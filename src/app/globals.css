@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0a;
+  --color-bg-elevated: #141414;
+  --color-bg-card: #181818;
+  --color-border: #232323;
+  --color-border-strong: #2c2c2c;
+
+  --color-gold: #c9a84c;
+  --color-gold-dim: #8b7530;
+  --color-gold-bright: #e0bf5e;
+
+  --color-cream: #f5efdc;
+  --color-text: #ffffff;
+  --color-text-dim: #999999;
+  --color-text-muted: #666666;
+
+  --color-success: #7bb663;
+  --color-warning: #e0a545;
+  --color-danger: #e04545;
+
+  --font-sans: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 25% 10%, rgba(201, 168, 76, 0.06), transparent 40%),
+    radial-gradient(circle at 80% 90%, rgba(201, 168, 76, 0.04), transparent 45%);
+  background-attachment: fixed;
+}
+
+.dot-grid {
+  background-image: radial-gradient(
+    circle,
+    rgba(201, 168, 76, 0.12) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(201, 168, 76, 0);
+  }
+  50% {
+    box-shadow: 0 0 32px 0 rgba(201, 168, 76, 0.25);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold-dim),
+    var(--color-gold-bright),
+    var(--color-gold-dim)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-bg);
+}
+
+/* Hide scrollbar in modal but keep functionality */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold-dim);
+}
