@@ -2,21 +2,30 @@
 
 import { motion } from "framer-motion";
 import { Plus, Send, Pencil, Sparkles } from "lucide-react";
+import type { RoomId } from "@/lib/rooms";
 
 interface Action {
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   variant: "primary" | "ghost";
+  targetRoom?: RoomId;
 }
 
 const ACTIONS: Action[] = [
-  { label: "Add Lead", icon: Plus, variant: "primary" },
-  { label: "Send Outreach", icon: Send, variant: "ghost" },
-  { label: "Manual Entry", icon: Pencil, variant: "ghost" },
-  { label: "Quick Note", icon: Sparkles, variant: "ghost" },
+  { label: "Add Lead", icon: Plus, variant: "primary", targetRoom: "lead_scorer" },
+  { label: "Send Outreach", icon: Send, variant: "ghost", targetRoom: "outreach" },
+  { label: "Add Task", icon: Pencil, variant: "ghost", targetRoom: "calendar" },
+  { label: "Log Content", icon: Sparkles, variant: "ghost", targetRoom: "analytics" },
 ];
 
 export function ActionBar() {
+  function open(targetRoom?: RoomId) {
+    if (!targetRoom) return;
+    window.dispatchEvent(
+      new CustomEvent("hq:open-room", { detail: { roomId: targetRoom } }),
+    );
+  }
+
   return (
     <footer className="sticky bottom-0 z-30 border-t border-border-strong bg-bg-elevated/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-3 lg:px-8">
@@ -30,6 +39,7 @@ export function ActionBar() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + i * 0.05 }}
+              onClick={() => open(a.targetRoom)}
               className={
                 "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors " +
                 (isPrimary

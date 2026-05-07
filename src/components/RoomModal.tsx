@@ -3,13 +3,25 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { Room } from "@/lib/rooms";
+import type { OutreachRow, OutreachStats } from "@/lib/queries";
+import { OutreachPanel } from "./rooms/OutreachPanel";
 
 interface RoomModalProps {
   room: Room | null;
   onClose: () => void;
+  outreachData?: {
+    list: OutreachRow[];
+    stats: OutreachStats;
+  };
+  onSendAnimation?: () => void;
 }
 
-export function RoomModal({ room, onClose }: RoomModalProps) {
+export function RoomModal({
+  room,
+  onClose,
+  outreachData,
+  onSendAnimation,
+}: RoomModalProps) {
   return (
     <AnimatePresence>
       {room && (
@@ -26,7 +38,7 @@ export function RoomModal({ room, onClose }: RoomModalProps) {
             exit={{ scale: 0.96, y: 10, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 260 }}
             onClick={(e) => e.stopPropagation()}
-            className="scrollbar-thin relative max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gold/30 bg-bg-elevated p-6 shadow-2xl"
+            className="scrollbar-thin relative max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gold/30 bg-bg-elevated p-6 shadow-2xl"
           >
             <button
               onClick={onClose}
@@ -36,7 +48,7 @@ export function RoomModal({ room, onClose }: RoomModalProps) {
               <X size={16} />
             </button>
 
-            <div className="mb-4 flex items-start gap-4">
+            <div className="mb-5 flex items-start gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-3xl">
                 {room.emoji}
               </div>
@@ -51,14 +63,22 @@ export function RoomModal({ room, onClose }: RoomModalProps) {
               </div>
             </div>
 
-            <div className="mt-6 rounded-lg border border-dashed border-border bg-bg-card/60 p-6 text-center">
-              <p className="text-sm text-text-dim">
-                Soba još nije implementirana — gradimo je u sljedećem koraku.
-              </p>
-              <p className="mt-2 text-xs text-text-muted">
-                Phase 1 placeholder · forme, tabele i akcije dolaze iduće.
-              </p>
-            </div>
+            {room.id === "outreach" && outreachData ? (
+              <OutreachPanel
+                initialList={outreachData.list}
+                initialStats={outreachData.stats}
+                onSendAnimation={onSendAnimation}
+              />
+            ) : (
+              <div className="mt-6 rounded-lg border border-dashed border-border bg-bg-card/60 p-6 text-center">
+                <p className="text-sm text-text-dim">
+                  Soba dolazi uskoro — gradimo room-by-room.
+                </p>
+                <p className="mt-2 text-xs text-text-muted">
+                  Sljedeće na redu prema build planu.
+                </p>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
