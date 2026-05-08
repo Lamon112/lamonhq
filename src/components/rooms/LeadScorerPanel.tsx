@@ -18,7 +18,12 @@ import {
   UserPlus,
   Mail as MailIcon,
 } from "lucide-react";
-import { addLead, updateLead, deleteLead } from "@/app/actions/leads";
+import {
+  addLead,
+  updateLead,
+  deleteLead,
+  bulkImportLeads,
+} from "@/app/actions/leads";
 import { scoreLead, saveAiFeedback } from "@/app/actions/ai";
 import {
   runProspector,
@@ -38,7 +43,7 @@ import {
 import { formatEuro, formatRelative } from "@/lib/format";
 import type { LeadRow, LeadsStats } from "@/lib/queries";
 
-type Tab = "list" | "score" | "discover";
+type Tab = "list" | "score" | "discover" | "import";
 
 interface LeadScorerPanelProps {
   initialList: LeadRow[];
@@ -358,9 +363,16 @@ export function LeadScorerPanel({
         >
           <Search size={14} /> Discover · Apollo
         </TabButton>
+        <TabButton
+          active={tab === "import"}
+          onClick={() => setTab("import")}
+        >
+          <Plus size={14} /> Bulk import
+        </TabButton>
       </div>
 
       {tab === "discover" && <ProspectorTab />}
+      {tab === "import" && <BulkImportTab />}
 
       <AnimatePresence mode="wait">
         {tab === "score" && (
@@ -807,6 +819,106 @@ function ScorePill({ score }: { score: number }) {
 interface SelectedPersonState {
   candidateIdx: number;
   personIdx: number;
+}
+
+function BulkImportTab() {
+  const [raw, setRaw] = useState("");
+  const [niche, setNiche] = useState<
+    "stomatologija" | "estetska" | "fizio" | "ortopedija" | "coach" | "other"
+  >("stomatologija");
+  const [source, setSource] = useState<
+    "linkedin" | "instagram" | "tiktok" | "referral" | "other"
+  >("other");
+  const [pending, startTransition] = useTransition();
+  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const sampleLines = raw.split("\n").filter((l) => l.trim()).length;
+
+  function submit() {
+    if (!raw.trim()) return setError("Paste-aj lista prvo");
+    setError(null);
+    setInfo(null);
+    startTransition(async () => {
+      const res = await bulkImportLeads(raw, source, niche);
+      if (!res.ok) {
+        setError(res.error ?? "Greška");
+        return;
+      }
+      setInfo(
+        `📥 Učitano ${res.inserted}/${res.total} · preskočeno ${res.skipped} (već postoji email)`,
+      );
+      setRaw("");
+      setTimeout(() => window.location.reload(), 1800);
+    });
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 text-xs text-purple-200">
+        <strong>Bulk import:</strong> paste-aj listu klinika u bilo kojem
+        formatu — <code>email</code> ili <code>name,email</code> ili
+        <code>name;email;phone</code>. Svaka linija = jedan lead. Email
+        duplikati se preskaču. Importani leadovi imaju score 0 — onda klikni{" "}
+        <em>AI re-score & enrich</em> u List tabu da ih AI obradi.
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Niche">
+          <select
+            value={niche}
+            onChange={(e) => setNiche(e.target.value as typeof niche)}
+            className="w-full rounded border border-border bg-bg/60 px-2 py-1.5 text-sm text-text"
+          >
+            <option value="stomatologija">Stomatologija</option>
+            <option value="estetska">Estetska</option>
+            <option value="fizio">Fizio</option>
+            <option value="ortopedija">Ortopedija</option>
+            <option value="coach">Coach</option>
+            <option value="other">Other</option>
+          </select>
+        </Field>
+        <Field label="Source">
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value as typeof source)}
+            className="w-full rounded border border-border bg-bg/60 px-2 py-1.5 text-sm text-text"
+          >
+            <option value="referral">Referral (npr. Špeharova baza)</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+            <option value="other">Other</option>
+          </select>
+        </Field>
+      </div>
+
+      <Field label={`Lista (${sampleLines} linija)`}>
+        <textarea
+          value={raw}
+          onChange={(e) => setRaw(e.target.value)}
+          rows={12}
+          placeholder="Stomatologija Marković, info@markovic.hr&#10;Dental Centar Maric, info@maric.hr, +385 99 123 456&#10;ordinacija.kovac@gmail.com"
+          className="w-full rounded border border-border bg-bg/60 px-2 py-2 text-xs text-text font-mono"
+        />
+      </Field>
+
+      {info && (
+        <div className="rounded border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+          {info}
+        </div>
+      )}
+      {error && (
+        <div className="rounded border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+          {error}
+        </div>
+      )}
+
+      <PrimaryButton onClick={submit} disabled={pending || !raw.trim()}>
+        {pending ? "Uvozim…" : `📥 Import ${sampleLines} ${sampleLines === 1 ? "lead" : "leadova"}`}
+      </PrimaryButton>
+    </div>
+  );
 }
 
 function ProspectorTab() {

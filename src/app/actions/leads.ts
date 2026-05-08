@@ -137,6 +137,163 @@ export async function updateLead(
   return { ok: true };
 }
 
+// ────────────────────────────────────────────────────────────────────
+// BULK IMPORT — paste CSV/TSV/lines of "name,email" or just emails
+// Parses lines, dedupes against existing leads.email, inserts as raw
+// (icp_score=0) so they show up at the bottom of the queue and can be
+// enriched in batch via bulkReEnrichUnscored.
+// ────────────────────────────────────────────────────────────────────
+
+export interface BulkImportResult {
+  ok: boolean;
+  inserted: number;
+  skipped: number;
+  total: number;
+  error?: string;
+}
+
+function parseRawLeads(
+  raw: string,
+): Array<{ name: string; email?: string }> {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith("#"));
+  const out: Array<{ name: string; email?: string }> = [];
+  const emailRegex = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i;
+
+  for (const line of lines) {
+    // Try common CSV/TSV formats; ignore header row
+    if (/^name[,;\t]\s*email/i.test(line)) continue;
+
+    const parts = line
+      .split(/[,;\t]/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    let name: string | undefined;
+    let email: string | undefined;
+
+    for (const p of parts) {
+      const m = p.match(emailRegex);
+      if (m && !email) email = m[1].toLowerCase();
+      else if (!name) name = p;
+    }
+
+    // Single value line: if it's email, use as both; if not, treat as name
+    if (parts.length === 1) {
+      const single = parts[0];
+      const m = single.match(emailRegex);
+      if (m) {
+        email = m[1].toLowerCase();
+        name = single;
+      } else {
+        name = single;
+      }
+    }
+
+    if (!name && !email) continue;
+    out.push({
+      name: (name ?? email ?? "Unknown").slice(0, 200),
+      email,
+    });
+  }
+
+  return out;
+}
+
+export async function bulkImportLeads(
+  raw: string,
+  source: "linkedin" | "instagram" | "tiktok" | "referral" | "other" = "other",
+  niche:
+    | "stomatologija"
+    | "estetska"
+    | "fizio"
+    | "ortopedija"
+    | "coach"
+    | "other"
+    | null = "stomatologija",
+): Promise<BulkImportResult> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user)
+    return {
+      ok: false,
+      inserted: 0,
+      skipped: 0,
+      total: 0,
+      error: "Niste prijavljeni",
+    };
+  const userId = userData.user.id;
+
+  const parsed = parseRawLeads(raw);
+  if (parsed.length === 0)
+    return { ok: false, inserted: 0, skipped: 0, total: 0, error: "Nema parsiranih redaka" };
+
+  // Dedupe against existing emails for this user
+  const emails = parsed.map((p) => p.email).filter(Boolean) as string[];
+  const existingSet = new Set<string>();
+  if (emails.length > 0) {
+    const { data: existing } = await supabase
+      .from("leads")
+      .select("email")
+      .eq("user_id", userId)
+      .in("email", emails);
+    for (const r of existing ?? []) {
+      if (r.email) existingSet.add((r.email as string).toLowerCase());
+    }
+  }
+
+  const toInsert = parsed
+    .filter((p) => !p.email || !existingSet.has(p.email))
+    .map((p) => ({
+      user_id: userId,
+      name: p.name,
+      email: p.email ?? null,
+      source,
+      niche,
+      stage: "discovery" as const,
+      icp_score: 0,
+      icp_breakdown: {},
+      notes: `📥 Bulk import ${new Date().toISOString().slice(0, 10)}\nEmail: ${p.email ?? "(nema)"}`,
+    }));
+
+  if (toInsert.length === 0) {
+    return {
+      ok: true,
+      inserted: 0,
+      skipped: parsed.length,
+      total: parsed.length,
+    };
+  }
+
+  // Insert in chunks of 100 (Supabase row limit safety)
+  let inserted = 0;
+  for (let i = 0; i < toInsert.length; i += 100) {
+    const chunk = toInsert.slice(i, i + 100);
+    const { error, count } = await supabase
+      .from("leads")
+      .insert(chunk, { count: "exact" });
+    if (error)
+      return {
+        ok: false,
+        inserted,
+        skipped: parsed.length - inserted,
+        total: parsed.length,
+        error: error.message,
+      };
+    inserted += count ?? chunk.length;
+  }
+
+  revalidatePath("/");
+  return {
+    ok: true,
+    inserted,
+    skipped: parsed.length - inserted,
+    total: parsed.length,
+  };
+}
+
 export async function deleteLead(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("leads").delete().eq("id", id);
