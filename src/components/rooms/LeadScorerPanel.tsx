@@ -9,8 +9,12 @@ import {
   Trash2,
   ChevronRight,
   ArrowRight,
+  Wand2,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { addLead, updateLead, deleteLead } from "@/app/actions/leads";
+import { scoreLead, saveAiFeedback } from "@/app/actions/ai";
 import {
   StatTile,
   TabButton,
@@ -125,6 +129,73 @@ export function LeadScorerPanel({
   );
   const [estimatedValue, setEstimatedValue] = useState("");
   const [notes, setNotes] = useState("");
+
+  // AI scorer state
+  const [aiProfile, setAiProfile] = useState("");
+  const [aiResult, setAiResult] = useState<{
+    breakdown: Record<string, number>;
+    confidence: string;
+    reasoning: Record<string, string>;
+    summary: string;
+    raw: string;
+  } | null>(null);
+  const [aiRated, setAiRated] = useState<"good" | "bad" | null>(null);
+
+  function runAiScore() {
+    setError(null);
+    if (aiProfile.trim().length < 30) {
+      setError("Paste-aj makar bio + 1-2 posta (min 30 znakova)");
+      return;
+    }
+    startTransition(async () => {
+      const res = await scoreLead({ profileText: aiProfile });
+      if (!res.ok || !res.result) {
+        setError(res.error ?? "AI greška");
+        return;
+      }
+      const r = res.result;
+      // Auto-fill form fields
+      setName(r.suggested_name);
+      setNiche(r.suggested_niche);
+      setSource(r.suggested_source);
+      setBreakdown({
+        lice_branda: r.icp_breakdown.lice_branda,
+        edge: r.icp_breakdown.edge,
+        premium: r.icp_breakdown.premium,
+        dokaz: r.icp_breakdown.dokaz,
+        brzina_odluke: r.icp_breakdown.brzina_odluke,
+      });
+      // Append summary to notes
+      const reasoningBlock = ICP_CRITERIA.map(
+        (c) =>
+          `· ${c.label} (${r.icp_breakdown[c.key as keyof typeof r.icp_breakdown]}/4): ${r.reasoning[c.key as keyof typeof r.reasoning]}`,
+      ).join("\n");
+      setNotes(
+        `🤖 AI summary: ${r.summary}\n\n${reasoningBlock}\n\n--- Original profile ---\n${aiProfile.slice(0, 1000)}`,
+      );
+      setAiResult({
+        breakdown: r.icp_breakdown as unknown as Record<string, number>,
+        confidence: r.confidence,
+        reasoning: r.reasoning as unknown as Record<string, string>,
+        summary: r.summary,
+        raw: res.raw ?? "",
+      });
+      setAiRated(null);
+    });
+  }
+
+  function rateAi(rating: "good" | "bad") {
+    if (!aiResult) return;
+    setAiRated(rating);
+    startTransition(async () => {
+      await saveAiFeedback({
+        kind: "lead_score",
+        input: { profileText: aiProfile },
+        output: aiResult.raw,
+        rating,
+      });
+    });
+  }
 
   const totalScore = Object.values(breakdown).reduce(
     (s, v) => s + (Number(v) || 0),
@@ -282,6 +353,81 @@ export function LeadScorerPanel({
             onSubmit={submit}
             className="space-y-4"
           >
+            {/* AI HELPER */}
+            <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gold flex items-center gap-1.5">
+                  <Wand2 size={12} />
+                  ✨ AI Lead Scorer (Claude)
+                </span>
+                <span className="text-[10px] text-text-muted">
+                  Paste profil → auto-popunja sve fieldove
+                </span>
+              </div>
+              <textarea
+                className="input font-mono text-[11px]"
+                rows={3}
+                value={aiProfile}
+                onChange={(e) => setAiProfile(e.target.value)}
+                placeholder="Paste LinkedIn About + 1-2 posta · ili IG bio + best videos · ili web stranica section · što imaš"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={runAiScore}
+                  disabled={pending || aiProfile.trim().length < 30}
+                  className="flex items-center gap-2 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-bg transition-colors hover:bg-gold-bright disabled:opacity-40"
+                >
+                  <Wand2 size={12} />
+                  {pending ? "Analyzing…" : "Analiziraj profil"}
+                </button>
+                {aiResult && (
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <Badge
+                      tone={
+                        aiResult.confidence === "high"
+                          ? "success"
+                          : aiResult.confidence === "medium"
+                            ? "gold"
+                            : "neutral"
+                      }
+                    >
+                      confidence: {aiResult.confidence}
+                    </Badge>
+                    {aiRated === null ? (
+                      <>
+                        <span className="text-text-muted">AI je dobro pogodio?</span>
+                        <button
+                          type="button"
+                          onClick={() => rateAi("good")}
+                          className="rounded p-1 text-success transition-colors hover:bg-success/10"
+                          title="👍 Good — AI uči ovo"
+                        >
+                          <ThumbsUp size={11} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => rateAi("bad")}
+                          className="rounded p-1 text-danger transition-colors hover:bg-danger/10"
+                        >
+                          <ThumbsDown size={11} />
+                        </button>
+                      </>
+                    ) : aiRated === "good" ? (
+                      <span className="text-success">👍 Saved · AI uči</span>
+                    ) : (
+                      <span className="text-warning">👎 Saved</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {aiResult && (
+                <p className="text-[11px] italic text-text-dim">
+                  💬 {aiResult.summary}
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Ime / klinika *">
                 <input
@@ -380,6 +526,11 @@ export function LeadScorerPanel({
                       </button>
                     ))}
                   </div>
+                  {aiResult?.reasoning?.[c.key] && (
+                    <p className="text-[10px] italic text-text-dim border-l-2 border-gold/30 pl-2">
+                      🤖 {aiResult.reasoning[c.key]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

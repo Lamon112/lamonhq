@@ -228,9 +228,228 @@ export async function draftOutreachVariants(
   }
 }
 
+// =====================================================================
+// AI Lead Scorer
+// =====================================================================
+
+export interface ScoreLeadInput {
+  profileText: string;
+  hint?: string; // optional: "TikTok bio + 3 last posts" etc.
+}
+
+export interface LeadScoreBreakdown {
+  lice_branda: number;
+  edge: number;
+  premium: number;
+  dokaz: number;
+  brzina_odluke: number;
+}
+
+export interface LeadScoreResult {
+  ok: boolean;
+  error?: string;
+  raw?: string;
+  result?: {
+    icp_breakdown: LeadScoreBreakdown;
+    icp_total: number;
+    confidence: "low" | "medium" | "high";
+    suggested_name: string;
+    suggested_niche:
+      | "stomatologija"
+      | "estetska"
+      | "fizio"
+      | "ortopedija"
+      | "coach"
+      | "other";
+    suggested_source:
+      | "linkedin"
+      | "instagram"
+      | "tiktok"
+      | "referral"
+      | "other";
+    reasoning: {
+      lice_branda: string;
+      edge: string;
+      premium: string;
+      dokaz: string;
+      brzina_odluke: string;
+    };
+    summary: string;
+  };
+}
+
+const LEAD_SCORER_PROMPT = `Ti si Lamon Agency lead scorer. Analiziraj profil potencijalnog klijenta i daj mu ICP score po 5 kriterija (svaki 0-4, ukupno 0-20).
+
+# Lamon ICP cilj
+High-leverage, premium klijent koji brzo donosi odluke. Ne želimo discount klijente, ne želimo committee odluke.
+
+# 5 kriterija s rubrikom
+
+**1. Lice branda (0-4)** — ima li klinika/coach jasno lice?
+- 0: anonimno, nema founder / lica
+- 1: vlasnik postoji ali nema osobni brand
+- 2: vlasnik je donekle vidljiv (par postova)
+- 3: jasan founder s osobnim brandom
+- 4: founder je referenca u industriji (govornik, autor, citiran)
+
+**2. Edge (0-4)** — razlikuju se od konkurencije?
+- 0: generic, isto kao 100 drugih
+- 1: minor differentiator
+- 2: jasan USP ali ne unikat
+- 3: solid niche + jasna pozicija
+- 4: kategorija od jednog — niko drugi to ne radi tako
+
+**3. Premium (0-4)** — premium pozicioniranje + cijena?
+- 0: discount / mass market
+- 1: budget-friendly
+- 2: mid-market
+- 3: premium tier (cijene iznad prosjeka tržišta)
+- 4: ultra-premium / luxury (top 5% tržišta)
+
+**4. Dokaz (0-4)** — testimonials, rezultati, case studies?
+- 0: ništa vidljivo
+- 1: 1-2 generic testimonial
+- 2: nekoliko testimonials / before-after
+- 3: kvalitetne case stories s brojevima
+- 4: poznati brendovi/celebrities/influenceri među klijentima
+
+**5. Brzina odluke (0-4)** — koliko brzo odluče?
+- 0: committee, >3 mj sporo
+- 1: 1-2 mj decision cycle
+- 2: standard B2B (4-6 tj)
+- 3: 1-2 osobe + brzo (1-3 tj)
+- 4: founder direktno, isti dan/tjedan
+
+# Pravila
+- Budi konzervativan — ako informacija fali, score bi trebao biti niži, ne pretpostavljaj
+- Confidence: 'high' samo ako profile text bogat (LinkedIn About + posts ili web stranica + testimonials), 'medium' za solid bio, 'low' za samo username/handle
+- Reasoning: 1 rečenica po kriteriju, MORA referencirati specifičan signal iz teksta (citiraj fragment ako možeš)
+- summary: 1-2 rečenice, "ovo je [hot/warm/cold] lead jer..."
+
+# Output: STRICT JSON, bez markdown fence-a, bez objašnjenja, samo:
+{
+  "icp_breakdown": {"lice_branda": 0-4, "edge": 0-4, "premium": 0-4, "dokaz": 0-4, "brzina_odluke": 0-4},
+  "icp_total": 0-20,
+  "confidence": "low|medium|high",
+  "suggested_name": "string",
+  "suggested_niche": "stomatologija|estetska|fizio|ortopedija|coach|other",
+  "suggested_source": "linkedin|instagram|tiktok|referral|other",
+  "reasoning": {"lice_branda": "...", "edge": "...", "premium": "...", "dokaz": "...", "brzina_odluke": "..."},
+  "summary": "..."
+}`;
+
+function tryParseScoreJson(text: string): LeadScoreResult["result"] | null {
+  // Strip code fences if any
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    // Quick shape check
+    if (
+      !parsed.icp_breakdown ||
+      typeof parsed.icp_breakdown.lice_branda !== "number"
+    ) {
+      return null;
+    }
+    return parsed as LeadScoreResult["result"];
+  } catch {
+    return null;
+  }
+}
+
+export async function scoreLead(
+  input: ScoreLeadInput,
+): Promise<LeadScoreResult> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { ok: false, error: "ANTHROPIC_API_KEY nije postavljen" };
+  }
+  const profile = input.profileText.trim();
+  if (profile.length < 30) {
+    return {
+      ok: false,
+      error: "Profile text je prekratak — paste-aj makar bio + 1-2 posta",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+
+    // Few-shot from good rated lead scores (future-proofing)
+    const goodExamples = userId
+      ? await fetchGoodLeadScoreExamples(userId)
+      : [];
+
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const exampleSection =
+      goodExamples.length > 0
+        ? `\n# Tvoji prijašnji 'good-rated' score-ovi (referenca):\n${goodExamples
+            .map((e, i) => `--- Primjer ${i + 1} ---\n${e}`)
+            .join("\n\n")}\n`
+        : "";
+
+    const userMessage = `${exampleSection}# Profile za scoring${input.hint ? ` (${input.hint})` : ""}:\n\n${profile}\n\nVrati JSON.`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1200,
+      system: [
+        {
+          type: "text",
+          text: LEAD_SCORER_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+    });
+
+    const block = message.content.find((b) => b.type === "text");
+    const raw = block && block.type === "text" ? block.text.trim() : "";
+    const result = tryParseScoreJson(raw);
+    if (!result) {
+      return {
+        ok: false,
+        error: "AI nije vratio validan JSON",
+        raw,
+      };
+    }
+    return { ok: true, result, raw };
+  } catch (e) {
+    return {
+      ok: false,
+      error:
+        e instanceof Error ? `Anthropic error: ${e.message}` : "Greška",
+    };
+  }
+}
+
+async function fetchGoodLeadScoreExamples(
+  userId: string,
+  limit = 2,
+): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ai_feedback")
+    .select("input_payload, output_text")
+    .eq("user_id", userId)
+    .eq("kind", "lead_score")
+    .eq("rating", "good")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((r) => {
+    const input = r.input_payload as { profileText?: string } | null;
+    const profile = input?.profileText?.slice(0, 400) ?? "(no profile)";
+    return `Profile: ${profile}\n\nGood JSON output:\n${r.output_text}`;
+  });
+}
+
 export interface FeedbackInput {
-  kind: "outreach_draft";
-  input: DraftInput;
+  kind: "outreach_draft" | "lead_score";
+  input: DraftInput | ScoreLeadInput;
   output: string;
   rating: "good" | "bad";
   notes?: string;
