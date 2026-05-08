@@ -3,23 +3,40 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { Room } from "@/lib/rooms";
-import type { OutreachRow, OutreachStats } from "@/lib/queries";
+import type {
+  OutreachRow,
+  OutreachStats,
+  ClientRow,
+  ClientsStats,
+  LeadRow,
+  LeadsStats,
+  DiscoveryStats,
+} from "@/lib/queries";
 import { OutreachPanel } from "./rooms/OutreachPanel";
+import { ClientsPanel } from "./rooms/ClientsPanel";
+import { LeadScorerPanel } from "./rooms/LeadScorerPanel";
+import { DiscoveryPanel } from "./rooms/DiscoveryPanel";
+
+export interface RoomData {
+  outreach: { list: OutreachRow[]; stats: OutreachStats };
+  clients: { list: ClientRow[]; stats: ClientsStats };
+  leads: { list: LeadRow[]; stats: LeadsStats };
+  discovery: { stats: DiscoveryStats };
+}
 
 interface RoomModalProps {
   room: Room | null;
+  initialTab?: string;
+  data: RoomData;
   onClose: () => void;
-  outreachData?: {
-    list: OutreachRow[];
-    stats: OutreachStats;
-  };
   onSendAnimation?: () => void;
 }
 
 export function RoomModal({
   room,
+  data,
+  initialTab,
   onClose,
-  outreachData,
   onSendAnimation,
 }: RoomModalProps) {
   return (
@@ -38,11 +55,11 @@ export function RoomModal({
             exit={{ scale: 0.96, y: 10, opacity: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 260 }}
             onClick={(e) => e.stopPropagation()}
-            className="scrollbar-thin relative max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gold/30 bg-bg-elevated p-6 shadow-2xl"
+            className="scrollbar-thin relative max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gold/30 bg-bg-elevated p-6 shadow-2xl"
           >
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-md border border-border text-text-dim transition-colors hover:border-gold/50 hover:text-text"
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border bg-bg-elevated text-text-dim transition-colors hover:border-gold/50 hover:text-text"
               aria-label="Zatvori"
             >
               <X size={16} />
@@ -63,25 +80,70 @@ export function RoomModal({
               </div>
             </div>
 
-            {room.id === "outreach" && outreachData ? (
-              <OutreachPanel
-                initialList={outreachData.list}
-                initialStats={outreachData.stats}
-                onSendAnimation={onSendAnimation}
-              />
-            ) : (
-              <div className="mt-6 rounded-lg border border-dashed border-border bg-bg-card/60 p-6 text-center">
-                <p className="text-sm text-text-dim">
-                  Soba dolazi uskoro — gradimo room-by-room.
-                </p>
-                <p className="mt-2 text-xs text-text-muted">
-                  Sljedeće na redu prema build planu.
-                </p>
-              </div>
-            )}
+            <RoomBody
+              room={room}
+              data={data}
+              initialTab={initialTab}
+              onSendAnimation={onSendAnimation}
+            />
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
+}
+
+function RoomBody({
+  room,
+  data,
+  initialTab,
+  onSendAnimation,
+}: {
+  room: Room;
+  data: RoomData;
+  initialTab?: string;
+  onSendAnimation?: () => void;
+}) {
+  switch (room.id) {
+    case "outreach":
+      return (
+        <OutreachPanel
+          initialList={data.outreach.list}
+          initialStats={data.outreach.stats}
+          onSendAnimation={onSendAnimation}
+        />
+      );
+    case "clients":
+      return (
+        <ClientsPanel
+          initialList={data.clients.list}
+          initialStats={data.clients.stats}
+        />
+      );
+    case "lead_scorer":
+      return (
+        <LeadScorerPanel
+          initialList={data.leads.list}
+          initialStats={data.leads.stats}
+        />
+      );
+    case "discovery":
+      return (
+        <DiscoveryPanel
+          initialList={data.leads.list}
+          initialStats={data.discovery.stats}
+        />
+      );
+    default:
+      return (
+        <div className="mt-6 rounded-lg border border-dashed border-border bg-bg-card/60 p-6 text-center">
+          <p className="text-sm text-text-dim">
+            Soba dolazi uskoro — gradimo room-by-room.
+          </p>
+          <p className="mt-2 text-xs text-text-muted">
+            {room.name} · placeholder
+          </p>
+        </div>
+      );
+  }
 }

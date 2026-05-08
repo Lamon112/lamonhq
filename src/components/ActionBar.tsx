@@ -12,9 +12,10 @@ interface Action {
 }
 
 const ACTIONS: Action[] = [
-  { label: "Add Lead", icon: Plus, variant: "primary", targetRoom: "lead_scorer" },
+  { label: "Score Lead", icon: Plus, variant: "primary", targetRoom: "lead_scorer" },
+  { label: "Add Client", icon: Plus, variant: "ghost", targetRoom: "clients" },
   { label: "Send Outreach", icon: Send, variant: "ghost", targetRoom: "outreach" },
-  { label: "Add Task", icon: Pencil, variant: "ghost", targetRoom: "calendar" },
+  { label: "Log Discovery", icon: Pencil, variant: "ghost", targetRoom: "discovery" },
   { label: "Log Content", icon: Sparkles, variant: "ghost", targetRoom: "analytics" },
 ];
 

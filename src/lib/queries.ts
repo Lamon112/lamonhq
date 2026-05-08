@@ -155,3 +155,200 @@ export async function getRecentLeads(limit = 30): Promise<LeadRef[]> {
     .limit(limit);
   return (data ?? []) as LeadRef[];
 }
+
+// =====================================================================
+// Client Manager
+// =====================================================================
+
+export interface ClientRow {
+  id: string;
+  name: string;
+  type: "b2b_clinic" | "coach_mentor" | "affiliate";
+  status: "active" | "onboarding" | "paused" | "churned";
+  monthly_revenue: number | null;
+  start_date: string | null;
+  notes: string | null;
+  last_touchpoint_at: string | null;
+  next_action: string | null;
+  next_action_date: string | null;
+  churn_risk: "low" | "medium" | "high" | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientsStats {
+  active: number;
+  onboarding: number;
+  paused: number;
+  churned: number;
+  churnRisk: number;
+  mrrCents: number;
+}
+
+export async function getClients(): Promise<ClientRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clients")
+    .select("*")
+    .order("status", { ascending: true })
+    .order("monthly_revenue", { ascending: false });
+  return (data ?? []) as ClientRow[];
+}
+
+export async function getClientsStats(): Promise<ClientsStats> {
+  const clients = await getClients();
+  const stats = {
+    active: 0,
+    onboarding: 0,
+    paused: 0,
+    churned: 0,
+    churnRisk: 0,
+    mrrCents: 0,
+  };
+  for (const c of clients) {
+    stats[c.status] += 1;
+    if (c.churn_risk && c.status === "active") stats.churnRisk += 1;
+    if (c.status === "active") {
+      stats.mrrCents += Math.round(Number(c.monthly_revenue ?? 0) * 100);
+    }
+  }
+  return stats;
+}
+
+// =====================================================================
+// Lead Scorer
+// =====================================================================
+
+export type ICPCriterion =
+  | "lice_branda"
+  | "edge"
+  | "premium"
+  | "dokaz"
+  | "brzina_odluke";
+
+export interface LeadRow {
+  id: string;
+  name: string;
+  source: "linkedin" | "instagram" | "tiktok" | "referral" | "other" | null;
+  niche:
+    | "stomatologija"
+    | "estetska"
+    | "fizio"
+    | "ortopedija"
+    | "coach"
+    | "other"
+    | null;
+  icp_score: number | null;
+  icp_breakdown: Record<string, number> | null;
+  stage:
+    | "discovery"
+    | "pricing"
+    | "financing"
+    | "booking"
+    | "closed_won"
+    | "closed_lost";
+  estimated_value: number | null;
+  next_action: string | null;
+  next_action_date: string | null;
+  notes: string | null;
+  discovery_at: string | null;
+  discovery_outcome: string | null;
+  discovery_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadsStats {
+  total: number;
+  hot: number; // score >= 15
+  warm: number; // 10-14
+  cold: number; // < 10
+  byStage: Record<LeadRow["stage"], number>;
+}
+
+export async function getLeads(): Promise<LeadRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("leads")
+    .select("*")
+    .order("icp_score", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+  return (data ?? []) as LeadRow[];
+}
+
+export async function getLeadsStats(): Promise<LeadsStats> {
+  const leads = await getLeads();
+  const stats: LeadsStats = {
+    total: leads.length,
+    hot: 0,
+    warm: 0,
+    cold: 0,
+    byStage: {
+      discovery: 0,
+      pricing: 0,
+      financing: 0,
+      booking: 0,
+      closed_won: 0,
+      closed_lost: 0,
+    },
+  };
+  for (const l of leads) {
+    const score = l.icp_score ?? 0;
+    if (score >= 15) stats.hot += 1;
+    else if (score >= 10) stats.warm += 1;
+    else stats.cold += 1;
+    stats.byStage[l.stage] += 1;
+  }
+  return stats;
+}
+
+// =====================================================================
+// Discovery Bay
+// =====================================================================
+
+export interface DiscoveryStats {
+  thisWeek: number;
+  upcoming: number;
+  showUpRate: number; // 0-1 (replied / scheduled)
+  conversionToPricing: number;
+}
+
+export async function getDiscoveryStats(): Promise<DiscoveryStats> {
+  const supabase = await createClient();
+  const weekStart = startOfWeek();
+  const now = new Date().toISOString();
+
+  const [thisWeekRes, upcomingRes, allRecentRes, pricingRes] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .gte("discovery_at", weekStart),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .gte("discovery_at", now),
+    supabase
+      .from("leads")
+      .select("discovery_outcome")
+      .gte("discovery_at", weekStart)
+      .lt("discovery_at", now),
+    supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .gte("discovery_at", weekStart)
+      .in("stage", ["pricing", "financing", "booking", "closed_won"]),
+  ]);
+
+  const past = allRecentRes.data ?? [];
+  const showed = past.filter(
+    (r) => r.discovery_outcome && r.discovery_outcome !== "no_show",
+  ).length;
+  const showUpRate = past.length ? showed / past.length : 0;
+
+  return {
+    thisWeek: thisWeekRes.count ?? 0,
+    upcoming: upcomingRes.count ?? 0,
+    showUpRate,
+    conversionToPricing: pricingRes.count ?? 0,
+  };
+}

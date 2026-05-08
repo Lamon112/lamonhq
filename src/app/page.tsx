@@ -6,6 +6,11 @@ import {
   getHQStats,
   getOutreachStats,
   getOutreachList,
+  getClients,
+  getClientsStats,
+  getLeads,
+  getLeadsStats,
+  getDiscoveryStats,
 } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -16,10 +21,24 @@ export default async function HQPage() {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
 
-  const [stats, outreachStats, outreachList] = await Promise.all([
+  const [
+    stats,
+    outreachStats,
+    outreachList,
+    clientList,
+    clientStats,
+    leadList,
+    leadStats,
+    discoveryStats,
+  ] = await Promise.all([
     getHQStats(),
     getOutreachStats(),
     getOutreachList(),
+    getClients(),
+    getClientsStats(),
+    getLeads(),
+    getLeadsStats(),
+    getDiscoveryStats(),
   ]);
 
   const userMeta = {
@@ -38,7 +57,12 @@ export default async function HQPage() {
     <>
       <ResourceBar stats={stats} user={userMeta} />
       <Building
-        outreachData={{ list: outreachList, stats: outreachStats }}
+        data={{
+          outreach: { list: outreachList, stats: outreachStats },
+          clients: { list: clientList, stats: clientStats },
+          leads: { list: leadList, stats: leadStats },
+          discovery: { stats: discoveryStats },
+        }}
       />
       <ActionBar />
     </>

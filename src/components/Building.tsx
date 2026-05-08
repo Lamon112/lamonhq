@@ -2,19 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Floor } from "./Floor";
-import { RoomModal } from "./RoomModal";
+import { RoomModal, type RoomData } from "./RoomModal";
 import { EnvelopeFly } from "./EnvelopeFly";
 import { ALL_ROOMS, FLOORS, type Room, type RoomId } from "@/lib/rooms";
-import type { OutreachRow, OutreachStats } from "@/lib/queries";
 
 interface BuildingProps {
-  outreachData: {
-    list: OutreachRow[];
-    stats: OutreachStats;
-  };
+  data: RoomData;
 }
 
-export function Building({ outreachData }: BuildingProps) {
+export function Building({ data }: BuildingProps) {
   const [selected, setSelected] = useState<Room | null>(null);
   const [envelopeTrigger, setEnvelopeTrigger] = useState(0);
 
@@ -32,7 +28,6 @@ export function Building({ outreachData }: BuildingProps) {
     <main className="dot-grid relative flex-1">
       <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-10">
         <div className="relative overflow-hidden rounded-2xl border border-border-strong bg-bg/60">
-          {/* Elevator shaft (vertical line through middle of right column) */}
           <div
             aria-hidden
             className="pointer-events-none absolute bottom-0 right-0 top-0 hidden w-px bg-gradient-to-b from-gold/0 via-gold/30 to-gold/0 lg:block"
@@ -54,8 +49,8 @@ export function Building({ outreachData }: BuildingProps) {
 
       <RoomModal
         room={selected}
+        data={data}
         onClose={() => setSelected(null)}
-        outreachData={outreachData}
         onSendAnimation={() => setEnvelopeTrigger((n) => n + 1)}
       />
       <EnvelopeFly trigger={envelopeTrigger} />
