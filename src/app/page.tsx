@@ -3,9 +3,11 @@ import { Building } from "@/components/Building";
 import { ActionBar } from "@/components/ActionBar";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { DailyBriefing } from "@/components/DailyBriefing";
+import { FollowUpsPanel } from "@/components/FollowUpsPanel";
 import { getRecentActivity } from "@/app/actions/activityLog";
 import { getXpStats } from "@/app/actions/xp";
 import { getTodaysBriefing } from "@/app/actions/briefing";
+import { getPendingFollowUps } from "@/app/actions/followUps";
 import { createClient } from "@/lib/supabase/server";
 import {
   getHQStats,
@@ -59,6 +61,7 @@ export default async function HQPage() {
     activityRows,
     xpStats,
     todaysBriefing,
+    followUps,
   ] = await Promise.all([
     getHQStats(),
     getOutreachStats(),
@@ -81,6 +84,7 @@ export default async function HQPage() {
     getRecentActivity(40),
     getXpStats(),
     getTodaysBriefing(),
+    getPendingFollowUps(),
   ]);
 
   const userMeta = {
@@ -99,6 +103,7 @@ export default async function HQPage() {
     <>
       <ResourceBar stats={stats} xp={xpStats} user={userMeta} />
       <DailyBriefing initialBriefing={todaysBriefing} />
+      <FollowUpsPanel initialDrafts={followUps} />
       <Building
         data={{
           outreach: { list: outreachList, stats: outreachStats },
