@@ -452,6 +452,74 @@ export async function getContentStats(): Promise<ContentStats> {
 }
 
 // =====================================================================
+// Social Channel Stats (YouTube auto-refresh)
+// =====================================================================
+
+export interface ChannelStatsSnapshot {
+  id: string;
+  platform: "youtube" | "instagram" | "tiktok" | "linkedin";
+  handle: string | null;
+  channel_id: string | null;
+  subscribers: number | null;
+  total_views: number | null;
+  video_count: number | null;
+  fetched_at: string;
+}
+
+export interface ChannelStatsView {
+  latest: ChannelStatsSnapshot | null;
+  previous: ChannelStatsSnapshot | null;
+  deltaSubscribers: number | null;
+  deltaTotalViews: number | null;
+  deltaVideoCount: number | null;
+  deltaSinceDays: number | null;
+}
+
+export async function getChannelStatsView(
+  platform: ChannelStatsSnapshot["platform"] = "youtube",
+): Promise<ChannelStatsView> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("social_channel_stats")
+    .select(
+      "id, platform, handle, channel_id, subscribers, total_views, video_count, fetched_at",
+    )
+    .eq("platform", platform)
+    .order("fetched_at", { ascending: false })
+    .limit(2);
+
+  const rows = (data ?? []) as ChannelStatsSnapshot[];
+  const latest = rows[0] ?? null;
+  const previous = rows[1] ?? null;
+
+  const sub = (k: keyof ChannelStatsSnapshot) =>
+    latest && previous && latest[k] != null && previous[k] != null
+      ? (latest[k] as number) - (previous[k] as number)
+      : null;
+
+  const deltaSinceDays =
+    latest && previous
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(latest.fetched_at).getTime() -
+              new Date(previous.fetched_at).getTime()) /
+              86_400_000,
+          ),
+        )
+      : null;
+
+  return {
+    latest,
+    previous,
+    deltaSubscribers: sub("subscribers"),
+    deltaTotalViews: sub("total_views"),
+    deltaVideoCount: sub("video_count"),
+    deltaSinceDays,
+  };
+}
+
+// =====================================================================
 // Competitor Watch
 // =====================================================================
 

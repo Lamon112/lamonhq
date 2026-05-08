@@ -14,6 +14,7 @@ import type {
   DealsStats,
   ContentPostRow,
   ContentStats,
+  ChannelStatsView,
   CompetitorRow,
   CompetitorUpdateRow,
   CompetitorStats,
@@ -39,7 +40,11 @@ export interface RoomData {
   leads: { list: LeadRow[]; stats: LeadsStats };
   discovery: { stats: DiscoveryStats };
   deals: { stats: DealsStats };
-  content: { list: ContentPostRow[]; stats: ContentStats };
+  content: {
+    list: ContentPostRow[];
+    stats: ContentStats;
+    youtube: ChannelStatsView;
+  };
   competitor: {
     list: CompetitorRow[];
     updates: CompetitorUpdateRow[];
@@ -176,6 +181,7 @@ function RoomBody({
         <AnalyticsPanel
           initialList={data.content.list}
           initialStats={data.content.stats}
+          initialYoutube={data.content.youtube}
         />
       );
     case "competitor":

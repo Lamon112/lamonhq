@@ -1,13 +1,14 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useMemo, useState, useTransition } from "react";
-import { ChartBar, Plus, ExternalLink, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { ChartBar, Plus, ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import {
   addContentPost,
   deleteContentPost,
   updateContentStats,
 } from "@/app/actions/content";
+import { refreshYouTubeStats } from "@/app/actions/analytics";
 import {
   StatTile,
   TabButton,
@@ -18,7 +19,11 @@ import {
   Badge,
 } from "@/components/ui/common";
 import { formatRelative } from "@/lib/format";
-import type { ContentPostRow, ContentStats } from "@/lib/queries";
+import type {
+  ChannelStatsView,
+  ContentPostRow,
+  ContentStats,
+} from "@/lib/queries";
 
 type Tab = "list" | "add";
 type Platform = "all" | "tiktok" | "instagram" | "youtube" | "linkedin";
@@ -26,6 +31,7 @@ type Platform = "all" | "tiktok" | "instagram" | "youtube" | "linkedin";
 interface AnalyticsPanelProps {
   initialList: ContentPostRow[];
   initialStats: ContentStats;
+  initialYoutube: ChannelStatsView;
 }
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -44,6 +50,7 @@ function formatViews(n: number): string {
 export function AnalyticsPanel({
   initialList,
   initialStats,
+  initialYoutube,
 }: AnalyticsPanelProps) {
   const [tab, setTab] = useState<Tab>("list");
   const [filter, setFilter] = useState<Platform>("all");
@@ -51,6 +58,61 @@ export function AnalyticsPanel({
   const [stats, setStats] = useState(initialStats);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [youtube, setYoutube] = useState(initialYoutube);
+  const [ytRefreshing, setYtRefreshing] = useState(false);
+  const [ytError, setYtError] = useState<string | null>(null);
+
+  const ytLatest = youtube.latest;
+  const ytStale = !ytLatest
+    ? true
+    : Date.now() - new Date(ytLatest.fetched_at).getTime() > 10 * 60 * 1000;
+
+  async function refreshYoutube(force = false) {
+    setYtRefreshing(true);
+    setYtError(null);
+    const res = await refreshYouTubeStats({ force });
+    if (!res.ok) setYtError(res.error ?? "YouTube refresh failed");
+    if (res.ok && res.stats) {
+      const newSnap = {
+        id: crypto.randomUUID(),
+        platform: "youtube" as const,
+        handle: res.stats.handle,
+        channel_id: res.stats.channelId,
+        subscribers: res.stats.subscribers,
+        total_views: res.stats.totalViews,
+        video_count: res.stats.videoCount,
+        fetched_at: res.fetchedAt ?? new Date().toISOString(),
+      };
+      const prev = youtube.latest;
+      const sub = (k: keyof typeof newSnap) =>
+        prev && newSnap[k] != null && prev[k] != null
+          ? (newSnap[k] as number) - (prev[k] as number)
+          : null;
+      setYoutube({
+        latest: newSnap,
+        previous: prev,
+        deltaSubscribers: sub("subscribers"),
+        deltaTotalViews: sub("total_views"),
+        deltaVideoCount: sub("video_count"),
+        deltaSinceDays: prev
+          ? Math.max(
+              0,
+              Math.round(
+                (new Date(newSnap.fetched_at).getTime() -
+                  new Date(prev.fetched_at).getTime()) /
+                  86_400_000,
+              ),
+            )
+          : null,
+      });
+    }
+    setYtRefreshing(false);
+  }
+
+  useEffect(() => {
+    if (ytStale && !ytRefreshing) void refreshYoutube(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Form state
   const [platform, setPlatform] = useState<ContentPostRow["platform"]>("tiktok");
@@ -160,6 +222,81 @@ export function AnalyticsPanel({
 
   return (
     <div className="space-y-5">
+      <div className="rounded-lg border border-border bg-bg-card/60 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">
+              YouTube channel · auto
+            </div>
+            <div className="mt-0.5 flex items-baseline gap-2">
+              <span className="text-sm font-medium text-text">
+                {ytLatest?.handle ?? "@lamon.leonardo"}
+              </span>
+              {ytLatest?.fetched_at && (
+                <span className="text-[10px] text-text-dim">
+                  refreshed {formatRelative(ytLatest.fetched_at)}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => void refreshYoutube(true)}
+            disabled={ytRefreshing}
+            className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-text-muted transition-colors hover:border-gold/40 hover:text-gold disabled:opacity-50"
+            title="Force refresh"
+          >
+            <RefreshCw
+              size={12}
+              className={ytRefreshing ? "animate-spin" : ""}
+            />
+            {ytRefreshing ? "Sync…" : "Sync now"}
+          </button>
+        </div>
+        {ytError && (
+          <div className="mb-2 rounded border border-danger/40 bg-danger/10 px-2 py-1 text-[11px] text-danger">
+            {ytError}
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-2">
+          <StatTile
+            label="Subscribers"
+            value={
+              ytLatest?.subscribers != null
+                ? formatViews(ytLatest.subscribers)
+                : "—"
+            }
+            hint={
+              youtube.deltaSubscribers != null && youtube.deltaSubscribers !== 0
+                ? `${youtube.deltaSubscribers > 0 ? "+" : ""}${youtube.deltaSubscribers}${youtube.deltaSinceDays ? ` · ${youtube.deltaSinceDays}d` : ""}`
+                : undefined
+            }
+            accent="gold"
+          />
+          <StatTile
+            label="Total views"
+            value={
+              ytLatest?.total_views != null
+                ? formatViews(ytLatest.total_views)
+                : "—"
+            }
+            hint={
+              youtube.deltaTotalViews != null && youtube.deltaTotalViews !== 0
+                ? `${youtube.deltaTotalViews > 0 ? "+" : ""}${formatViews(youtube.deltaTotalViews)}`
+                : undefined
+            }
+          />
+          <StatTile
+            label="Videos"
+            value={ytLatest?.video_count?.toString() ?? "—"}
+            hint={
+              youtube.deltaVideoCount != null && youtube.deltaVideoCount !== 0
+                ? `${youtube.deltaVideoCount > 0 ? "+" : ""}${youtube.deltaVideoCount}`
+                : undefined
+            }
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatTile
           label="Posts ovaj mj"
