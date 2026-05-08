@@ -487,3 +487,226 @@ export async function addProspectsToPipeline(
   revalidatePath("/");
   return { ok: true, added };
 }
+
+// =============================================================================
+// Bulk re-enrich existing leads that don't have an ICP score yet.
+// Walks the leads table for any `icp_score = 0` or null, extracts website from
+// the lead's notes (or email domain), runs scrapeSite + AI enrich + score, then
+// updates the row.
+// =============================================================================
+
+interface LeadRowSlim {
+  id: string;
+  name: string;
+  email: string | null;
+  notes: string | null;
+  icp_score: number | null;
+}
+
+function extractWebsiteFromNotes(
+  notes: string | null,
+  email: string | null,
+): string | null {
+  if (notes) {
+    const m = notes.match(/Website:\s*(https?:\/\/[^\s\n]+)/i);
+    if (m?.[1]) return m[1];
+  }
+  if (email && email.includes("@")) {
+    const domain = email.split("@")[1];
+    if (domain) return `https://${domain}`;
+  }
+  return null;
+}
+
+function extractGoogleRating(
+  notes: string | null,
+): { rating: number; count: number } | null {
+  if (!notes) return null;
+  const m = notes.match(/Google:\s*⭐\s*([\d.]+)\s*\((\d+)\)/i);
+  if (!m) return null;
+  return {
+    rating: parseFloat(m[1]),
+    count: parseInt(m[2], 10),
+  };
+}
+
+function extractAddress(notes: string | null): string | null {
+  if (!notes) return null;
+  const m = notes.match(/Address:\s*([^\n]+)/i);
+  return m?.[1]?.trim() ?? null;
+}
+
+function extractIndustry(notes: string | null): string | null {
+  if (!notes) return null;
+  const m = notes.match(/Industry:\s*([^\n]+)/i);
+  return m?.[1]?.trim() ?? null;
+}
+
+function extractEmployees(notes: string | null): number | null {
+  if (!notes) return null;
+  const m = notes.match(/Employees:\s*(\d+)/i);
+  return m?.[1] ? parseInt(m[1], 10) : null;
+}
+
+export interface BulkEnrichResult {
+  ok: boolean;
+  scanned: number;
+  scored: number;
+  skipped: number;
+  error?: string;
+}
+
+export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user)
+    return {
+      ok: false,
+      scanned: 0,
+      scored: 0,
+      skipped: 0,
+      error: "Niste prijavljeni",
+    };
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return {
+      ok: false,
+      scanned: 0,
+      scored: 0,
+      skipped: 0,
+      error: "ANTHROPIC_API_KEY nije postavljen",
+    };
+  }
+
+  const { data: leads, error: selErr } = await supabase
+    .from("leads")
+    .select("id, name, email, notes, icp_score")
+    .or("icp_score.is.null,icp_score.eq.0");
+
+  if (selErr)
+    return { ok: false, scanned: 0, scored: 0, skipped: 0, error: selErr.message };
+
+  const list = (leads ?? []) as LeadRowSlim[];
+  if (list.length === 0)
+    return { ok: true, scanned: 0, scored: 0, skipped: 0 };
+
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+
+  let scored = 0;
+  let skipped = 0;
+
+  await Promise.all(
+    list.map(async (lead) => {
+      const website = extractWebsiteFromNotes(lead.notes, lead.email);
+      if (!website) {
+        skipped++;
+        return;
+      }
+
+      const googleRating = extractGoogleRating(lead.notes);
+      const apolloOrg = {
+        id: "",
+        name: lead.name,
+        industry: extractIndustry(lead.notes) ?? undefined,
+        estimated_num_employees: extractEmployees(lead.notes) ?? undefined,
+      } as ApolloOrg;
+
+      const c: ProspectCandidate = {
+        placeId: lead.id,
+        name: lead.name,
+        website,
+        domain: (() => {
+          try {
+            return new URL(website).hostname.replace(/^www\./, "");
+          } catch {
+            return undefined;
+          }
+        })(),
+        address: extractAddress(lead.notes) ?? undefined,
+        rating: googleRating?.rating,
+        reviewCount: googleRating?.count,
+        apolloOrg: apolloOrg.industry || apolloOrg.estimated_num_employees
+          ? apolloOrg
+          : undefined,
+      };
+
+      const enriched = await enrichAndScoreClinic(anthropic, c);
+      if (typeof enriched.icpScore !== "number") {
+        skipped++;
+        return;
+      }
+
+      // Compose the new notes with AI reasoning + premium signals + owners,
+      // then preserve the original metadata block.
+      const primaryOwner = enriched.owners?.[0];
+      const ownerEmail = primaryOwner?.email ?? lead.email ?? null;
+
+      const enrichmentBlock = [
+        enriched.scoreReasoning ? `🤖 ${enriched.scoreReasoning}` : null,
+        enriched.premiumSignals && enriched.premiumSignals.length > 0
+          ? `✨ Premium signals: ${enriched.premiumSignals.join(" · ")}`
+          : null,
+        enriched.owners && enriched.owners.length > 0
+          ? `👥 AI vlasnici:\n${enriched.owners
+              .map(
+                (o) =>
+                  `  - ${o.name}${o.role ? ` (${o.role})` : ""}${o.linkedin ? ` ${o.linkedin}` : ""}${o.email ? ` ${o.email}` : ""}${o.phone ? ` 📞 ${o.phone}` : ""}`,
+              )
+              .join("\n")}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      // Strip any previous AI block so we don't duplicate
+      const cleanedOriginalNotes = (lead.notes ?? "")
+        .replace(/^🤖[^\n]*\n?/gm, "")
+        .replace(/^✨ Premium signals:[^\n]*\n?/gm, "")
+        .replace(/^👥 AI vlasnici:[\s\S]*?(?=\n[A-Z]|\n$|$)/gm, "")
+        .trim();
+
+      const newNotes = enrichmentBlock
+        ? `${enrichmentBlock}\n\n${cleanedOriginalNotes}`.trim()
+        : cleanedOriginalNotes;
+
+      const ownerName = primaryOwner?.name;
+      const newName = ownerName && !lead.name.includes("/")
+        ? `${lead.name} / ${ownerName}`
+        : lead.name;
+
+      const { error: updErr } = await supabase
+        .from("leads")
+        .update({
+          icp_score: enriched.icpScore,
+          icp_breakdown: enriched.icpBreakdown ?? {},
+          email: ownerEmail,
+          notes: newNotes,
+          name: newName,
+        })
+        .eq("id", lead.id);
+      if (updErr) {
+        skipped++;
+        return;
+      }
+
+      scored++;
+
+      void logActivity(userData.user!.id, {
+        type: "lead_scored",
+        title: `AI re-score: ${newName} · ${enriched.icpScore}/20`,
+        summary: enriched.scoreReasoning,
+        hqRoom: "lead_scorer",
+        hqRowId: lead.id,
+        tags: [
+          "re-enrich",
+          enriched.icpScore >= 14 ? "hot" : null,
+        ].filter(Boolean) as string[],
+      });
+    }),
+  );
+
+  revalidatePath("/");
+  return { ok: true, scanned: list.length, scored, skipped };
+}

@@ -23,6 +23,7 @@ import { scoreLead, saveAiFeedback } from "@/app/actions/ai";
 import {
   runProspector,
   addProspectsToPipeline,
+  bulkReEnrichUnscored,
   type ProspectCandidate,
 } from "@/app/actions/prospector";
 import {
@@ -588,28 +589,31 @@ export function LeadScorerPanel({
             exit={{ opacity: 0, y: -6 }}
             className="space-y-3"
           >
-            <div className="flex flex-wrap items-center gap-1">
-              {(
-                [
-                  ["all", `Svi · ${list.length}`],
-                  ["hot", `🔥 Hot · ${stats.hot}`],
-                  ["warm", `Warm · ${stats.warm}`],
-                  ["cold", `Cold · ${stats.cold}`],
-                ] as const
-              ).map(([k, label]) => (
-                <button
-                  key={k}
-                  onClick={() => setScoreFilter(k as typeof scoreFilter)}
-                  className={
-                    "rounded-md border px-2 py-1 text-[10px] uppercase tracking-wider transition-colors " +
-                    (scoreFilter === k
-                      ? "border-gold text-gold"
-                      : "border-border text-text-muted hover:border-gold/40 hover:text-text-dim")
-                  }
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1">
+                {(
+                  [
+                    ["all", `Svi · ${list.length}`],
+                    ["hot", `🔥 Hot · ${stats.hot}`],
+                    ["warm", `Warm · ${stats.warm}`],
+                    ["cold", `Cold · ${stats.cold}`],
+                  ] as const
+                ).map(([k, label]) => (
+                  <button
+                    key={k}
+                    onClick={() => setScoreFilter(k as typeof scoreFilter)}
+                    className={
+                      "rounded-md border px-2 py-1 text-[10px] uppercase tracking-wider transition-colors " +
+                      (scoreFilter === k
+                        ? "border-gold text-gold"
+                        : "border-border text-text-muted hover:border-gold/40 hover:text-text-dim")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <BulkRescoreButton />
             </div>
 
             {filtered.length === 0 && (
@@ -1153,3 +1157,60 @@ function ProspectorTab() {
     </motion.div>
   );
 }
+
+// =====================================================================
+// Bulk re-score unscored leads (AI scrape + score in batch)
+// =====================================================================
+
+function BulkRescoreButton() {
+  const [pending, startTransition] = useTransition();
+  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function run() {
+    setInfo(null);
+    setError(null);
+    startTransition(async () => {
+      const res = await bulkReEnrichUnscored();
+      if (!res.ok) {
+        setError(res.error ?? "Bulk re-score greška");
+        return;
+      }
+      if (res.scanned === 0) {
+        setInfo("Nema unscored leadova — svi su već score-ani.");
+      } else {
+        setInfo(
+          `🤖 ${res.scored}/${res.scanned} score-ano${res.skipped > 0 ? ` · ${res.skipped} preskočeno (bez website-a)` : ""}. Refresh za update.`,
+        );
+        // Refresh after a short delay so users sees the info first
+        setTimeout(() => window.location.reload(), 1800);
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={run}
+        disabled={pending}
+        className="flex items-center gap-1.5 rounded-md border border-orange-500/40 bg-orange-500/10 px-2.5 py-1 text-[10px] font-medium text-orange-300 hover:border-orange-500/70 disabled:opacity-50"
+        title="AI prolazi kroz sve unscored leadove i score-a ih (scrape + ICP)"
+      >
+        {pending ? (
+          <Loader2 size={11} className="animate-spin" />
+        ) : (
+          <Wand2 size={11} />
+        )}
+        {pending ? "AI score-a…" : "🤖 AI score sve unscored"}
+      </button>
+      {info && (
+        <span className="text-[10px] text-success">{info}</span>
+      )}
+      {error && (
+        <span className="text-[10px] text-danger">{error}</span>
+      )}
+    </div>
+  );
+}
+
