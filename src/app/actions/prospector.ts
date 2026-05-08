@@ -62,6 +62,25 @@ export interface ProspectCandidate {
   scoreReasoning?: string;
   /** Diagnostics: which website paths were scraped */
   scrapedPages?: string[];
+  /** Already-implemented presale blocker — true if AI saw competitor automation */
+  alreadyHasCompetitorSolution?: boolean | null;
+  /** Concrete list of competitor tools spotted on the website (booking widget, AI chatbot, etc.) */
+  existingTools?: string[];
+  /** Short sentence pointing to where the AI saw the competitor solution */
+  competitorSolutionEvidence?: string | null;
+  /** Social media URLs found on the site (header/footer/sidebar) */
+  socialLinks?: {
+    instagram?: string | null;
+    facebook?: string | null;
+    linkedin?: string | null;
+    tiktok?: string | null;
+    youtube?: string | null;
+    twitter?: string | null;
+  };
+  /** Short bullets describing observed social activity */
+  socialSignals?: string[];
+  /** 0-4 social activity score */
+  socialScore?: number;
 }
 
 export interface ProspectorResult {
@@ -75,9 +94,9 @@ export interface ProspectorResult {
   scoredCount?: number;
 }
 
-const ENRICH_SYSTEM_PROMPT = `Ti si AI Lead Enricher za Lamon Agency (Lamon HQ — agencija koja prodaje "Rast paket" za B2B klinike: 1.997€ setup + 1.497€/mj za AI receptionist + 24/7 booking system).
+const ENRICH_SYSTEM_PROMPT = `Ti si AI Lead Enricher za Lamon Agency (Lamon HQ — agencija koja prodaje "Rast paket" za B2B klinike: 1.997€ setup + 1.497€/mj za AI receptionist + 24/7 booking system + WhatsApp template-ovi).
 
-Dobio si scraped tekst s web stranice klinike. Tvoj zadatak: izvući vlasnike/direktore/ključno osoblje + score-ati klinika protiv ICP-a Lamon Agencije.
+Dobio si scraped tekst s web stranice klinike. Tvoj zadatak: izvuci vlasnike + score-aj ICP + provjeri imaju li već naše rješenje + procijeni social presence.
 
 # ICP kriteriji (svaki 0-4, total 0-20):
 
@@ -89,15 +108,37 @@ Dobio si scraped tekst s web stranice klinike. Tvoj zadatak: izvući vlasnike/di
 
 # Vlasnici / decision makers
 
-Iz scraped texta izvuci konkretna imena ljudi koji su vlasnici, direktori, founderi ILI top doktori s LinkedIn-om (ako vidiš). Tipično na "Tim", "O nama", "Liječnici" stranici.
-
-Format: { name, role, linkedin?, email?, phone? }
-
-Ako tekst ne pokazuje konkretne vlasnike (npr. samo opis usluga), vrati \`owners: []\` i \`scoreReasoning\` napomeni.
+Iz scraped texta izvuci konkretna imena ljudi koji su vlasnici, direktori, founderi ILI top doktori s LinkedIn-om (ako vidiš). Tipično na "Tim", "O nama", "Liječnici" stranici. Format: { name, role, linkedin?, email?, phone? }. Ako tekst ne pokazuje konkretne vlasnike, vrati owners: [].
 
 # Premium signals
 
-Ekstraktiraj **3-5 konkretnih kratkih natuknica** o premium/edge tragovima koje vidiš (npr. "European Society of Implantology member", "designer interijer s mramornim podom", "after-hours emergency", "20+ godina iskustva"). Ne generic — konkretno.
+Ekstraktiraj 3-5 konkretnih kratkih natuknica o premium/edge tragovima (npr. "European Society of Implantology member", "designer interijer s mramornim podom", "after-hours emergency", "20+ godina iskustva"). Ne generic — konkretno.
+
+# Already-implemented check (PRESALE BLOCKER)
+
+Provjeri u scraped tekstu ima li klinika već implementirano nešto što direktno konkurira našem Rast paketu:
+
+- AI chatbot widget (npr. "online assistant", "AI receptionist", "chatbot", crisp.chat, intercom)
+- Online booking system (npr. termin24, doctolib, MyDent, dr-online, JotForm rezervacije, Calendly embed)
+- WhatsApp Business automatic replies / template-ovi
+- 24/7 phone answering service
+- Custom CRM ili patient management system koji već radi reminderse
+
+Postavi:
+- already_has_competitor_solution: true ako su VIDLJIVI tragovi nečeg gore. false ako nema, null ako se ne može utvrditi.
+- existing_tools: konkretna lista što vidiš (npr. ["termin24 widget", "WhatsApp business klik-to-chat", "online rezervacija forma"]). Prazno [] ako ništa.
+- competitor_solution_evidence: 1 rečenica gdje si to vidio (npr. "Footer ima 'powered by Termin24', /rezervacija page koristi vanjski widget").
+
+PAZI: imati samo telefonski broj i email NE znači "imaju već". Tražimo automatizaciju.
+
+# Social media presence
+
+Iz scraped texta izvuci linkove društvenih mreža (header, footer, sidebar) i procijeni aktivnost.
+
+Postavi:
+- social_links: { instagram, facebook, linkedin, tiktok, youtube, twitter } — URL ili null po kanalu.
+- social_signals: 2-4 kratke natuknice o aktivnosti koje vidiš (npr. "embedded IG feed s recent postovima", "10K IG followera spomenuto u about", "Štimac LIVE weekly format spomenut", "linkovi prisutni ali bez vidljivog content-a").
+- social_score (0-4): 0 = nema linkova, 1 = samo IG/FB ikona, 2 = aktivni na 1-2 mreže, 3 = aktivni multi-platform, 4 = jaka content-engine, embedded feed, follower count vidljiv. **Visok social_score = bolji fit za B2C Growth Operator. Za B2B klinike još bolji ako postoji "lice branda" s aktivnim accounts.**
 
 # Format izlaza — STRIKT JSON, ništa drugo:
 
@@ -112,7 +153,20 @@ Ekstraktiraj **3-5 konkretnih kratkih natuknica** o premium/edge tragovima koje 
   },
   "icp_score": 16,
   "premium_signals": ["...", "..."],
-  "score_reasoning": "1 rečenica zašto si dao taj score."
+  "already_has_competitor_solution": false,
+  "existing_tools": [],
+  "competitor_solution_evidence": "Nema vidljivih tragova automatizacije.",
+  "social_links": {
+    "instagram": "https://instagram.com/...",
+    "facebook": null,
+    "linkedin": null,
+    "tiktok": null,
+    "youtube": null,
+    "twitter": null
+  },
+  "social_signals": ["...", "..."],
+  "social_score": 2,
+  "score_reasoning": "1 rečenica zašto si dao taj ICP score, uključujući signal o presale blockerima ili social presence."
 }
 
 NE dodaj markdown code fence, NE objašnjenja, samo JSON.`;
@@ -134,6 +188,19 @@ interface ParsedEnrichment {
   };
   icp_score: number;
   premium_signals: string[];
+  already_has_competitor_solution?: boolean | null;
+  existing_tools?: string[];
+  competitor_solution_evidence?: string | null;
+  social_links?: {
+    instagram?: string | null;
+    facebook?: string | null;
+    linkedin?: string | null;
+    tiktok?: string | null;
+    youtube?: string | null;
+    twitter?: string | null;
+  };
+  social_signals?: string[];
+  social_score?: number;
   score_reasoning: string;
 }
 
@@ -249,6 +316,13 @@ Sad ekstraktiraj vlasnike + score-aj ICP po pravilima. STRIKT JSON.`;
       icpBreakdown: parsed.icp_breakdown,
       premiumSignals: parsed.premium_signals,
       scoreReasoning: parsed.score_reasoning,
+      alreadyHasCompetitorSolution:
+        parsed.already_has_competitor_solution ?? null,
+      existingTools: parsed.existing_tools ?? [],
+      competitorSolutionEvidence: parsed.competitor_solution_evidence ?? null,
+      socialLinks: parsed.social_links ?? undefined,
+      socialSignals: parsed.social_signals ?? [],
+      socialScore: parsed.social_score,
     };
   } catch {
     return { ...c, scrapedPages };
@@ -411,10 +485,26 @@ export async function addProspectsToPipeline(
 
     const leadName = ownerName ? `${c.name} / ${ownerName}` : c.name;
 
+    const socialSummary = c.socialLinks
+      ? Object.entries(c.socialLinks)
+          .filter(([, v]) => v)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(" · ")
+      : "";
+
     const notesParts = [
       c.scoreReasoning ? `🤖 ${c.scoreReasoning}` : null,
       c.premiumSignals && c.premiumSignals.length > 0
         ? `✨ Premium signals: ${c.premiumSignals.join(" · ")}`
+        : null,
+      c.alreadyHasCompetitorSolution === true
+        ? `🚫 VEĆ IMA RJEŠENJE: ${c.existingTools?.join(", ") ?? "(detalji nepoznati)"}${c.competitorSolutionEvidence ? ` — ${c.competitorSolutionEvidence}` : ""}`
+        : null,
+      typeof c.socialScore === "number"
+        ? `📱 Social score: ${c.socialScore}/4${socialSummary ? ` · ${socialSummary}` : ""}`
+        : null,
+      c.socialSignals && c.socialSignals.length > 0
+        ? `📊 Social signals: ${c.socialSignals.join(" · ")}`
         : null,
       ownerRole ? `Title: ${ownerRole}` : null,
       ownerLinkedin ? `LinkedIn: ${ownerLinkedin}` : null,
@@ -643,10 +733,26 @@ export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
       const primaryOwner = enriched.owners?.[0];
       const ownerEmail = primaryOwner?.email ?? lead.email ?? null;
 
+      const socialSummary = enriched.socialLinks
+        ? Object.entries(enriched.socialLinks)
+            .filter(([, v]) => v)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(" · ")
+        : "";
+
       const enrichmentBlock = [
         enriched.scoreReasoning ? `🤖 ${enriched.scoreReasoning}` : null,
         enriched.premiumSignals && enriched.premiumSignals.length > 0
           ? `✨ Premium signals: ${enriched.premiumSignals.join(" · ")}`
+          : null,
+        enriched.alreadyHasCompetitorSolution === true
+          ? `🚫 VEĆ IMA RJEŠENJE: ${enriched.existingTools?.join(", ") ?? "(detalji nepoznati)"}${enriched.competitorSolutionEvidence ? ` — ${enriched.competitorSolutionEvidence}` : ""}`
+          : null,
+        typeof enriched.socialScore === "number"
+          ? `📱 Social score: ${enriched.socialScore}/4${socialSummary ? ` · ${socialSummary}` : ""}`
+          : null,
+        enriched.socialSignals && enriched.socialSignals.length > 0
+          ? `📊 Social signals: ${enriched.socialSignals.join(" · ")}`
           : null,
         enriched.owners && enriched.owners.length > 0
           ? `👥 AI vlasnici:\n${enriched.owners

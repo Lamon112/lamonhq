@@ -1024,6 +1024,19 @@ function ProspectorTab() {
                       </span>
                     )}
                   </div>
+                  {c.alreadyHasCompetitorSolution === true && (
+                    <div
+                      className="mt-1 inline-flex flex-wrap items-center gap-1 rounded border border-danger/40 bg-danger/10 px-2 py-1 text-[10px] text-danger"
+                      title={c.competitorSolutionEvidence ?? ""}
+                    >
+                      🚫 VEĆ IMA RJEŠENJE
+                      {c.existingTools && c.existingTools.length > 0 && (
+                        <span className="text-text-dim">
+                          · {c.existingTools.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {c.scoreReasoning && (
                     <p className="mt-1 text-[11px] italic text-text-dim">
                       🤖 {c.scoreReasoning}
@@ -1039,6 +1052,85 @@ function ProspectorTab() {
                           ✨ {sig}
                         </span>
                       ))}
+                    </div>
+                  )}
+                  {(c.socialLinks || typeof c.socialScore === "number") && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                      {typeof c.socialScore === "number" && (
+                        <span
+                          className={
+                            "rounded border px-1.5 py-0.5 font-medium " +
+                            (c.socialScore >= 3
+                              ? "border-success/40 bg-success/10 text-success"
+                              : c.socialScore >= 2
+                                ? "border-warning/40 bg-warning/10 text-warning"
+                                : "border-border bg-bg/60 text-text-muted")
+                          }
+                          title={c.socialSignals?.join(" · ")}
+                        >
+                          📱 Social {c.socialScore}/4
+                        </span>
+                      )}
+                      {c.socialLinks?.instagram && (
+                        <a
+                          href={c.socialLinks.instagram}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-pink-400 hover:underline"
+                        >
+                          IG
+                        </a>
+                      )}
+                      {c.socialLinks?.facebook && (
+                        <a
+                          href={c.socialLinks.facebook}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          FB
+                        </a>
+                      )}
+                      {c.socialLinks?.linkedin && (
+                        <a
+                          href={c.socialLinks.linkedin}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          LI
+                        </a>
+                      )}
+                      {c.socialLinks?.tiktok && (
+                        <a
+                          href={c.socialLinks.tiktok}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-text hover:underline"
+                        >
+                          TT
+                        </a>
+                      )}
+                      {c.socialLinks?.youtube && (
+                        <a
+                          href={c.socialLinks.youtube}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-red-400 hover:underline"
+                        >
+                          YT
+                        </a>
+                      )}
+                      {c.socialLinks?.twitter && (
+                        <a
+                          href={c.socialLinks.twitter}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-300 hover:underline"
+                        >
+                          X
+                        </a>
+                      )}
                     </div>
                   )}
                   {c.address && (
