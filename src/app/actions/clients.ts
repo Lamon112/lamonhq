@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notionSync } from "./notionSync";
 
 export interface AddClientInput {
   name: string;
@@ -48,6 +49,16 @@ export async function addClient(input: AddClientInput): Promise<ActionResult> {
     .single();
 
   if (error) return { ok: false, error: error.message };
+
+  void notionSync({
+    type: "client_added",
+    title: `Klijent dodan: ${name}`,
+    summary: `${input.type} · ${input.status} · €${input.monthlyRevenue}/mj`,
+    hqRoom: "clients",
+    hqRowId: data.id,
+    amountEur: input.monthlyRevenue,
+    tags: [input.type, input.status],
+  });
 
   revalidatePath("/");
   return { ok: true, id: data.id };

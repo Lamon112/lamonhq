@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notionSync } from "./notionSync";
 
 export interface ActionResult {
   ok: boolean;
@@ -77,6 +78,16 @@ export async function closeDealWon(
     .select("id")
     .single();
   if (clientErr) return { ok: false, error: clientErr.message };
+
+  void notionSync({
+    type: "deal_won",
+    title: `🎉 Deal WON: ${lead.name}`,
+    summary: `€${input.monthlyRevenue}/mj MRR · ${inferredType} · ${input.notes ?? ""}`,
+    hqRoom: "closing",
+    hqRowId: client.id,
+    amountEur: input.monthlyRevenue,
+    tags: [inferredType, "won"],
+  });
 
   revalidatePath("/");
   return { ok: true, id: client.id };

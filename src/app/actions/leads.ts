@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notionSync } from "./notionSync";
 
 export type Niche =
   | "stomatologija"
@@ -73,6 +74,16 @@ export async function addLead(input: AddLeadInput): Promise<ActionResult> {
     .single();
 
   if (error) return { ok: false, error: error.message };
+
+  void notionSync({
+    type: "lead_scored",
+    title: `Lead score: ${name} · ${score}/20`,
+    summary: `${input.niche ?? "?"} · ${input.source ?? "?"} · estimated €${input.estimatedValue ?? 0}`,
+    hqRoom: "lead_scorer",
+    hqRowId: data.id,
+    amountEur: input.estimatedValue ?? undefined,
+    tags: [input.niche, input.source].filter(Boolean) as string[],
+  });
 
   revalidatePath("/");
   return { ok: true, id: data.id };

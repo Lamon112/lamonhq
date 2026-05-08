@@ -231,6 +231,165 @@ export async function previewDatabase(
   }
 }
 
+// =====================================================================
+// Sync helpers — used by server actions to push HQ events into Notion
+// =====================================================================
+
+const ACTIVITY_LOG_DB_TITLE = "📓 Lamon HQ Activity Log";
+
+export type ActivityType =
+  | "outreach_sent"
+  | "client_added"
+  | "lead_scored"
+  | "discovery_booked"
+  | "deal_won"
+  | "report_sent"
+  | "task_done";
+
+export interface ActivityPayload {
+  type: ActivityType;
+  title: string;
+  summary?: string;
+  hqRoom?: string; // outreach / clients / lead_scorer / etc.
+  hqRowId?: string;
+  amountEur?: number;
+  tags?: string[];
+}
+
+interface CreateDatabaseResponse {
+  id: string;
+  parent: { type: string; page_id?: string };
+  title?: { plain_text: string }[];
+}
+
+export async function findActivityLogDb(
+  token: string,
+): Promise<{ id: string } | null> {
+  // Search Notion for the activity log DB by title
+  const res = await fetch(`${NOTION_BASE}/search`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token.trim()}`,
+      "Notion-Version": NOTION_VERSION,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: ACTIVITY_LOG_DB_TITLE,
+      filter: { property: "object", value: "database" },
+      page_size: 5,
+    }),
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    results: { id: string; title?: { plain_text: string }[] }[];
+  };
+  const match = json.results.find((r) =>
+    r.title?.map((t) => t.plain_text).join("").includes(ACTIVITY_LOG_DB_TITLE),
+  );
+  return match ? { id: match.id } : null;
+}
+
+export async function createActivityLogDb(
+  token: string,
+  parentPageId: string,
+): Promise<{ id: string } | { error: string }> {
+  const body = {
+    parent: { type: "page_id", page_id: parentPageId },
+    title: [
+      {
+        type: "text",
+        text: { content: ACTIVITY_LOG_DB_TITLE },
+      },
+    ],
+    properties: {
+      Title: { title: {} },
+      Type: {
+        select: {
+          options: [
+            { name: "outreach_sent", color: "blue" },
+            { name: "client_added", color: "green" },
+            { name: "lead_scored", color: "yellow" },
+            { name: "discovery_booked", color: "purple" },
+            { name: "deal_won", color: "green" },
+            { name: "report_sent", color: "default" },
+            { name: "task_done", color: "gray" },
+          ],
+        },
+      },
+      Summary: { rich_text: {} },
+      Room: { rich_text: {} },
+      "HQ Row ID": { rich_text: {} },
+      "Amount €": { number: { format: "euro" } },
+      Tags: { multi_select: { options: [] } },
+      When: { date: {} },
+    },
+  };
+  try {
+    const r = await notionFetch<CreateDatabaseResponse>(token, "/databases", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    return { id: r.id };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Greška kod create DB" };
+  }
+}
+
+export async function appendActivityRow(
+  token: string,
+  dbId: string,
+  payload: ActivityPayload,
+): Promise<{ ok: boolean; error?: string; pageId?: string }> {
+  const properties: Record<string, unknown> = {
+    Title: {
+      title: [{ type: "text", text: { content: payload.title.slice(0, 200) } }],
+    },
+    Type: { select: { name: payload.type } },
+    When: { date: { start: new Date().toISOString() } },
+  };
+  if (payload.summary) {
+    properties.Summary = {
+      rich_text: [
+        { type: "text", text: { content: payload.summary.slice(0, 1900) } },
+      ],
+    };
+  }
+  if (payload.hqRoom) {
+    properties.Room = {
+      rich_text: [{ type: "text", text: { content: payload.hqRoom } }],
+    };
+  }
+  if (payload.hqRowId) {
+    properties["HQ Row ID"] = {
+      rich_text: [{ type: "text", text: { content: payload.hqRowId } }],
+    };
+  }
+  if (typeof payload.amountEur === "number") {
+    properties["Amount €"] = { number: payload.amountEur };
+  }
+  if (payload.tags && payload.tags.length > 0) {
+    properties.Tags = {
+      multi_select: payload.tags.map((t) => ({ name: t.slice(0, 100) })),
+    };
+  }
+
+  try {
+    const r = await notionFetch<{ id: string }>(token, "/pages", {
+      method: "POST",
+      body: JSON.stringify({
+        parent: { database_id: dbId },
+        properties,
+      }),
+    });
+    return { ok: true, pageId: r.id };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Append greška",
+    };
+  }
+}
+
 export async function fetchAllRows(
   token: string,
   dbId: string,

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notionSync } from "./notionSync";
 
 export interface ActionResult {
   ok: boolean;
@@ -49,11 +50,35 @@ export async function upsertReport(
 
 export async function markReportSent(id: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const { data: report } = await supabase
+    .from("weekly_reports")
+    .select("client_id, week_start, content")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase
     .from("weekly_reports")
     .update({ status: "sent", sent_at: new Date().toISOString() })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  if (report) {
+    let clientName = "?";
+    const { data: c } = await supabase
+      .from("clients")
+      .select("name")
+      .eq("id", report.client_id)
+      .maybeSingle();
+    if (c?.name) clientName = c.name;
+    void notionSync({
+      type: "report_sent",
+      title: `Weekly report sent: ${clientName} · ${report.week_start}`,
+      summary: report.content?.slice(0, 500) ?? undefined,
+      hqRoom: "reports",
+      hqRowId: id,
+      tags: ["weekly_report"],
+    });
+  }
+
   revalidatePath("/");
   return { ok: true };
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notionSync } from "./notionSync";
 
 export interface AddOutreachInput {
   leadName: string;
@@ -39,6 +40,16 @@ export async function addOutreach(
     .single();
 
   if (error) return { ok: false, error: error.message };
+
+  // Async sync to Notion (fire-and-forget)
+  void notionSync({
+    type: "outreach_sent",
+    title: `Outreach → ${leadName}`,
+    summary: `${input.platform.toUpperCase()}: ${input.message?.slice(0, 200) ?? "(no message)"}`,
+    hqRoom: "outreach",
+    hqRowId: data.id,
+    tags: [input.platform],
+  });
 
   revalidatePath("/");
   return { ok: true, id: data.id };

@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { getCalendlyStatus } from "@/app/actions/calendly";
+import { getNotionStatus } from "@/app/actions/notionSync";
 import { CalendlySetup } from "./CalendlySetup";
+import { NotionSetup } from "./NotionSetup";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntegrationsPage() {
-  const calendlyStatus = await getCalendlyStatus();
+  const [calendlyStatus, notionStatus] = await Promise.all([
+    getCalendlyStatus(),
+    getNotionStatus(),
+  ]);
 
   return (
     <div className="dot-grid min-h-screen">
@@ -33,8 +38,10 @@ export default async function IntegrationsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-8 lg:px-8 lg:py-10">
+      <main className="mx-auto max-w-5xl space-y-10 px-4 py-8 lg:px-8 lg:py-10">
         <CalendlySetup initialStatus={calendlyStatus} />
+        <div className="border-t border-border-strong" />
+        <NotionSetup initialStatus={notionStatus} />
       </main>
     </div>
   );
