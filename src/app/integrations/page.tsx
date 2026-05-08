@@ -3,22 +3,30 @@ import { getCalendlyStatus } from "@/app/actions/calendly";
 import { getNotionStatus } from "@/app/actions/notionSync";
 import { getTelegramStatus } from "@/app/actions/telegram";
 import { getGmailStatus } from "@/app/actions/gmail";
+import { getApolloStatus } from "@/app/actions/apollo";
 import { CalendlySetup } from "./CalendlySetup";
 import { NotionSetup } from "./NotionSetup";
 import { TelegramSetup } from "./TelegramSetup";
 import { GmailSetup } from "./GmailSetup";
+import { ApolloSetup } from "./ApolloSetup";
 import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntegrationsPage() {
-  const [calendlyStatus, notionStatus, telegramStatus, gmailStatus] =
-    await Promise.all([
-      getCalendlyStatus(),
-      getNotionStatus(),
-      getTelegramStatus(),
-      getGmailStatus(),
-    ]);
+  const [
+    calendlyStatus,
+    notionStatus,
+    telegramStatus,
+    gmailStatus,
+    apolloStatus,
+  ] = await Promise.all([
+    getCalendlyStatus(),
+    getNotionStatus(),
+    getTelegramStatus(),
+    getGmailStatus(),
+    getApolloStatus(),
+  ]);
 
   return (
     <div className="dot-grid min-h-screen">
@@ -50,6 +58,8 @@ export default async function IntegrationsPage() {
         <Suspense fallback={null}>
           <GmailSetup initialStatus={gmailStatus} />
         </Suspense>
+        <div className="border-t border-border-strong" />
+        <ApolloSetup initialStatus={apolloStatus} />
         <div className="border-t border-border-strong" />
         <CalendlySetup initialStatus={calendlyStatus} />
         <div className="border-t border-border-strong" />
