@@ -668,15 +668,25 @@ export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
     };
   }
 
-  const { data: leads, error: selErr } = await supabase
+  // Pick up leads that are unscored OR scored but missing the new signals
+  // (existing tools / social presence). Anything without "📱 Social score:"
+  // in notes is treated as needing the upgraded enrichment.
+  const { data: allLeads, error: selErr } = await supabase
     .from("leads")
-    .select("id, name, email, notes, icp_score")
-    .or("icp_score.is.null,icp_score.eq.0");
+    .select("id, name, email, notes, icp_score");
+
+  const leads = (allLeads ?? []).filter((l) => {
+    const score = (l.icp_score as number | null) ?? 0;
+    if (score === 0) return true;
+    const notes = (l.notes as string | null) ?? "";
+    if (!notes.includes("📱 Social score:")) return true; // old enrichment, refresh
+    return false;
+  });
 
   if (selErr)
     return { ok: false, scanned: 0, scored: 0, skipped: 0, error: selErr.message };
 
-  const list = (leads ?? []) as LeadRowSlim[];
+  const list = leads as LeadRowSlim[];
   if (list.length === 0)
     return { ok: true, scanned: 0, scored: 0, skipped: 0 };
 

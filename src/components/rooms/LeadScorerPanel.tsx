@@ -1287,14 +1287,14 @@ function BulkRescoreButton() {
         onClick={run}
         disabled={pending}
         className="flex items-center gap-1.5 rounded-md border border-orange-500/40 bg-orange-500/10 px-2.5 py-1 text-[10px] font-medium text-orange-300 hover:border-orange-500/70 disabled:opacity-50"
-        title="AI prolazi kroz sve unscored leadove i score-a ih (scrape + ICP)"
+        title="AI prolazi kroz unscored + zastarjele leadove i score-a ih (scrape + ICP + existing tools + social)"
       >
         {pending ? (
           <Loader2 size={11} className="animate-spin" />
         ) : (
           <Wand2 size={11} />
         )}
-        {pending ? "AI score-a…" : "🤖 AI score sve unscored"}
+        {pending ? "AI enrich-a…" : "🤖 AI re-score & enrich"}
       </button>
       {info && (
         <span className="text-[10px] text-success">{info}</span>
