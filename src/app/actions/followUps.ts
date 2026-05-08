@@ -404,7 +404,7 @@ export async function generateFollowUpsForAllUsers(): Promise<{
     else {
       total += result.generated;
       if (result.generated > 0) {
-        const tgText = `📨 *Follow-ups spremni*\n\n${result.generated} draft${result.generated === 1 ? "" : "a"} čeka tvoj review za leadove tihe 4+ dana.\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
+        const tgText = `🤵 *Follow-ups pripremljeni.*\n\n${result.generated} draft${result.generated === 1 ? "" : "a"} za leadove tihe 4+ dana — review pa send u 1 klik.\n\n_— Jarvis_\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
         void pushTelegramNotification("followups", tgText, userId);
       }
     }

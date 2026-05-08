@@ -56,7 +56,7 @@ export async function setupTelegram(
   const sendRes = await sendTelegramMessage(
     trimmedToken,
     chatId,
-    `🛡️ *Lamon HQ povezan*\n\nDobit ćeš push notifikacije za:\n• Daily Briefing (07:00)\n• Auto Follow-ups (06:30)\n• Smart Inbox triage\n\n[Otvori HQ](${APP_URL})`,
+    `🤵 *Jarvis na dužnosti, Leonardo.*\n\nOd sada javljam:\n• ☀️ Daily Briefing — 07:00\n• 📨 Auto Follow-ups — 06:30\n• 📩 Inbound triage — odmah\n\nUgodan dan. _— Jarvis_\n\n[Otvori HQ](${APP_URL})`,
   );
   if (!sendRes.ok) {
     return {
@@ -158,7 +158,7 @@ export async function sendTestTelegram(): Promise<{
   const res = await sendTelegramMessage(
     cfg.bot_token,
     cfg.chat_id,
-    `🧪 *Test poruka*\n\nAko vidiš ovo, tvoj Lamon HQ Telegram push radi.\n\n[Otvori HQ](${APP_URL})`,
+    `🤵 *Test komunikacijskog kanala.*\n\nAko ovo vidiš — push radi besprijekorno. _— Jarvis_\n\n[Otvori HQ](${APP_URL})`,
   );
   return { ok: res.ok, error: res.error };
 }

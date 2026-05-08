@@ -213,7 +213,7 @@ export async function triageInbound(input: TriageInput): Promise<{
 
     // Push notification (only fires if user enabled inbound notifs)
     const senderLabel = input.senderName ?? "lead";
-    const tgText = `📩 *Inbound triage* — _${parsed.category.toUpperCase()}_\n\n*Od:* ${senderLabel}\n*Sažetak:* ${parsed.summary}\n${parsed.suggested_stage ? `*Predlažem stage:* ${parsed.suggested_stage}\n` : ""}\n[Otvori HQ za reply](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
+    const tgText = `🤵 *Nova poruka, Leonardo.*\n📩 _${parsed.category.toUpperCase()}_\n\n*Od:* ${senderLabel}\n*Sažetak:* ${parsed.summary}\n${parsed.suggested_stage ? `*Predlažem stage:* ${parsed.suggested_stage}\n` : ""}\nDraft je spreman za review. _— Jarvis_\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
     void pushTelegramNotification("inbound", tgText, userData.user.id);
 
     revalidatePath("/");

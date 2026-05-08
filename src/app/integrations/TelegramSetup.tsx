@@ -87,12 +87,15 @@ export function TelegramSetup({
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-400/40 bg-blue-400/10 text-2xl">
-          📲
+          🤵
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Telegram Push</h2>
+          <h2 className="text-lg font-semibold text-text">
+            Jarvis <span className="text-text-muted text-sm">· Telegram</span>
+          </h2>
           <p className="text-xs text-text-muted">
-            Daily briefing + follow-ups + inbox notifikacije direktno na mobitel
+            Tvoj AI butler — daily briefing + follow-ups + inbox push direkt na
+            mobitel
           </p>
         </div>
         {status.connected && (
@@ -118,17 +121,20 @@ export function TelegramSetup({
             </li>
             <li>
               <span className="text-blue-400">2.</span> Pošalji{" "}
-              <code className="rounded bg-bg px-1">/newbot</code> → daj naziv +
-              username (mora završiti s &ldquo;bot&rdquo;)
+              <code className="rounded bg-bg px-1">/newbot</code> → naziv:{" "}
+              <strong className="text-text">Jarvis</strong> → username:{" "}
+              <code className="rounded bg-bg px-1">lamon_jarvis_bot</code>{" "}
+              (ili sličan, mora završiti s &ldquo;bot&rdquo;)
             </li>
             <li>
               <span className="text-blue-400">3.</span> Kopiraj{" "}
-              <strong className="text-text">bot token</strong>koji ti je
+              <strong className="text-text">bot token</strong> koji ti je
               BotFather poslao
             </li>
             <li>
-              <span className="text-blue-400">4.</span> Otvori svoj novi bot u
-              Telegramu i klikni <strong>Start</strong> (ili pošalji &ldquo;hi&rdquo;)
+              <span className="text-blue-400">4.</span> Otvori svoj novi Jarvis
+              bot u Telegramu i klikni <strong>Start</strong> (ili pošalji
+              &ldquo;hi&rdquo;)
             </li>
             <li>
               <span className="text-blue-400">5.</span> Paste-aj token ovdje —
