@@ -29,10 +29,11 @@ import {
   type GmailStatus,
 } from "@/app/actions/gmail";
 import { OUTREACH_TEMPLATES, type OutreachTemplate } from "@/lib/templates";
+import { ApprovalQueue } from "./ApprovalQueue";
 import { formatRelative } from "@/lib/format";
 import type { OutreachRow, OutreachStats } from "@/lib/queries";
 
-type Tab = "log" | "history" | "templates";
+type Tab = "log" | "approval" | "history" | "templates";
 
 interface OutreachPanelProps {
   initialList: OutreachRow[];
@@ -371,6 +372,12 @@ export function OutreachPanel({
         <TabButton active={tab === "log"} onClick={() => setTab("log")}>
           <Send size={14} /> Log new
         </TabButton>
+        <TabButton
+          active={tab === "approval"}
+          onClick={() => setTab("approval")}
+        >
+          <Sparkles size={14} /> Approval queue
+        </TabButton>
         <TabButton active={tab === "history"} onClick={() => setTab("history")}>
           <Mail size={14} /> History · {list.length}
         </TabButton>
@@ -670,6 +677,17 @@ export function OutreachPanel({
               </div>
             </div>
           </motion.form>
+        )}
+
+        {tab === "approval" && (
+          <motion.div
+            key="approval"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+          >
+            <ApprovalQueue />
+          </motion.div>
         )}
 
         {tab === "history" && (
