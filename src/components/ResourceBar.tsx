@@ -7,9 +7,12 @@ import { useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import { formatEuro } from "@/lib/format";
 import type { HQStats } from "@/lib/queries";
+import type { XpStats } from "@/lib/xp";
+import { PlayerLevel } from "./PlayerLevel";
 
 interface ResourceBarProps {
   stats: HQStats;
+  xp: XpStats;
   user: {
     email: string | null;
     fullName: string | null;
@@ -17,7 +20,7 @@ interface ResourceBarProps {
   };
 }
 
-export function ResourceBar({ stats, user }: ResourceBarProps) {
+export function ResourceBar({ stats, xp, user }: ResourceBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const progress = Math.min((stats.mrrCents / stats.goalTargetCents) * 100, 100);
 
@@ -96,6 +99,8 @@ export function ResourceBar({ stats, user }: ResourceBarProps) {
             </motion.div>
           ))}
         </div>
+
+        <PlayerLevel stats={xp} />
 
         <div className="flex min-w-[200px] flex-col gap-1.5 rounded-lg border border-gold/30 bg-gold/5 px-4 py-2">
           <div className="flex items-baseline justify-between text-[10px] uppercase tracking-wider">
