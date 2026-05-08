@@ -114,25 +114,20 @@ export function ActivityFeed({
 
   return (
     <>
-      {/* Floating trigger button */}
-      <motion.button
+      {/* Floating trigger button — keyboard-only (alt+a) toggle, hidden visually */}
+      <button
         onClick={() => setOpen(true)}
-        whileTap={{ scale: 0.95 }}
-        whileHover={{ scale: 1.05 }}
-        className="fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-bg-elevated/90 text-gold shadow-lg backdrop-blur-md hover:border-gold/70 hover:bg-gold/10"
-        aria-label="Activity Feed"
+        className="sr-only"
+        aria-label="Activity Feed (alt+a)"
+        accessKey="a"
       >
         <Activity size={18} />
         {newCount > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-bg bg-gold px-1 text-[10px] font-bold text-bg"
-          >
+          <span>
             {newCount > 99 ? "99+" : newCount}
-          </motion.span>
+          </span>
         )}
-      </motion.button>
+      </button>
 
       {/* Slide-out drawer */}
       <AnimatePresence>
