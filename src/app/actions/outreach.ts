@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "./activityLog";
 import { draftOutreach } from "./ai";
 import { sendViaGmail } from "./gmail";
+import { pushTelegramNotification } from "./telegram";
 
 export interface AddOutreachInput {
   leadName: string;
@@ -211,6 +212,16 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
   }
 
   revalidatePath("/");
+
+  // Jarvis push: "X novih draftova spremno za review"
+  if (generated > 0) {
+    void pushTelegramNotification(
+      "followups",
+      `✨ Leonardo, ${generated} novi${generated === 1 ? "" : "h"} cold-outreach draft${generated === 1 ? "" : "ova"} čeka tvoj review u Approval queue.\n\nOtvori Outreach Lab → Approval queue → Approve & Send (email auto-šalje, IG/LI ti šalješ ručno).\n\n— Jarvis`,
+      userId,
+    );
+  }
+
   return {
     ok: true,
     generated,

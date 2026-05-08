@@ -133,6 +133,30 @@ export async function updateLead(
 
   const { error } = await supabase.from("leads").update(patch).eq("id", input.id);
   if (error) return { ok: false, error: error.message };
+
+  // Jarvis push: novi sastanak booked
+  if (input.discoveryAt) {
+    const { data: userData } = await supabase.auth.getUser();
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("name, icp_score")
+      .eq("id", input.id)
+      .single();
+    if (userData.user && lead) {
+      const when = new Date(input.discoveryAt).toLocaleString("hr-HR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+      const score = lead.icp_score ? ` · ${lead.icp_score}/20 ICP` : "";
+      const { pushTelegramNotification } = await import("./telegram");
+      void pushTelegramNotification(
+        "briefing",
+        `📅 Sastanak bookiran: ${lead.name}${score}\n${when}\n\nOtvori Brief Room → klikni "Generiraj brief pitanja" par sati prije poziva za AI prep.\n\n— Jarvis`,
+        userData.user.id,
+      );
+    }
+  }
+
   revalidatePath("/");
   return { ok: true };
 }
@@ -286,6 +310,16 @@ export async function bulkImportLeads(
   }
 
   revalidatePath("/");
+
+  if (inserted > 0) {
+    const { pushTelegramNotification } = await import("./telegram");
+    void pushTelegramNotification(
+      "followups",
+      `📥 Leonardo, ${inserted} ${inserted === 1 ? "novi lead" : "novih leadova"} importano u Lead Scorer (${niche ?? "general"}). Otvori List tab → "AI re-score & enrich" za batch obradu.\n\n— Jarvis`,
+      userId,
+    );
+  }
+
   return {
     ok: true,
     inserted,
