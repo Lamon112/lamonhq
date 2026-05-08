@@ -1037,6 +1037,71 @@ function ProspectorTab() {
                       )}
                     </div>
                   )}
+                  {c.financials && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px]">
+                      {typeof c.financials.revenue === "number" && (
+                        <span
+                          className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-300"
+                          title={`Latest year: ${c.financials.latestYear ?? "?"}`}
+                        >
+                          💰 €{Math.round(c.financials.revenue).toLocaleString("hr-HR")}
+                        </span>
+                      )}
+                      {typeof c.financials.yoyGrowthPct === "number" && (
+                        <span
+                          className={
+                            "rounded border px-1.5 py-0.5 " +
+                            (c.financials.yoyGrowthPct > 20
+                              ? "border-success/40 bg-success/10 text-success"
+                              : c.financials.yoyGrowthPct > 0
+                                ? "border-warning/40 bg-warning/10 text-warning"
+                                : "border-danger/40 bg-danger/10 text-danger")
+                          }
+                        >
+                          📈 YoY {c.financials.yoyGrowthPct > 0 ? "+" : ""}
+                          {c.financials.yoyGrowthPct}%
+                        </span>
+                      )}
+                      {typeof c.financials.profitMarginPct === "number" && (
+                        <span
+                          className={
+                            "rounded border px-1.5 py-0.5 " +
+                            (c.financials.profitMarginPct < 5
+                              ? "border-warning/40 bg-warning/10 text-warning"
+                              : "border-border bg-bg/60 text-text-muted")
+                          }
+                          title="Tanke margine = svaki propušteni booking jako boli"
+                        >
+                          marža {c.financials.profitMarginPct}%
+                        </span>
+                      )}
+                      {typeof c.financials.employees === "number" && (
+                        <span className="rounded border border-border bg-bg/60 px-1.5 py-0.5 text-text-muted">
+                          {c.financials.employees} zap.
+                        </span>
+                      )}
+                      {c.financials.creditRating && (
+                        <span
+                          className="rounded border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-cyan-300"
+                          title={
+                            c.financials.riskLevel
+                              ? `${c.financials.riskLevel} risk`
+                              : ""
+                          }
+                        >
+                          🟢 {c.financials.creditRating}
+                        </span>
+                      )}
+                      <a
+                        href={c.financials.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-text-dim hover:text-text hover:underline"
+                      >
+                        izvor
+                      </a>
+                    </div>
+                  )}
                   {c.scoreReasoning && (
                     <p className="mt-1 text-[11px] italic text-text-dim">
                       🤖 {c.scoreReasoning}

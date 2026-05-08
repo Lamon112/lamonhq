@@ -11,6 +11,11 @@ import {
   type ApolloPerson,
 } from "@/lib/apollo";
 import { scrapeSite } from "@/lib/scraper";
+import {
+  fetchCompanyFinancials,
+  summarizeFinancials,
+  type CompanyFinancials,
+} from "@/lib/companywall";
 import { logActivity } from "./activityLog";
 
 export interface ProspectorInput {
@@ -81,6 +86,8 @@ export interface ProspectCandidate {
   socialSignals?: string[];
   /** 0-4 social activity score */
   socialScore?: number;
+  /** Public Croatian company financial intel (companywall.hr scrape) */
+  financials?: CompanyFinancials;
 }
 
 export interface ProspectorResult {
@@ -229,16 +236,13 @@ async function enrichAndScoreClinic(
   anthropic: Anthropic,
   c: ProspectCandidate,
 ): Promise<ProspectCandidate> {
-  // 1. Try to scrape the website (fail silently — Apollo + Places data still useful)
-  let scrapedText: string | null = null;
-  let scrapedPages: string[] = [];
-  if (c.website) {
-    const scraped = await scrapeSite(c.website);
-    if (scraped) {
-      scrapedText = scraped.combinedText;
-      scrapedPages = scraped.pages.map((p) => p.url);
-    }
-  }
+  // 1. Run scrape + financial fetch in parallel (both fail silently)
+  const [scraped, financials] = await Promise.all([
+    c.website ? scrapeSite(c.website) : Promise.resolve(null),
+    fetchCompanyFinancials(c.name),
+  ]);
+  const scrapedText = scraped?.combinedText ?? null;
+  const scrapedPages = scraped?.pages.map((p) => p.url) ?? [];
 
   // 2. Build context for AI
   const apolloHints: string[] = [];
@@ -266,6 +270,31 @@ async function enrichAndScoreClinic(
           .join("\n")
       : null;
 
+  // Build financial intel block (if companywall.hr returned anything)
+  let financialBlock = "";
+  if (financials) {
+    const lines: string[] = [];
+    if (financials.legalName) lines.push(`Legal name: ${financials.legalName}`);
+    if (financials.foundedYear)
+      lines.push(`Founded: ${financials.foundedYear}`);
+    if (typeof financials.employees === "number")
+      lines.push(`Employees: ${financials.employees}`);
+    if (typeof financials.revenue === "number") {
+      const yr = financials.latestYear ? ` (${financials.latestYear})` : "";
+      lines.push(`Revenue${yr}: €${Math.round(financials.revenue).toLocaleString("hr-HR")}`);
+    }
+    if (typeof financials.profit === "number")
+      lines.push(`Profit: €${Math.round(financials.profit).toLocaleString("hr-HR")}`);
+    if (typeof financials.profitMarginPct === "number")
+      lines.push(`Profit margin: ${financials.profitMarginPct}%`);
+    if (typeof financials.yoyGrowthPct === "number")
+      lines.push(`YoY revenue growth: ${financials.yoyGrowthPct > 0 ? "+" : ""}${financials.yoyGrowthPct}%`);
+    if (financials.creditRating)
+      lines.push(`Credit rating: ${financials.creditRating}${financials.riskLevel ? ` (${financials.riskLevel} risk)` : ""}`);
+    if (lines.length > 0)
+      financialBlock = `\n# Financial intel (public Croatian registry — companywall.hr)\n${lines.join("\n")}\n\nKoristi ove brojke u score_reasoning kad procjenjuješ premium / brzina_odluke / dokaz. Mali profit margin + visoki YoY rast = pain-point signal (svaki propušteni booking direktno udara u profit). A+ bonitet = stabilan klijent koji može platiti.\n`;
+  }
+
   const userMessage = `# Klinika
 **Name:** ${c.name}
 **Address:** ${c.address ?? "?"}
@@ -276,7 +305,7 @@ async function enrichAndScoreClinic(
 ${apolloHints.length > 0 ? apolloHints.join("\n") : "(no Apollo data)"}
 
 ${apolloPeopleSummary ? `# Apollo top people\n${apolloPeopleSummary}` : ""}
-
+${financialBlock}
 # Scraped website content (multiple pages combined)
 ${scrapedText ? scrapedText : "(website not reachable or no content)"}
 
@@ -299,11 +328,12 @@ Sad ekstraktiraj vlasnike + score-aj ICP po pravilima. STRIKT JSON.`;
     const raw =
       textBlock && textBlock.type === "text" ? textBlock.text : "";
     const parsed = parseEnrichment(raw);
-    if (!parsed) return { ...c, scrapedPages };
+    if (!parsed) return { ...c, scrapedPages, financials: financials ?? undefined };
 
     return {
       ...c,
       scrapedPages,
+      financials: financials ?? undefined,
       owners: parsed.owners.map((o) => ({
         name: o.name,
         role: o.role,
@@ -325,7 +355,7 @@ Sad ekstraktiraj vlasnike + score-aj ICP po pravilima. STRIKT JSON.`;
       socialScore: parsed.social_score,
     };
   } catch {
-    return { ...c, scrapedPages };
+    return { ...c, scrapedPages, financials: financials ?? undefined };
   }
 }
 
@@ -496,6 +526,9 @@ export async function addProspectsToPipeline(
       c.scoreReasoning ? `🤖 ${c.scoreReasoning}` : null,
       c.premiumSignals && c.premiumSignals.length > 0
         ? `✨ Premium signals: ${c.premiumSignals.join(" · ")}`
+        : null,
+      c.financials
+        ? `📈 Financial intel: ${summarizeFinancials(c.financials)} · ${c.financials.url}`
         : null,
       c.alreadyHasCompetitorSolution === true
         ? `🚫 VEĆ IMA RJEŠENJE: ${c.existingTools?.join(", ") ?? "(detalji nepoznati)"}${c.competitorSolutionEvidence ? ` — ${c.competitorSolutionEvidence}` : ""}`
@@ -755,6 +788,9 @@ export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
         enriched.premiumSignals && enriched.premiumSignals.length > 0
           ? `✨ Premium signals: ${enriched.premiumSignals.join(" · ")}`
           : null,
+        enriched.financials
+          ? `📈 Financial intel: ${summarizeFinancials(enriched.financials)} · ${enriched.financials.url}`
+          : null,
         enriched.alreadyHasCompetitorSolution === true
           ? `🚫 VEĆ IMA RJEŠENJE: ${enriched.existingTools?.join(", ") ?? "(detalji nepoznati)"}${enriched.competitorSolutionEvidence ? ` — ${enriched.competitorSolutionEvidence}` : ""}`
           : null,
@@ -780,6 +816,10 @@ export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
       const cleanedOriginalNotes = (lead.notes ?? "")
         .replace(/^🤖[^\n]*\n?/gm, "")
         .replace(/^✨ Premium signals:[^\n]*\n?/gm, "")
+        .replace(/^📈 Financial intel:[^\n]*\n?/gm, "")
+        .replace(/^🚫 VEĆ IMA RJEŠENJE:[^\n]*\n?/gm, "")
+        .replace(/^📱 Social score:[^\n]*\n?/gm, "")
+        .replace(/^📊 Social signals:[^\n]*\n?/gm, "")
         .replace(/^👥 AI vlasnici:[\s\S]*?(?=\n[A-Z]|\n$|$)/gm, "")
         .trim();
 
