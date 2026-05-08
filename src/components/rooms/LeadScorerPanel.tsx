@@ -21,11 +21,10 @@ import {
 import { addLead, updateLead, deleteLead } from "@/app/actions/leads";
 import { scoreLead, saveAiFeedback } from "@/app/actions/ai";
 import {
-  searchProspects,
-  addProspectToPipeline,
-  type DiscoveryFilters,
-} from "@/app/actions/apollo";
-import type { ApolloPerson } from "@/lib/apollo";
+  runProspector,
+  addProspectsToPipeline,
+  type ProspectCandidate,
+} from "@/app/actions/prospector";
 import {
   StatTile,
   TabButton,
@@ -360,7 +359,7 @@ export function LeadScorerPanel({
         </TabButton>
       </div>
 
-      {tab === "discover" && <DiscoverApolloTab />}
+      {tab === "discover" && <ProspectorTab />}
 
       <AnimatePresence mode="wait">
         {tab === "score" && (
@@ -798,150 +797,162 @@ function ScorePill({ score }: { score: number }) {
 }
 
 // =====================================================================
-// Discover via Apollo — sub-tab
+// AI Prospector — Discover tab (Places + Apollo enrich)
 // =====================================================================
 
-function DiscoverApolloTab() {
-  const [country, setCountry] = useState("Croatia");
-  const [city, setCity] = useState("");
-  const [keyword, setKeyword] = useState("klinika");
-  const [titles, setTitles] = useState("owner, founder, director, ceo");
-  const [results, setResults] = useState<ApolloPerson[]>([]);
-  const [total, setTotal] = useState<number | null>(null);
-  const [page, setPage] = useState(1);
+interface SelectedPersonState {
+  candidateIdx: number;
+  personIdx: number;
+}
+
+function ProspectorTab() {
+  const [niche, setNiche] = useState("stomatološka klinika");
+  const [location, setLocation] = useState("Zagreb");
+  const [count, setCount] = useState(10);
+  const [results, setResults] = useState<ProspectCandidate[]>([]);
+  const [enrichedCount, setEnrichedCount] = useState(0);
+  const [peopleCount, setPeopleCount] = useState(0);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [revealEmail, setRevealEmail] = useState(false);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [info, setInfo] = useState<string | null>(null);
+  const [selectedPersons, setSelectedPersons] = useState<
+    Record<number, number | null>
+  >({});
+  const [busyAdd, setBusyAdd] = useState(false);
 
-  function search(nextPage = 1) {
+  function run() {
     setError(null);
-    const filters: DiscoveryFilters = {
-      countries: country.trim() ? [country.trim()] : undefined,
-      cities: city.trim() ? [city.trim()] : undefined,
-      organizationKeyword: keyword.trim() || undefined,
-      titles: titles
-        ? titles
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
-        : undefined,
-      page: nextPage,
-    };
+    setInfo(null);
+    setResults([]);
+    setSelectedPersons({});
+    if (!niche.trim() || !location.trim()) {
+      setError("Niche + lokacija su obavezni");
+      return;
+    }
     startTransition(async () => {
-      const res = await searchProspects(filters);
+      const res = await runProspector({
+        niche: niche.trim(),
+        location: location.trim(),
+        count,
+        regionCode: "hr",
+      });
       if (!res.ok) {
-        setError(res.error ?? "Apollo search greška");
+        setError(res.error ?? "Prospector greška");
         return;
       }
-      setResults(res.people ?? []);
-      setTotal(res.total ?? null);
-      setPage(nextPage);
+      setResults(res.candidates ?? []);
+      setEnrichedCount(res.enrichedCount ?? 0);
+      setPeopleCount(res.peopleCount ?? 0);
     });
   }
 
-  function add(person: ApolloPerson) {
-    setBusyId(person.id);
+  function pickPerson(idx: number, personIdx: number | null) {
+    setSelectedPersons((prev) => ({ ...prev, [idx]: personIdx }));
+  }
+
+  function addAll() {
+    if (results.length === 0) return;
+    setBusyAdd(true);
+    setError(null);
+    setInfo(null);
+    const candidates = results.map((c, idx) => {
+      const personIdx = selectedPersons[idx];
+      const person =
+        typeof personIdx === "number" ? c.topPeople?.[personIdx] : undefined;
+      return {
+        name: c.name,
+        address: c.address,
+        website: c.website,
+        phone: c.phone,
+        placeId: c.placeId,
+        googleMapsUri: c.googleMapsUri,
+        employeeCount: c.apolloOrg?.estimated_num_employees,
+        industry: c.apolloOrg?.industry,
+        organizationLinkedin: c.apolloOrg?.linkedin_url,
+        decisionMakerName: person
+          ? [person.first_name, person.last_name].filter(Boolean).join(" ") ||
+            person.name
+          : undefined,
+        decisionMakerTitle: person?.title,
+        decisionMakerLinkedin: person?.linkedin_url,
+      };
+    });
     startTransition(async () => {
-      const res = await addProspectToPipeline({
-        apolloPersonId: person.id,
-        firstName: person.first_name,
-        lastName: person.last_name,
-        title: person.title ?? person.headline,
-        email: person.email,
-        linkedinUrl: person.linkedin_url,
-        organizationName: person.organization?.name,
-        organizationDomain: person.organization?.primary_domain,
-        organizationCity: person.organization?.organization_city,
-        organizationCountry: person.organization?.organization_country,
-        revealEmail,
-      });
-      setBusyId(null);
+      const res = await addProspectsToPipeline({ candidates });
+      setBusyAdd(false);
       if (!res.ok) {
-        setError(res.error ?? "Greška pri dodavanju");
+        setError(res.error ?? "Add to pipeline greška");
         return;
       }
-      setAddedIds((prev) => new Set(prev).add(person.id));
+      setInfo(
+        `${res.added} klijenata dodano u Pipeline. Otvori List tab da vidiš.`,
+      );
     });
   }
 
   return (
     <motion.div
-      key="discover"
+      key="prospector"
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
-      <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 text-xs text-text-dim">
-        🔍 <strong className="text-orange-300">Apollo lead discovery</strong> —
-        pronađi vlasnike/direktore klinika u HR/EU. Search je free, email reveal
-        koristi 1 credit (Free tier 100/mj).
+      <div className="rounded-lg border border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-bg-elevated/40 to-purple-500/5 p-3 text-xs text-text-dim">
+        🤖 <strong className="text-orange-300">AI Prospector</strong> — kažeš
+        koliko + koji niche + grad, AI ti ulovi listu klinika preko Google
+        Mapsa, enrichaj kroz Apollo (industry + employees + LinkedIn) i pokaže
+        decision-makere. Sve <em>besplatno</em> (Google Places $200 free credit
+        /mj, Apollo Free enrich + top_people).
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Field label="Country">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Field
+          label="Niche keyword *"
+          hint="npr. stomatološka klinika, estetska klinika, fizio, dermatologija"
+        >
           <input
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder="Croatia"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            placeholder="stomatološka klinika"
             className="input"
           />
         </Field>
-        <Field label="City (optional)">
+        <Field
+          label="Grad / lokacija *"
+          hint="Zagreb / Split / Hrvatska / Ljubljana"
+        >
           <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
             placeholder="Zagreb"
             className="input"
           />
         </Field>
-        <Field
-          label="Organization keyword *"
-          hint="npr. klinika, dental, estetska, fizio, ortopedija, beauty"
-        >
+        <Field label="Koliko klinika (1-20)">
           <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="klinika"
-            className="input"
-          />
-        </Field>
-        <Field
-          label="Decision-maker titles"
-          hint="comma-separated: owner, founder, director, ceo, chief"
-        >
-          <input
-            value={titles}
-            onChange={(e) => setTitles(e.target.value)}
-            placeholder="owner, founder, director, ceo"
+            type="number"
+            min={1}
+            max={20}
+            value={count}
+            onChange={(e) => setCount(Math.min(20, Math.max(1, +e.target.value || 10)))}
             className="input"
           />
         </Field>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="flex items-center gap-2 text-[11px] text-text-dim">
-          <input
-            type="checkbox"
-            checked={revealEmail}
-            onChange={(e) => setRevealEmail(e.target.checked)}
-            className="accent-orange-500"
-          />
-          Reveal email kad klikneš Add (1 credit per prospect)
-        </label>
+      <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => search(1)}
-          disabled={pending || !keyword.trim()}
-          className="flex items-center gap-2 rounded-lg border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-300 transition-colors hover:bg-orange-500/20 disabled:opacity-40"
+          onClick={run}
+          disabled={pending || !niche.trim() || !location.trim()}
+          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-2 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] disabled:opacity-40"
         >
           {pending ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
             <Search size={14} />
           )}
-          {pending ? "Searching…" : "Search Apollo"}
+          {pending ? "AI traži…" : "🔍 Find clinics"}
         </button>
       </div>
 
@@ -950,121 +961,190 @@ function DiscoverApolloTab() {
           {error}
         </div>
       )}
+      {info && (
+        <div className="rounded-md border border-success/40 bg-success/10 p-2 text-xs text-success">
+          {info}
+        </div>
+      )}
 
       {results.length > 0 && (
-        <div className="text-[11px] text-text-muted">
-          {total !== null
-            ? `${total.toLocaleString("hr-HR")} ukupno · prikazano ${results.length} (page ${page})`
-            : `Prikazano ${results.length}`}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-text-muted">
+          <span>
+            ✅ {results.length} klinika · 🔬 {enrichedCount} enriched · 👥{" "}
+            {peopleCount} decision-makera nađeno
+          </span>
+          <button
+            type="button"
+            onClick={addAll}
+            disabled={busyAdd || pending}
+            className="flex items-center gap-1.5 rounded-md border border-orange-500/40 bg-orange-500/10 px-3 py-1.5 text-[11px] font-medium text-orange-300 hover:border-orange-500/70 disabled:opacity-50"
+          >
+            {busyAdd ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <UserPlus size={11} />
+            )}
+            Add all to pipeline
+          </button>
         </div>
       )}
 
       <ul className="space-y-2">
-        {results.map((p) => {
-          const fullName =
-            [p.first_name, p.last_name].filter(Boolean).join(" ") ||
-            p.name ||
-            "?";
-          const isAdded = addedIds.has(p.id);
-          const busy = busyId === p.id;
-          const emailMissing =
-            !p.email || p.email.includes("email_not_unlocked");
+        {results.map((c, idx) => {
+          const selectedPersonIdx = selectedPersons[idx];
           return (
             <li
-              key={p.id}
-              className="rounded-lg border border-border bg-bg-card/40 p-3 hover:border-orange-500/40"
+              key={c.placeId}
+              className="rounded-lg border border-border bg-bg-card/40 p-3 hover:border-orange-500/30"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-text">
-                      {fullName}
+                      {c.name}
                     </span>
-                    {p.title && (
-                      <span className="rounded border border-border bg-bg/60 px-1.5 py-0.5 text-[10px] text-text-muted">
-                        {p.title}
+                    {typeof c.rating === "number" && (
+                      <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 text-[10px] text-warning">
+                        ⭐ {c.rating.toFixed(1)}
+                        {c.reviewCount ? ` · ${c.reviewCount}` : ""}
                       </span>
                     )}
-                    {p.linkedin_url && (
+                    {c.apolloOrg?.estimated_num_employees && (
+                      <span className="rounded border border-blue-500/40 bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-300">
+                        {c.apolloOrg.estimated_num_employees} emp
+                      </span>
+                    )}
+                    {c.apolloOrg?.industry && (
+                      <span className="rounded border border-border bg-bg/60 px-1.5 py-0.5 text-[10px] text-text-muted">
+                        {c.apolloOrg.industry}
+                      </span>
+                    )}
+                  </div>
+                  {c.address && (
+                    <p className="mt-0.5 text-[11px] text-text-dim">
+                      📍 {c.address}
+                    </p>
+                  )}
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
+                    {c.website && (
                       <a
-                        href={p.linkedin_url}
+                        href={c.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-[10px] text-blue-400 hover:underline"
+                        className="text-blue-400 hover:underline"
                       >
-                        <ExternalLink size={10} /> LinkedIn
+                        🌐 {c.domain ?? c.website}
+                      </a>
+                    )}
+                    {c.phone && (
+                      <span className="text-text-dim">📞 {c.phone}</span>
+                    )}
+                    {c.googleMapsUri && (
+                      <a
+                        href={c.googleMapsUri}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-text-muted hover:underline"
+                      >
+                        Maps
+                      </a>
+                    )}
+                    {c.apolloOrg?.linkedin_url && (
+                      <a
+                        href={c.apolloOrg.linkedin_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-400 hover:underline"
+                      >
+                        Org LinkedIn
                       </a>
                     )}
                   </div>
-                  <div className="mt-0.5 text-[12px] text-text-dim">
-                    {p.organization?.name ?? "?"}
-                    {p.organization?.organization_city && (
-                      <>
-                        {" "}
-                        ·{" "}
-                        <span className="text-text-muted">
-                          {p.organization.organization_city}
-                        </span>
-                      </>
-                    )}
-                    {p.organization?.organization_country && (
-                      <>
-                        ,{" "}
-                        <span className="text-text-muted">
-                          {p.organization.organization_country}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {p.email && !emailMissing && (
-                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-success">
-                      <MailIcon size={10} /> {p.email}
-                    </div>
-                  )}
-                  {emailMissing && (
-                    <div className="mt-0.5 text-[10px] text-text-muted italic">
-                      Email locked — reveal koristi 1 credit
-                    </div>
-                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => add(p)}
-                  disabled={busy || isAdded}
-                  className={
-                    "flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-[11px] font-medium transition-colors " +
-                    (isAdded
-                      ? "border-success/40 bg-success/10 text-success"
-                      : "border-orange-500/40 bg-orange-500/10 text-orange-300 hover:border-orange-500/70 disabled:opacity-50")
-                  }
-                >
-                  {busy ? (
-                    <Loader2 size={11} className="animate-spin" />
-                  ) : isAdded ? (
-                    <ThumbsUp size={11} />
-                  ) : (
-                    <UserPlus size={11} />
-                  )}
-                  {isAdded ? "U pipelineu" : "Add to pipeline"}
-                </button>
               </div>
+
+              {c.topPeople && c.topPeople.length > 0 && (
+                <div className="mt-3 rounded-md border border-purple-500/20 bg-purple-500/5 p-2">
+                  <div className="mb-1 text-[10px] uppercase tracking-wider text-purple-300">
+                    Decision makers ({c.topPeople.length})
+                  </div>
+                  <div className="space-y-1">
+                    {c.topPeople.map((p, pIdx) => {
+                      const fullName =
+                        [p.first_name, p.last_name]
+                          .filter(Boolean)
+                          .join(" ") ||
+                        p.name ||
+                        "?";
+                      const isSelected = selectedPersonIdx === pIdx;
+                      return (
+                        <label
+                          key={p.id}
+                          className={
+                            "flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 text-[11px] transition-colors " +
+                            (isSelected
+                              ? "bg-purple-500/15 text-text"
+                              : "text-text-dim hover:bg-bg-card/60")
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name={`person-${idx}`}
+                              checked={isSelected}
+                              onChange={() => pickPerson(idx, pIdx)}
+                              className="accent-purple-500"
+                            />
+                            <span className="font-medium">{fullName}</span>
+                            {p.title && (
+                              <span className="text-text-muted">
+                                · {p.title}
+                              </span>
+                            )}
+                          </div>
+                          {p.linkedin_url && (
+                            <a
+                              href={p.linkedin_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-400 hover:underline"
+                            >
+                              <ExternalLink size={10} className="inline" />
+                            </a>
+                          )}
+                        </label>
+                      );
+                    })}
+                    {selectedPersonIdx !== null &&
+                      selectedPersonIdx !== undefined && (
+                        <button
+                          type="button"
+                          onClick={() => pickPerson(idx, null)}
+                          className="text-[10px] text-text-muted hover:text-text-dim"
+                        >
+                          Odznači
+                        </button>
+                      )}
+                  </div>
+                </div>
+              )}
+
+              {(!c.topPeople || c.topPeople.length === 0) && c.apolloOrg && (
+                <div className="mt-2 text-[10px] italic text-text-muted">
+                  Apollo enriched org, ali bez top decision-makera. Provjeri
+                  ručno na LinkedIn-u.
+                </div>
+              )}
+              {!c.apolloOrg && c.domain && (
+                <div className="mt-2 text-[10px] italic text-text-muted">
+                  Apollo nije imao podatke za {c.domain}.
+                </div>
+              )}
             </li>
           );
         })}
       </ul>
-
-      {results.length > 0 && total !== null && total > results.length && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => search(page + 1)}
-            disabled={pending}
-            className="rounded-md border border-border bg-bg-card px-3 py-1 text-[11px] text-text-dim hover:border-orange-500/40 disabled:opacity-50"
-          >
-            Sljedeća stranica →
-          </button>
-        </div>
-      )}
     </motion.div>
   );
 }

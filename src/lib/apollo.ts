@@ -257,17 +257,59 @@ export async function pingApollo(
     method: "GET",
   });
   if (!res.ok) {
-    // /auth/health may not be authoritative on free tiers; fall back to a tiny search
-    const probe = await apolloFetch<unknown>(
-      apiKey,
-      "/mixed_people/search",
-      {
-        method: "POST",
-        body: JSON.stringify({ page: 1, per_page: 1 }),
-      },
-    );
+    // Fall back to enrich probe (free-tier safe)
+    const probe = await apolloFetch<unknown>(apiKey, "/organizations/enrich", {
+      method: "POST",
+      body: JSON.stringify({ domain: "apollo.io" }),
+    });
     if (!probe.ok) return { ok: false, error: probe.error };
     return { ok: true };
   }
   return { ok: true, userEmail: res.data.user?.email };
+}
+
+// ===========================================================================
+// Free-tier endpoints — work on Apollo Free plan
+// ===========================================================================
+
+/**
+ * Enrich an organization by domain. Free-tier safe.
+ * Returns full org info including industry, size, LinkedIn, founded year.
+ */
+export async function enrichOrganization(opts: {
+  apiKey: string;
+  domain: string;
+}): Promise<{ ok: boolean; org?: ApolloOrg; error?: string }> {
+  const res = await apolloFetch<{ organization?: ApolloOrg }>(
+    opts.apiKey,
+    "/organizations/enrich",
+    {
+      method: "POST",
+      body: JSON.stringify({ domain: opts.domain }),
+    },
+  );
+  if (!res.ok) return { ok: false, error: res.error };
+  return { ok: true, org: res.data.organization };
+}
+
+/**
+ * Get top decision-makers of an organization. Free-tier safe.
+ * Returns up to ~10 people with title + LinkedIn URL (emails locked).
+ */
+export async function organizationTopPeople(opts: {
+  apiKey: string;
+  organizationId: string;
+}): Promise<{ ok: boolean; people?: ApolloPerson[]; error?: string }> {
+  const params = new URLSearchParams({
+    organization_id: opts.organizationId,
+  });
+  const res = await apolloFetch<{ people?: ApolloPerson[] }>(
+    opts.apiKey,
+    `/mixed_people/organization_top_people?${params.toString()}`,
+    {
+      method: "GET",
+    },
+  );
+  if (!res.ok) return { ok: false, error: res.error };
+  return { ok: true, people: res.data.people ?? [] };
 }
