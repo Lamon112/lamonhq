@@ -36,7 +36,7 @@ import { PrimaryButton, GhostButton } from "@/components/ui/common";
 import { formatRelative } from "@/lib/format";
 import type { OutreachRow, OutreachStats } from "@/lib/queries";
 
-type Tab = "log" | "approval" | "history" | "templates";
+type Tab = "approval" | "history" | "templates";
 
 interface OutreachPanelProps {
   initialList: OutreachRow[];
@@ -71,7 +71,7 @@ export function OutreachPanel({
   initialStats,
   onSendAnimation,
 }: OutreachPanelProps) {
-  const [tab, setTab] = useState<Tab>("log");
+  const [tab, setTab] = useState<Tab>("approval");
   const [list, setList] = useState(initialList);
   const [stats, setStats] = useState(initialStats);
   const [pending, startTransition] = useTransition();
@@ -166,7 +166,6 @@ export function OutreachPanel({
       t.platform === "any" ? "linkedin" : (t.platform as typeof platform),
     );
     setPickedTemplate(t.id);
-    setTab("log");
   }
 
   function generateAiDraft() {
@@ -420,9 +419,6 @@ export function OutreachPanel({
 
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-border">
-        <TabButton active={tab === "log"} onClick={() => setTab("log")}>
-          <Send size={14} /> Log new
-        </TabButton>
         <TabButton
           active={tab === "approval"}
           onClick={() => setTab("approval")}
@@ -442,293 +438,6 @@ export function OutreachPanel({
 
       {/* Panels */}
       <AnimatePresence mode="wait">
-        {tab === "log" && (
-          <motion.form
-            key="log"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            onSubmit={submit}
-            className="space-y-3"
-          >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Lead name *">
-                <input
-                  type="text"
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
-                  placeholder="Estetska klinika Zagreb / dr. Marko"
-                  className="input"
-                  autoFocus
-                />
-              </Field>
-              <Field label="Platforma">
-                <select
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value as typeof platform)}
-                  className="input"
-                >
-                  {PLATFORMS.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </div>
-
-            {isEmailMode && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-              >
-                <Field
-                  label="Recipient email *"
-                  hint={
-                    gmailStatus?.connected
-                      ? `Šalje se iz ${gmailStatus.email} kroz Gmail API`
-                      : "Spoji Gmail u /integrations da omogućiš stvarni send"
-                  }
-                >
-                  <input
-                    type="email"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    placeholder="dr.marko@klinika-zagreb.hr"
-                    className="input"
-                  />
-                </Field>
-                <Field label="Subject *">
-                  <input
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Brzo pitanje za vašu kliniku"
-                    className="input"
-                  />
-                </Field>
-              </motion.div>
-            )}
-
-            <Field
-              label={`Poruka${pickedTemplate === "ai" ? " · ✨ AI draft" : pickedTemplate ? " · iz template-a" : ""}`}
-              hint="Tipkaj, paste-aj template, ili klikni '✨ AI draft' da Claude napiše prijedlog. Ono što je tu prije AI drafta postaje 'hook' kontekst."
-            >
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={7}
-                placeholder="Pozdrav…   (ili napiši ovdje hook tipa 'novi post o booking flow-u' i klikni ✨ AI draft)"
-                className="input font-mono text-xs"
-              />
-            </Field>
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={generateAiDraft}
-                  disabled={pending || !leadName.trim()}
-                  className="flex items-center gap-2 rounded-lg border border-gold/50 bg-gold/10 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/20 disabled:opacity-40"
-                  title="Claude napiše 1 prijedlog"
-                >
-                  <Wand2 size={14} />
-                  ✨ AI draft
-                </button>
-                <button
-                  type="button"
-                  onClick={generateVariants}
-                  disabled={pending || !leadName.trim()}
-                  className="flex items-center gap-2 rounded-lg border border-gold/50 bg-bg-card px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/10 disabled:opacity-40"
-                  title="Claude generira 3 različita angle-a (curiosity / social proof / direct)"
-                >
-                  <Layers size={14} />
-                  ✨ 3 variants
-                </button>
-                {aiDraftRaw && aiRated === null && (
-                  <div className="flex items-center gap-1 rounded-lg border border-border bg-bg-card px-2 py-1.5 text-[10px] text-text-muted">
-                    <span>AI je ovo dobro pogodio?</span>
-                    <button
-                      type="button"
-                      onClick={() => rate("good")}
-                      className="rounded p-1 text-success transition-colors hover:bg-success/10"
-                      title="👍 Dobro — AI uči ovo kao good example"
-                    >
-                      <ThumbsUp size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => rate("bad")}
-                      className="rounded p-1 text-danger transition-colors hover:bg-danger/10"
-                      title="👎 Loše — reci mi što je krivo"
-                    >
-                      <ThumbsDown size={12} />
-                    </button>
-                  </div>
-                )}
-                {aiRated === "good" && (
-                  <span className="text-[10px] text-success">
-                    👍 Saved · AI uči ovo
-                  </span>
-                )}
-                {aiRated === "bad" && !feedbackOpen && (
-                  <span className="text-[10px] text-warning">
-                    👎 Saved · sljedeći put bolje
-                  </span>
-                )}
-              </div>
-              <p className="text-[10px] text-text-muted">
-                Claude Sonnet 4.6 · v2 prompt
-              </p>
-            </div>
-
-            {feedbackOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-2 rounded-lg border border-warning/40 bg-warning/5 p-3"
-              >
-                <div className="flex items-center justify-between text-xs text-warning">
-                  <span>Što je krivo? AI uči iz ovog feedbacka.</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFeedbackOpen(false);
-                      setAiRated(null);
-                    }}
-                    className="rounded p-0.5 text-text-muted hover:bg-bg-card"
-                  >
-                    <XIcon size={12} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {BAD_FEEDBACK_CHIPS.map((chip) => (
-                    <button
-                      key={chip}
-                      type="button"
-                      onClick={() => {
-                        setFeedbackNotes(chip);
-                      }}
-                      className={
-                        "rounded-md border px-2 py-1 text-[10px] transition-colors " +
-                        (feedbackNotes === chip
-                          ? "border-warning bg-warning/10 text-warning"
-                          : "border-border text-text-dim hover:border-warning/40")
-                      }
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  value={feedbackNotes}
-                  onChange={(e) => setFeedbackNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Detaljnije ako želiš…"
-                  className="input text-xs"
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={submitBadFeedback}
-                    disabled={!feedbackNotes.trim()}
-                    className="rounded-md bg-warning px-3 py-1 text-[11px] font-medium text-bg disabled:opacity-40"
-                  >
-                    Save feedback
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {variants && variants.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-2 rounded-lg border border-gold/30 bg-gold/5 p-3"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gold">
-                    ✨ 3 varijante · klikni onu koja ti najbolje sjeda
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setVariants(null)}
-                    className="rounded p-0.5 text-text-muted hover:bg-bg-card"
-                  >
-                    <XIcon size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-2">
-                  {variants.map((v, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => pickVariant(v.draft)}
-                      className="rounded-lg border border-border bg-bg-card/60 p-3 text-left transition-colors hover:border-gold/60"
-                    >
-                      <div className="mb-1.5 text-[10px] uppercase tracking-wider text-gold">
-                        {v.angle}
-                      </div>
-                      <pre className="whitespace-pre-wrap font-mono text-[11px] text-text-dim">
-                        {v.draft}
-                      </pre>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {error && (
-              <div className="rounded-md border border-danger/40 bg-danger/10 p-2 text-xs text-danger">
-                {error}
-              </div>
-            )}
-
-            {sendInfo && (
-              <div className="rounded-md border border-success/40 bg-success/5 p-2 text-xs text-success">
-                {sendInfo}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-text-muted">
-                {isEmailMode
-                  ? gmailStatus?.connected
-                    ? "Send via Gmail = email stvarno odlazi + log u HQ. Log only = samo bilježi aktivnost."
-                    : "Spoji Gmail u /integrations za stvarni send."
-                  : "LinkedIn / IG / TikTok šalju se ručno; ovdje samo log-ujemo aktivnost."}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  disabled={pending}
-                  className="flex items-center gap-2 rounded-lg border border-gold/50 bg-bg-card px-4 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/10 disabled:opacity-50"
-                >
-                  <Send size={14} />
-                  {pending ? "Logging…" : "Log only"}
-                </button>
-                {isEmailMode && (
-                  <button
-                    type="button"
-                    onClick={submitViaGmail}
-                    disabled={pending || !canSendViaGmail}
-                    className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
-                    title={
-                      gmailStatus?.connected
-                        ? "Šalje email kroz Gmail API + loga u HQ"
-                        : "Spoji Gmail u /integrations"
-                    }
-                  >
-                    <AtSign size={14} />
-                    {pending ? "Šaljem…" : "Send via Gmail"}
-                    <Zap size={12} className="-ml-0.5 opacity-70" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.form>
-        )}
 
         {tab === "approval" && (
           <motion.div
