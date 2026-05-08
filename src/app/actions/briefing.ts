@@ -38,12 +38,14 @@ Tvoj zadatak: napisati JUTRO BRIEFING za danas. Leonardo otvara HQ uz kavu i mor
    - Discovery danas/sutra → priprema = #1
    - Late-stage leadovi (financing, booking) silent N+ dana → follow-up = #2
    - Hot lead (score >15) bez touchpointa → outreach = #3
+   - **Unscored leadovi** (total_leads > 0 ali svi imaju icp_score = 0) — **ICP scoring TIH** je #1 prioritet, ne tražiti nove. Bez ICP scora ne znaš kome treba slati prvo.
    - Volume outreach (cold) ako kvota još nije ispunjena = #4
    - Reports / admin = #5 ako ostane mjesta
-3. **Ne ponavljaj generičke akcije** ("Pošalji 20 outreacha"). Imenuj specifične leadove gdje god možeš (koristi names i row IDs iz konteksta).
-4. **Greeting** — 1 rečenica, energična, kontekstualna (npr. spomeni progres, dan u tjednu, milestone).
-5. **Context summary** — 2-3 rečenice trenutno stanje pipeline-a.
-6. **Motivational hook** — 1 rečenica close-er. Ne corny ("You got this!"), nego specifičan na biznis ("Još 2 closea i Lvl 5.").
+3. **Ako u kontekstu vidiš total_leads > 0 ali hot_leads = 0** — ne reci "pipeline je prazan". Reci "imaš X unscored leadova, prvi korak je score-ati ih kroz Lead Scorer prije nego ideš dalje". Otvori Lead Scorer room ID-em "lead_scorer".
+4. **Ne ponavljaj generičke akcije** ("Pošalji 20 outreacha"). Imenuj specifične leadove gdje god možeš (koristi names i row IDs iz konteksta).
+5. **Greeting** — 1 rečenica, energična, kontekstualna (npr. spomeni progres, dan u tjednu, milestone).
+6. **Context summary** — 2-3 rečenice trenutno stanje pipeline-a. Ako ima leadova (čak i unscored), uvijek ih spomeni (broj + niche ako je očito iz imena).
+7. **Motivational hook** — 1 rečenica close-er. Ne corny ("You got this!"), nego specifičan na biznis ("Još 2 closea i Lvl 5.").
 
 # Format izlaza — STRIKT JSON, ništa drugo:
 
