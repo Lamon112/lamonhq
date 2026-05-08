@@ -9,13 +9,17 @@ import {
   Globe,
   Briefcase,
   Map as MapIcon,
+  Plus,
+  X as XIcon,
 } from "lucide-react";
 import { generateBriefQuestions } from "@/app/actions/brief";
+import { updateLead } from "@/app/actions/leads";
 import {
   StatTile,
   Badge,
   PrimaryButton,
   GhostButton,
+  Field,
 } from "@/components/ui/common";
 import { formatRelative } from "@/lib/format";
 import type { LeadRow } from "@/lib/queries";
@@ -101,7 +105,52 @@ export function BriefPanel({ initialList }: BriefPanelProps) {
   );
   const [pendingLeadId, setPendingLeadId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  // Manual booking modal state
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingLeadId, setBookingLeadId] = useState<string>("");
+  const [bookingDateTime, setBookingDateTime] = useState<string>("");
+  const [bookingNotes, setBookingNotes] = useState<string>("");
+
+  function openBookingModal() {
+    // Default lead = top hot lead without booking
+    const defaultLead = initialList
+      .filter((l) => !l.discovery_at && (l.icp_score ?? 0) >= 10)
+      .sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0))[0];
+    setBookingLeadId(defaultLead?.id ?? "");
+    // Default time = tomorrow 10:00
+    const tmrw = new Date();
+    tmrw.setDate(tmrw.getDate() + 1);
+    tmrw.setHours(10, 0, 0, 0);
+    const iso = tmrw.toISOString().slice(0, 16);
+    setBookingDateTime(iso);
+    setBookingNotes("");
+    setBookingOpen(true);
+  }
+
+  function saveBooking() {
+    if (!bookingLeadId) return setError("Odaberi lead");
+    if (!bookingDateTime) return setError("Odaberi datum + vrijeme");
+    setError(null);
+    setInfo(null);
+    startTransition(async () => {
+      const isoUtc = new Date(bookingDateTime).toISOString();
+      const res = await updateLead({
+        id: bookingLeadId,
+        discoveryAt: isoUtc,
+        discoveryNotes: bookingNotes || undefined,
+      });
+      if (!res.ok) {
+        setError(res.error ?? "Greška");
+        return;
+      }
+      setBookingOpen(false);
+      setInfo("📅 Sastanak dodan u Brief Room");
+      setTimeout(() => window.location.reload(), 1200);
+    });
+  }
 
   const upcoming = useMemo(
     () =>
@@ -147,9 +196,85 @@ export function BriefPanel({ initialList }: BriefPanelProps) {
         <StatTile label="Total leadova" value={String(initialList.length)} />
       </div>
 
+      <div className="flex justify-end">
+        <PrimaryButton onClick={openBookingModal}>
+          <Plus size={14} /> Add booking ručno
+        </PrimaryButton>
+      </div>
+
+      {info && (
+        <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+          {info}
+        </div>
+      )}
       {error && (
         <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
+        </div>
+      )}
+
+      {bookingOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-gold/30 bg-bg-elevated p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-text">
+                📅 Add manual booking
+              </h3>
+              <button
+                onClick={() => setBookingOpen(false)}
+                className="text-text-dim hover:text-text"
+              >
+                <XIcon size={16} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <Field label="Lead *">
+                <select
+                  value={bookingLeadId}
+                  onChange={(e) => setBookingLeadId(e.target.value)}
+                  className="w-full rounded border border-border bg-bg/60 px-2 py-1.5 text-sm text-text focus:border-gold/40 focus:outline-none"
+                >
+                  <option value="">— odaberi lead —</option>
+                  {[...initialList]
+                    .sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0))
+                    .map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                        {l.icp_score !== null
+                          ? ` · ${l.icp_score}/20`
+                          : ""}
+                        {l.discovery_at ? " · (već ima termin)" : ""}
+                      </option>
+                    ))}
+                </select>
+              </Field>
+              <Field label="Datum + vrijeme *">
+                <input
+                  type="datetime-local"
+                  value={bookingDateTime}
+                  onChange={(e) => setBookingDateTime(e.target.value)}
+                  className="w-full rounded border border-border bg-bg/60 px-2 py-1.5 text-sm text-text focus:border-gold/40 focus:outline-none"
+                />
+              </Field>
+              <Field label="Notes (optional)">
+                <textarea
+                  value={bookingNotes}
+                  onChange={(e) => setBookingNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Zoom link, dnevni red, što treba pripremiti…"
+                  className="w-full rounded border border-border bg-bg/60 px-2 py-1.5 text-xs text-text focus:border-gold/40 focus:outline-none"
+                />
+              </Field>
+              <div className="flex justify-end gap-2 pt-2">
+                <GhostButton onClick={() => setBookingOpen(false)}>
+                  Cancel
+                </GhostButton>
+                <PrimaryButton onClick={saveBooking}>
+                  💾 Save booking
+                </PrimaryButton>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
