@@ -1136,6 +1136,42 @@ function ProspectorTab() {
                       </span>
                     )}
                   </div>
+                  {c.primaryService && (
+                    <div
+                      className="mt-1 inline-flex flex-wrap items-center gap-1 rounded border border-gold/40 bg-gold/10 px-2 py-1 text-[10px] text-gold"
+                      title={c.serviceGapReasoning ?? ""}
+                    >
+                      🎯 Primary fit:{" "}
+                      <span className="font-semibold">
+                        {
+                          {
+                            chatbot: "AI Chatboti",
+                            automation: "AI Automatizacije",
+                            content: "Strategija sadržaja",
+                            social: "Društvene mreže",
+                            pr: "PR & Pozicioniranje",
+                            web: "Web Dizajn",
+                          }[c.primaryService]
+                        }
+                      </span>
+                      {c.secondaryService && (
+                        <span className="text-text-dim">
+                          {" "}
+                          · Secondary:{" "}
+                          {
+                            {
+                              chatbot: "Chatboti",
+                              automation: "Automatizacije",
+                              content: "Sadržaj",
+                              social: "Mreže",
+                              pr: "PR",
+                              web: "Web",
+                            }[c.secondaryService]
+                          }
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {c.alreadyHasCompetitorSolution === true && (
                     <div
                       className="mt-1 inline-flex flex-wrap items-center gap-1 rounded border border-danger/40 bg-danger/10 px-2 py-1 text-[10px] text-danger"

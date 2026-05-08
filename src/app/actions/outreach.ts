@@ -113,9 +113,11 @@ function pickPlatformFromNotes(
 function extractHook(notes: string | null): string | undefined {
   if (!notes) return undefined;
   const reasoning = notes.match(/^🤖 ([^\n]+)/m)?.[1];
+  const primaryFit = notes.match(/^🎯 Primary fit:\s*([^\n]+)/m)?.[1];
   const premium = notes.match(/^✨ Premium signals:\s*([^\n]+)/m)?.[1];
   const financial = notes.match(/^📈 Financial intel:\s*([^\n]+)/m)?.[1];
   const parts: string[] = [];
+  if (primaryFit) parts.push(`PRIMARY SERVICE FIT: ${primaryFit}`);
   if (reasoning) parts.push(`Reasoning: ${reasoning}`);
   if (premium) parts.push(`Premium signals: ${premium}`);
   if (financial)

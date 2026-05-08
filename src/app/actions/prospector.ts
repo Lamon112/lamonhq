@@ -88,6 +88,26 @@ export interface ProspectCandidate {
   socialScore?: number;
   /** Public Croatian company financial intel (companywall.hr scrape) */
   financials?: CompanyFinancials;
+  /** AI-detected primary Lamon service that best matches the gap (1 of 6) */
+  primaryService?:
+    | "chatbot"
+    | "automation"
+    | "content"
+    | "social"
+    | "pr"
+    | "web"
+    | null;
+  /** 1-line evidence why that service is the primary fit */
+  serviceGapReasoning?: string | null;
+  /** Secondary service fit (optional) */
+  secondaryService?:
+    | "chatbot"
+    | "automation"
+    | "content"
+    | "social"
+    | "pr"
+    | "web"
+    | null;
 }
 
 export interface ProspectorResult {
@@ -101,9 +121,16 @@ export interface ProspectorResult {
   scoredCount?: number;
 }
 
-const ENRICH_SYSTEM_PROMPT = `Ti si AI Lead Enricher za Lamon Agency (Lamon HQ — agencija koja prodaje "Rast paket" za B2B klinike: 1.997€ setup + 1.497€/mj za AI receptionist + 24/7 booking system + WhatsApp template-ovi).
+const ENRICH_SYSTEM_PROMPT = `Ti si AI Lead Enricher za Lamon Agency. Lamon Agency nudi 6 servisa, svaki pod jednim brandom:
 
-Dobio si scraped tekst s web stranice klinike. Tvoj zadatak: izvuci vlasnike + score-aj ICP + provjeri imaju li već naše rješenje + procijeni social presence.
+1. **chatbot** — AI Chatboti: web/WhatsApp/Instagram asistenti, 24/7 zakazivanje + kvalifikacija
+2. **automation** — AI Automatizacije: CRM integracije, podsjetnici, follow-up emailovi, izvještaji
+3. **content** — Strategija sadržaja: TikTok/YouTube short-form skripte i plan
+4. **social** — Društvene mreže: full management (planiranje, postanje, nadzor)
+5. **pr** — PR & Pozicioniranje: medijska vidljivost, autoritet branda
+6. **web** — Web Dizajn: novi sajt s ugrađenom AI/automation integracijom
+
+Tvoj zadatak: scraped tekst → izvuci vlasnike + score ICP + presale check + social analiza + **identificiraj koji od 6 servisa je primary fit** (najveći gap koji možemo popuniti).
 
 # ICP kriteriji (svaki 0-4, total 0-20):
 
@@ -147,6 +174,22 @@ Postavi:
 - social_signals: 2-4 kratke natuknice o aktivnosti koje vidiš (npr. "embedded IG feed s recent postovima", "10K IG followera spomenuto u about", "Štimac LIVE weekly format spomenut", "linkovi prisutni ali bez vidljivog content-a").
 - social_score (0-4): 0 = nema linkova, 1 = samo IG/FB ikona, 2 = aktivni na 1-2 mreže, 3 = aktivni multi-platform, 4 = jaka content-engine, embedded feed, follower count vidljiv. **Visok social_score = bolji fit za B2C Growth Operator. Za B2B klinike još bolji ako postoji "lice branda" s aktivnim accounts.**
 
+# Primary service fit — identificiraj NAJVEĆI gap
+
+Iz cijele analize (web, social, presale check, premium signals, financial intel ako je u kontekstu) zaključi koji od 6 servisa Lamon-a klinici **najviše nedostaje** i koji bi joj donio najveći direktan rast. Vraćaj točno **JEDAN** primary_service iz seta:
+
+\`"chatbot" | "automation" | "content" | "social" | "pr" | "web"\`
+
+Heuristike:
+- Bez 24/7 odgovora na pozive/IG DM/WhatsApp + propušteni upiti vidljivi → **chatbot** (najčešće za stomatologe, fizijatre, estetske)
+- Manualni follow-upi, nema CRM-a, podsjetnici se rade ručno → **automation**
+- Slab YouTube/TikTok footprint, klinika nema content engine, ali postoji "lice branda" koje bi moglo snimat → **content**
+- Mrtvi/nepostojeći IG/FB feed, nema content kalendar, treba kompletno mgmt → **social**
+- Lokalna klinika bez medijske prisutnosti, nema PR coverage, vlasnik bi rastao kroz autoritet → **pr**
+- Sajt zastario, slabe konverzije, generic template, treba refresh s AI integracijom → **web**
+
+Ako više servisa "pase", odaberi onaj s najjasnijim signalom u scraped sadržaju i daj 1-rečenicu **service_gap_reasoning** s konkretnim dokazom (npr. "Footer ima IG ikonu ali profil nema postova zadnja 3 mjeseca" → social).
+
 # Format izlaza — STRIKT JSON, ništa drugo:
 
 {
@@ -173,6 +216,9 @@ Postavi:
   },
   "social_signals": ["...", "..."],
   "social_score": 2,
+  "primary_service": "chatbot",
+  "service_gap_reasoning": "1 rečenica s konkretnim dokazom zašto baš taj servis (npr. 'Nema booking widgeta, samo telefonski broj — propušteni upiti predvidivi' za chatbot).",
+  "secondary_service": "social",
   "score_reasoning": "1 rečenica zašto si dao taj ICP score, uključujući signal o presale blockerima ili social presence."
 }
 
@@ -208,6 +254,23 @@ interface ParsedEnrichment {
   };
   social_signals?: string[];
   social_score?: number;
+  primary_service?:
+    | "chatbot"
+    | "automation"
+    | "content"
+    | "social"
+    | "pr"
+    | "web"
+    | null;
+  service_gap_reasoning?: string | null;
+  secondary_service?:
+    | "chatbot"
+    | "automation"
+    | "content"
+    | "social"
+    | "pr"
+    | "web"
+    | null;
   score_reasoning: string;
 }
 
@@ -353,6 +416,9 @@ Sad ekstraktiraj vlasnike + score-aj ICP po pravilima. STRIKT JSON.`;
       socialLinks: parsed.social_links ?? undefined,
       socialSignals: parsed.social_signals ?? [],
       socialScore: parsed.social_score,
+      primaryService: parsed.primary_service ?? null,
+      serviceGapReasoning: parsed.service_gap_reasoning ?? null,
+      secondaryService: parsed.secondary_service ?? null,
     };
   } catch {
     return { ...c, scrapedPages, financials: financials ?? undefined };
@@ -522,8 +588,21 @@ export async function addProspectsToPipeline(
           .join(" · ")
       : "";
 
+    const SERVICE_LABEL: Record<string, string> = {
+      chatbot: "AI Chatboti (web/WA/IG)",
+      automation: "AI Automatizacije (CRM, podsjetnici)",
+      content: "Strategija sadržaja (TT/YT skripte)",
+      social: "Društvene mreže (full mgmt)",
+      pr: "PR & Pozicioniranje",
+      web: "Web Dizajn",
+    };
+    const primaryServiceLine = c.primaryService
+      ? `🎯 Primary fit: ${SERVICE_LABEL[c.primaryService] ?? c.primaryService}${c.serviceGapReasoning ? ` — ${c.serviceGapReasoning}` : ""}${c.secondaryService ? ` · Secondary: ${SERVICE_LABEL[c.secondaryService] ?? c.secondaryService}` : ""}`
+      : null;
+
     const notesParts = [
       c.scoreReasoning ? `🤖 ${c.scoreReasoning}` : null,
+      primaryServiceLine,
       c.premiumSignals && c.premiumSignals.length > 0
         ? `✨ Premium signals: ${c.premiumSignals.join(" · ")}`
         : null,
@@ -784,8 +863,21 @@ export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
             .join(" · ")
         : "";
 
+      const SERVICE_LABEL2: Record<string, string> = {
+        chatbot: "AI Chatboti (web/WA/IG)",
+        automation: "AI Automatizacije (CRM, podsjetnici)",
+        content: "Strategija sadržaja (TT/YT skripte)",
+        social: "Društvene mreže (full mgmt)",
+        pr: "PR & Pozicioniranje",
+        web: "Web Dizajn",
+      };
+      const primaryFitLine = enriched.primaryService
+        ? `🎯 Primary fit: ${SERVICE_LABEL2[enriched.primaryService] ?? enriched.primaryService}${enriched.serviceGapReasoning ? ` — ${enriched.serviceGapReasoning}` : ""}${enriched.secondaryService ? ` · Secondary: ${SERVICE_LABEL2[enriched.secondaryService] ?? enriched.secondaryService}` : ""}`
+        : null;
+
       const enrichmentBlock = [
         enriched.scoreReasoning ? `🤖 ${enriched.scoreReasoning}` : null,
+        primaryFitLine,
         enriched.premiumSignals && enriched.premiumSignals.length > 0
           ? `✨ Premium signals: ${enriched.premiumSignals.join(" · ")}`
           : null,
@@ -816,6 +908,7 @@ export async function bulkReEnrichUnscored(): Promise<BulkEnrichResult> {
       // Strip any previous AI block so we don't duplicate
       const cleanedOriginalNotes = (lead.notes ?? "")
         .replace(/^🤖[^\n]*\n?/gm, "")
+        .replace(/^🎯 Primary fit:[^\n]*\n?/gm, "")
         .replace(/^✨ Premium signals:[^\n]*\n?/gm, "")
         .replace(/^📈 Financial intel:[^\n]*\n?/gm, "")
         .replace(/^🚫 VEĆ IMA RJEŠENJE:[^\n]*\n?/gm, "")
