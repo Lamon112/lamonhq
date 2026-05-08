@@ -2,8 +2,9 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useTransition } from "react";
-import { Mail, Send, Sparkles, FileText, Trash2, Check } from "lucide-react";
+import { Mail, Send, Sparkles, FileText, Trash2, Check, Wand2 } from "lucide-react";
 import { addOutreach, updateOutreachStatus, deleteOutreach } from "@/app/actions/outreach";
+import { draftOutreach } from "@/app/actions/ai";
 import { OUTREACH_TEMPLATES, type OutreachTemplate } from "@/lib/templates";
 import { formatRelative } from "@/lib/format";
 import type { OutreachRow, OutreachStats } from "@/lib/queries";
@@ -64,6 +65,27 @@ export function OutreachPanel({
     );
     setPickedTemplate(t.id);
     setTab("log");
+  }
+
+  function generateAiDraft() {
+    setError(null);
+    if (!leadName.trim()) {
+      setError("Unesi lead name prije AI drafta");
+      return;
+    }
+    startTransition(async () => {
+      const res = await draftOutreach({
+        leadName: leadName.trim(),
+        platform,
+        hook: message.trim() || undefined,
+      });
+      if (!res.ok) {
+        setError(res.error ?? "AI greška");
+        return;
+      }
+      setMessage(res.draft ?? "");
+      setPickedTemplate("ai");
+    });
   }
 
   function submit(e: React.FormEvent) {
@@ -219,17 +241,33 @@ export function OutreachPanel({
             </div>
 
             <Field
-              label={`Poruka${pickedTemplate ? " · iz template-a" : ""}`}
-              hint="Tipkaj ili odaberi template iz tab-a iznad. {{ime}}, {{klinika}} su placeholderi."
+              label={`Poruka${pickedTemplate === "ai" ? " · ✨ AI draft" : pickedTemplate ? " · iz template-a" : ""}`}
+              hint="Tipkaj, paste-aj template, ili klikni '✨ AI draft' da Claude napiše prijedlog. Ono što je tu prije AI drafta postaje 'hook' kontekst."
             >
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                rows={6}
-                placeholder="Pozdrav…"
+                rows={7}
+                placeholder="Pozdrav…   (ili napiši ovdje hook tipa 'novi post o booking flow-u' i klikni ✨ AI draft)"
                 className="input font-mono text-xs"
               />
             </Field>
+
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={generateAiDraft}
+                disabled={pending || !leadName.trim()}
+                className="flex items-center gap-2 rounded-lg border border-gold/50 bg-gold/10 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/20 disabled:opacity-40"
+                title={!leadName.trim() ? "Unesi lead name prvo" : "Claude napiše prijedlog poruke u tvom voice-u"}
+              >
+                <Wand2 size={14} />
+                ✨ AI draft (Claude)
+              </button>
+              <p className="text-[10px] text-text-muted">
+                Claude Sonnet 4.6 · ~$0.005 po draftu
+              </p>
+            </div>
 
             {error && (
               <div className="rounded-md border border-danger/40 bg-danger/10 p-2 text-xs text-danger">
