@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { notionSync } from "./notionSync";
+import { logActivity } from "./activityLog";
 
 export interface ActionResult {
   ok: boolean;
@@ -79,7 +79,7 @@ export async function closeDealWon(
     .single();
   if (clientErr) return { ok: false, error: clientErr.message };
 
-  void notionSync({
+  void logActivity(userData.user.id, {
     type: "deal_won",
     title: `🎉 Deal WON: ${lead.name}`,
     summary: `€${input.monthlyRevenue}/mj MRR · ${inferredType} · ${input.notes ?? ""}`,

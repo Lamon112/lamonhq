@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { notionSync } from "./notionSync";
+import { logActivity } from "./activityLog";
 
 export interface AddClientInput {
   name: string;
@@ -50,7 +50,7 @@ export async function addClient(input: AddClientInput): Promise<ActionResult> {
 
   if (error) return { ok: false, error: error.message };
 
-  void notionSync({
+  void logActivity(userData.user.id, {
     type: "client_added",
     title: `Klijent dodan: ${name}`,
     summary: `${input.type} · ${input.status} · €${input.monthlyRevenue}/mj`,

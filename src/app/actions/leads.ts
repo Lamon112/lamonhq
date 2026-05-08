@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { notionSync } from "./notionSync";
+import { logActivity } from "./activityLog";
 
 export type Niche =
   | "stomatologija"
@@ -75,7 +75,7 @@ export async function addLead(input: AddLeadInput): Promise<ActionResult> {
 
   if (error) return { ok: false, error: error.message };
 
-  void notionSync({
+  void logActivity(userData.user.id, {
     type: "lead_scored",
     title: `Lead score: ${name} · ${score}/20`,
     summary: `${input.niche ?? "?"} · ${input.source ?? "?"} · estimated €${input.estimatedValue ?? 0}`,

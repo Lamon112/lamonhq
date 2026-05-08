@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { notionSync } from "./notionSync";
+import { logActivity } from "./activityLog";
 
 export interface AddOutreachInput {
   leadName: string;
@@ -41,8 +41,7 @@ export async function addOutreach(
 
   if (error) return { ok: false, error: error.message };
 
-  // Async sync to Notion (fire-and-forget)
-  void notionSync({
+  void logActivity(userData.user.id, {
     type: "outreach_sent",
     title: `Outreach → ${leadName}`,
     summary: `${input.platform.toUpperCase()}: ${input.message?.slice(0, 200) ?? "(no message)"}`,

@@ -1,6 +1,8 @@
 import { ResourceBar } from "@/components/ResourceBar";
 import { Building } from "@/components/Building";
 import { ActionBar } from "@/components/ActionBar";
+import { ActivityFeed } from "@/components/ActivityFeed";
+import { getRecentActivity } from "@/app/actions/activityLog";
 import { createClient } from "@/lib/supabase/server";
 import {
   getHQStats,
@@ -51,6 +53,7 @@ export default async function HQPage() {
     taskStats,
     reportList,
     reportStats,
+    activityRows,
   ] = await Promise.all([
     getHQStats(),
     getOutreachStats(),
@@ -70,6 +73,7 @@ export default async function HQPage() {
     getTasksStats(),
     getWeeklyReports(),
     getReportsStats(),
+    getRecentActivity(40),
   ]);
 
   const userMeta = {
@@ -109,6 +113,7 @@ export default async function HQPage() {
         }}
       />
       <ActionBar />
+      <ActivityFeed initialRows={activityRows} />
     </>
   );
 }
