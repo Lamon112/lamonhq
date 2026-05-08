@@ -11,33 +11,61 @@ import type {
   LeadRow,
   LeadsStats,
   DiscoveryStats,
+  DealsStats,
+  ContentPostRow,
+  ContentStats,
+  CompetitorRow,
+  CompetitorUpdateRow,
+  CompetitorStats,
+  TaskRow,
+  TasksStats,
+  WeeklyReportRow,
+  ReportsStats,
 } from "@/lib/queries";
 import { OutreachPanel } from "./rooms/OutreachPanel";
 import { ClientsPanel } from "./rooms/ClientsPanel";
 import { LeadScorerPanel } from "./rooms/LeadScorerPanel";
 import { DiscoveryPanel } from "./rooms/DiscoveryPanel";
+import { ClosingPanel } from "./rooms/ClosingPanel";
+import { AnalyticsPanel } from "./rooms/AnalyticsPanel";
+import { CompetitorPanel } from "./rooms/CompetitorPanel";
+import { CalendarPanel } from "./rooms/CalendarPanel";
+import { ReportsPanel } from "./rooms/ReportsPanel";
 
 export interface RoomData {
   outreach: { list: OutreachRow[]; stats: OutreachStats };
   clients: { list: ClientRow[]; stats: ClientsStats };
   leads: { list: LeadRow[]; stats: LeadsStats };
   discovery: { stats: DiscoveryStats };
+  deals: { stats: DealsStats };
+  content: { list: ContentPostRow[]; stats: ContentStats };
+  competitor: {
+    list: CompetitorRow[];
+    updates: CompetitorUpdateRow[];
+    stats: CompetitorStats;
+  };
+  tasks: { list: TaskRow[]; stats: TasksStats };
+  reports: {
+    list: WeeklyReportRow[];
+    stats: ReportsStats;
+    weekStart: string;
+  };
 }
 
 interface RoomModalProps {
   room: Room | null;
-  initialTab?: string;
   data: RoomData;
   onClose: () => void;
   onSendAnimation?: () => void;
+  onWonAnimation?: () => void;
 }
 
 export function RoomModal({
   room,
   data,
-  initialTab,
   onClose,
   onSendAnimation,
+  onWonAnimation,
 }: RoomModalProps) {
   return (
     <AnimatePresence>
@@ -83,8 +111,8 @@ export function RoomModal({
             <RoomBody
               room={room}
               data={data}
-              initialTab={initialTab}
               onSendAnimation={onSendAnimation}
+              onWonAnimation={onWonAnimation}
             />
           </motion.div>
         </motion.div>
@@ -96,13 +124,13 @@ export function RoomModal({
 function RoomBody({
   room,
   data,
-  initialTab,
   onSendAnimation,
+  onWonAnimation,
 }: {
   room: Room;
   data: RoomData;
-  initialTab?: string;
   onSendAnimation?: () => void;
+  onWonAnimation?: () => void;
 }) {
   switch (room.id) {
     case "outreach":
@@ -134,14 +162,54 @@ function RoomBody({
           initialStats={data.discovery.stats}
         />
       );
+    case "closing":
+      return (
+        <ClosingPanel
+          initialList={data.leads.list}
+          initialStats={data.deals.stats}
+          onWonAnimation={onWonAnimation}
+        />
+      );
+    case "analytics":
+      return (
+        <AnalyticsPanel
+          initialList={data.content.list}
+          initialStats={data.content.stats}
+        />
+      );
+    case "competitor":
+      return (
+        <CompetitorPanel
+          initialList={data.competitor.list}
+          initialUpdates={data.competitor.updates}
+          initialStats={data.competitor.stats}
+        />
+      );
+    case "calendar":
+      return (
+        <CalendarPanel
+          initialList={data.tasks.list}
+          initialStats={data.tasks.stats}
+          clients={data.clients.list}
+          leads={data.leads.list}
+        />
+      );
+    case "reports":
+      return (
+        <ReportsPanel
+          initialReports={data.reports.list}
+          initialStats={data.reports.stats}
+          clients={data.clients.list}
+          contentPosts={data.content.list}
+          outreach={data.outreach.list}
+          weekStart={data.reports.weekStart}
+        />
+      );
     default:
       return (
         <div className="mt-6 rounded-lg border border-dashed border-border bg-bg-card/60 p-6 text-center">
           <p className="text-sm text-text-dim">
             Soba dolazi uskoro — gradimo room-by-room.
-          </p>
-          <p className="mt-2 text-xs text-text-muted">
-            {room.name} · placeholder
           </p>
         </div>
       );

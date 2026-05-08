@@ -11,6 +11,17 @@ import {
   getLeads,
   getLeadsStats,
   getDiscoveryStats,
+  getDealsStats,
+  getContentPosts,
+  getContentStats,
+  getCompetitors,
+  getCompetitorUpdates,
+  getCompetitorStats,
+  getTasks,
+  getTasksStats,
+  getWeeklyReports,
+  getReportsStats,
+  getCurrentWeekStart,
 } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +41,16 @@ export default async function HQPage() {
     leadList,
     leadStats,
     discoveryStats,
+    dealsStats,
+    contentList,
+    contentStats,
+    competitorList,
+    competitorUpdates,
+    competitorStats,
+    taskList,
+    taskStats,
+    reportList,
+    reportStats,
   ] = await Promise.all([
     getHQStats(),
     getOutreachStats(),
@@ -39,6 +60,16 @@ export default async function HQPage() {
     getLeads(),
     getLeadsStats(),
     getDiscoveryStats(),
+    getDealsStats(),
+    getContentPosts(),
+    getContentStats(),
+    getCompetitors(),
+    getCompetitorUpdates(),
+    getCompetitorStats(),
+    getTasks(),
+    getTasksStats(),
+    getWeeklyReports(),
+    getReportsStats(),
   ]);
 
   const userMeta = {
@@ -62,6 +93,19 @@ export default async function HQPage() {
           clients: { list: clientList, stats: clientStats },
           leads: { list: leadList, stats: leadStats },
           discovery: { stats: discoveryStats },
+          deals: { stats: dealsStats },
+          content: { list: contentList, stats: contentStats },
+          competitor: {
+            list: competitorList,
+            updates: competitorUpdates,
+            stats: competitorStats,
+          },
+          tasks: { list: taskList, stats: taskStats },
+          reports: {
+            list: reportList,
+            stats: reportStats,
+            weekStart: getCurrentWeekStart(),
+          },
         }}
       />
       <ActionBar />

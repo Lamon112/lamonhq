@@ -248,6 +248,7 @@ export interface LeadRow {
     | "closed_won"
     | "closed_lost";
   estimated_value: number | null;
+  probability: number | null;
   next_action: string | null;
   next_action_date: string | null;
   notes: string | null;
@@ -311,6 +312,370 @@ export interface DiscoveryStats {
   upcoming: number;
   showUpRate: number; // 0-1 (replied / scheduled)
   conversionToPricing: number;
+}
+
+// =====================================================================
+// Closing Room — open deals math
+// =====================================================================
+
+export interface DealsStats {
+  openCount: number;
+  pipelineValueCents: number; // sum estimated_value (any open stage)
+  weightedValueCents: number; // sum est_value * probability (or stage default)
+  wonThisMonth: number;
+  wonValueCents: number;
+}
+
+const STAGE_PROB_DEFAULT: Record<string, number> = {
+  discovery: 0.1,
+  pricing: 0.3,
+  financing: 0.5,
+  booking: 0.8,
+  closed_won: 1,
+  closed_lost: 0,
+};
+
+export async function getDealsStats(): Promise<DealsStats> {
+  const supabase = await createClient();
+  const monthStart = startOfMonth();
+
+  const [openRes, wonRes] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("estimated_value, probability, stage")
+      .in("stage", ["pricing", "financing", "booking"]),
+    supabase
+      .from("leads")
+      .select("estimated_value, updated_at, stage")
+      .eq("stage", "closed_won")
+      .gte("updated_at", monthStart),
+  ]);
+
+  let pipelineCents = 0;
+  let weightedCents = 0;
+  for (const r of openRes.data ?? []) {
+    const v = Math.round(Number(r.estimated_value ?? 0) * 100);
+    const p = r.probability ?? STAGE_PROB_DEFAULT[r.stage] ?? 0;
+    pipelineCents += v;
+    weightedCents += Math.round(v * p);
+  }
+
+  let wonCents = 0;
+  for (const r of wonRes.data ?? [])
+    wonCents += Math.round(Number(r.estimated_value ?? 0) * 100);
+
+  return {
+    openCount: openRes.data?.length ?? 0,
+    pipelineValueCents: pipelineCents,
+    weightedValueCents: weightedCents,
+    wonThisMonth: wonRes.data?.length ?? 0,
+    wonValueCents: wonCents,
+  };
+}
+
+// =====================================================================
+// Performance Analytics
+// =====================================================================
+
+export interface ContentPostRow {
+  id: string;
+  platform: "tiktok" | "instagram" | "youtube" | "linkedin";
+  post_url: string | null;
+  title: string | null;
+  posted_at: string | null;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  saves: number | null;
+  link_clicks: number | null;
+  created_at: string;
+}
+
+export interface ContentStats {
+  postsThisMonth: number;
+  totalViewsThisMonth: number;
+  bestPost: { title: string | null; platform: string; views: number } | null;
+  avgEngagement: number; // 0-1
+}
+
+export async function getContentPosts(limit = 100): Promise<ContentPostRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("content_posts")
+    .select("*")
+    .order("posted_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  return (data ?? []) as ContentPostRow[];
+}
+
+export async function getContentStats(): Promise<ContentStats> {
+  const posts = await getContentPosts();
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const monthPosts = posts.filter(
+    (p) => p.posted_at && new Date(p.posted_at) >= monthStart,
+  );
+  const totalViews = monthPosts.reduce((s, p) => s + (p.views ?? 0), 0);
+  let totalEng = 0;
+  let counted = 0;
+  for (const p of monthPosts) {
+    const v = p.views ?? 0;
+    if (v > 0) {
+      const eng =
+        ((p.likes ?? 0) + (p.comments ?? 0) + (p.saves ?? 0)) / v;
+      totalEng += eng;
+      counted += 1;
+    }
+  }
+  const avg = counted ? totalEng / counted : 0;
+
+  let best: ContentStats["bestPost"] = null;
+  for (const p of monthPosts) {
+    if (!best || (p.views ?? 0) > best.views) {
+      best = {
+        title: p.title,
+        platform: p.platform,
+        views: p.views ?? 0,
+      };
+    }
+  }
+
+  return {
+    postsThisMonth: monthPosts.length,
+    totalViewsThisMonth: totalViews,
+    bestPost: best,
+    avgEngagement: avg,
+  };
+}
+
+// =====================================================================
+// Competitor Watch
+// =====================================================================
+
+export interface CompetitorRow {
+  id: string;
+  name: string;
+  url: string | null;
+  notes: string | null;
+  last_check_at: string | null;
+  created_at: string;
+}
+
+export interface CompetitorUpdateRow {
+  id: string;
+  competitor_id: string;
+  observation: string;
+  url: string | null;
+  created_at: string;
+}
+
+export interface CompetitorStats {
+  count: number;
+  updatesThisWeek: number;
+  staleSinceDays: number; // longest "since last_check_at"
+}
+
+export async function getCompetitors(): Promise<CompetitorRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("competitors")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return (data ?? []) as CompetitorRow[];
+}
+
+export async function getCompetitorUpdates(
+  limit = 50,
+): Promise<CompetitorUpdateRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("competitor_updates")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as CompetitorUpdateRow[];
+}
+
+export async function getCompetitorStats(): Promise<CompetitorStats> {
+  const supabase = await createClient();
+  const weekStart = startOfWeek();
+  const [comps, updRes] = await Promise.all([
+    getCompetitors(),
+    supabase
+      .from("competitor_updates")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", weekStart),
+  ]);
+
+  let oldest = 0;
+  const now = Date.now();
+  for (const c of comps) {
+    if (!c.last_check_at) {
+      oldest = Math.max(oldest, 99);
+      continue;
+    }
+    const days = Math.floor(
+      (now - new Date(c.last_check_at).getTime()) / 86_400_000,
+    );
+    oldest = Math.max(oldest, days);
+  }
+
+  return {
+    count: comps.length,
+    updatesThisWeek: updRes.count ?? 0,
+    staleSinceDays: oldest,
+  };
+}
+
+// =====================================================================
+// Calendar / Tasks
+// =====================================================================
+
+export interface TaskRow {
+  id: string;
+  title: string;
+  room: string | null;
+  status: "todo" | "in_progress" | "done";
+  due_date: string | null;
+  completed_at: string | null;
+  notes: string | null;
+  client_id: string | null;
+  lead_id: string | null;
+  created_at: string;
+}
+
+export interface TasksStats {
+  todayCount: number;
+  weekCount: number;
+  overdue: number;
+  doneToday: number;
+}
+
+export async function getTasks(): Promise<TaskRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tasks")
+    .select("*")
+    .order("status", { ascending: true })
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
+  return (data ?? []) as TaskRow[];
+}
+
+export async function getTasksStats(): Promise<TasksStats> {
+  const supabase = await createClient();
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const weekEnd = new Date(today);
+  weekEnd.setDate(today.getDate() + 7);
+  const weekEndStr = weekEnd.toISOString().slice(0, 10);
+  const todayStartIso = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  ).toISOString();
+
+  const [todayRes, weekRes, overdueRes, doneRes] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("due_date", todayStr)
+      .neq("status", "done"),
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .gte("due_date", todayStr)
+      .lte("due_date", weekEndStr)
+      .neq("status", "done"),
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .lt("due_date", todayStr)
+      .neq("status", "done"),
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "done")
+      .gte("completed_at", todayStartIso),
+  ]);
+
+  return {
+    todayCount: todayRes.count ?? 0,
+    weekCount: weekRes.count ?? 0,
+    overdue: overdueRes.count ?? 0,
+    doneToday: doneRes.count ?? 0,
+  };
+}
+
+// =====================================================================
+// Weekly Reports
+// =====================================================================
+
+export interface WeeklyReportRow {
+  id: string;
+  client_id: string;
+  week_start: string;
+  content: string | null;
+  status: "draft" | "sent";
+  sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReportsStats {
+  dueThisWeek: number;
+  sentThisWeek: number;
+  pendingThisWeek: number;
+}
+
+export async function getWeeklyReports(): Promise<WeeklyReportRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("weekly_reports")
+    .select("*")
+    .order("week_start", { ascending: false })
+    .order("client_id", { ascending: true });
+  return (data ?? []) as WeeklyReportRow[];
+}
+
+export function getCurrentWeekStart(): string {
+  const d = new Date();
+  const day = d.getDay() || 7;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - (day - 1));
+  return monday.toISOString().slice(0, 10);
+}
+
+export async function getReportsStats(): Promise<ReportsStats> {
+  const ws = getCurrentWeekStart();
+  const supabase = await createClient();
+  const [activeRes, sentRes, draftRes] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active"),
+    supabase
+      .from("weekly_reports")
+      .select("*", { count: "exact", head: true })
+      .eq("week_start", ws)
+      .eq("status", "sent"),
+    supabase
+      .from("weekly_reports")
+      .select("*", { count: "exact", head: true })
+      .eq("week_start", ws)
+      .eq("status", "draft"),
+  ]);
+
+  const due = activeRes.count ?? 0;
+  const sent = sentRes.count ?? 0;
+  const drafts = draftRes.count ?? 0;
+  return {
+    dueThisWeek: due,
+    sentThisWeek: sent,
+    pendingThisWeek: Math.max(due - sent, 0) + drafts,
+  };
 }
 
 export async function getDiscoveryStats(): Promise<DiscoveryStats> {

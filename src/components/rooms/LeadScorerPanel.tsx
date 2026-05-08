@@ -180,6 +180,7 @@ export function LeadScorerPanel({
         icp_breakdown: breakdown,
         stage: "discovery",
         estimated_value: ev,
+        probability: null,
         next_action: null,
         next_action_date: null,
         notes: notes || null,

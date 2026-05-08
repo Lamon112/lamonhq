@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Floor } from "./Floor";
 import { RoomModal, type RoomData } from "./RoomModal";
 import { EnvelopeFly } from "./EnvelopeFly";
+import { MoneyFly } from "./MoneyFly";
 import { ALL_ROOMS, FLOORS, type Room, type RoomId } from "@/lib/rooms";
 
 interface BuildingProps {
@@ -13,6 +14,7 @@ interface BuildingProps {
 export function Building({ data }: BuildingProps) {
   const [selected, setSelected] = useState<Room | null>(null);
   const [envelopeTrigger, setEnvelopeTrigger] = useState(0);
+  const [moneyTrigger, setMoneyTrigger] = useState(0);
 
   useEffect(() => {
     function onOpen(e: Event) {
@@ -52,8 +54,10 @@ export function Building({ data }: BuildingProps) {
         data={data}
         onClose={() => setSelected(null)}
         onSendAnimation={() => setEnvelopeTrigger((n) => n + 1)}
+        onWonAnimation={() => setMoneyTrigger((n) => n + 1)}
       />
       <EnvelopeFly trigger={envelopeTrigger} />
+      <MoneyFly trigger={moneyTrigger} />
     </main>
   );
 }
