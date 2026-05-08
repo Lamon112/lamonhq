@@ -2,12 +2,21 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState, useTransition } from "react";
-import { FileText, Send, Sparkles, Trash2 } from "lucide-react";
+import {
+  FileText,
+  Send,
+  Sparkles,
+  Trash2,
+  ThumbsUp,
+  ThumbsDown,
+  Wand2,
+} from "lucide-react";
 import {
   upsertReport,
   markReportSent,
   deleteReport,
 } from "@/app/actions/reports";
+import { generateWeeklyReport, saveAiFeedback } from "@/app/actions/ai";
 import {
   StatTile,
   TabButton,
@@ -100,6 +109,12 @@ export function ReportsPanel({
   const [error, setError] = useState<string | null>(null);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [content, setContent] = useState("");
+  const [aiPending, setAiPending] = useState(false);
+  const [aiSource, setAiSource] = useState<
+    "ai" | "template" | "existing" | null
+  >(null);
+  const [aiRated, setAiRated] = useState<"good" | "bad" | null>(null);
+  const [customNotes, setCustomNotes] = useState("");
 
   const activeClients = useMemo(
     () => clients.filter((c) => c.status === "active"),
@@ -114,14 +129,61 @@ export function ReportsPanel({
     return m;
   }, [reports, weekStart]);
 
-  function startGenerate(client: ClientRow) {
+  function startEditExisting(client: ClientRow) {
     const existing = reportByClient[client.id];
-    setContent(
-      existing?.content ??
-        generateTemplate(client, contentPosts, outreach, weekStart),
-    );
+    if (!existing) return;
+    setContent(existing.content ?? "");
+    setEditingClientId(client.id);
+    setAiSource("existing");
+    setAiRated(null);
+    setCustomNotes("");
+    setError(null);
+  }
+
+  async function generateAI(client: ClientRow, withCustom?: string) {
     setEditingClientId(client.id);
     setError(null);
+    setAiPending(true);
+    setAiRated(null);
+    try {
+      const res = await generateWeeklyReport({
+        clientId: client.id,
+        weekStart,
+        customNotes: withCustom?.trim() || undefined,
+      });
+      if (!res.ok || !res.report) {
+        setError(res.error ?? "AI greška");
+        setAiSource(null);
+        return;
+      }
+      setContent(res.report);
+      setAiSource("ai");
+    } finally {
+      setAiPending(false);
+    }
+  }
+
+  function fallbackTemplate(client: ClientRow) {
+    setContent(generateTemplate(client, contentPosts, outreach, weekStart));
+    setAiSource("template");
+    setAiRated(null);
+  }
+
+  function rateAi(rating: "good" | "bad") {
+    if (!editingClientId || !content || aiSource !== "ai") return;
+    setAiRated(rating);
+    startTransition(async () => {
+      await saveAiFeedback({
+        kind: "weekly_report",
+        input: {
+          clientId: editingClientId,
+          weekStart,
+          customNotes: customNotes.trim() || undefined,
+        },
+        output: content,
+        rating,
+      });
+    });
   }
 
   function saveDraft() {
@@ -271,13 +333,36 @@ export function ReportsPanel({
                       ) : (
                         <Badge tone="danger">Nije pripremljen</Badge>
                       )}
-                      <button
-                        onClick={() => startGenerate(c)}
-                        className="ml-auto flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-bg transition-colors hover:bg-gold-bright"
-                      >
-                        <Sparkles size={12} />{" "}
-                        {r ? "Otvori draft" : "Generate"}
-                      </button>
+                      {r ? (
+                        <button
+                          onClick={() => startEditExisting(c)}
+                          className="ml-auto flex items-center gap-1.5 rounded-lg border border-border bg-bg-card px-3 py-1.5 text-xs font-medium text-text-dim transition-colors hover:border-gold/50 hover:text-text"
+                        >
+                          <FileText size={12} /> Otvori draft
+                        </button>
+                      ) : (
+                        <div className="ml-auto flex items-center gap-1.5">
+                          <button
+                            onClick={() => generateAI(c)}
+                            disabled={pending || aiPending}
+                            className="flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-bg transition-colors hover:bg-gold-bright disabled:opacity-50"
+                          >
+                            <Wand2 size={12} />
+                            ✨ AI generate
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingClientId(c.id);
+                              fallbackTemplate(c);
+                              setError(null);
+                            }}
+                            className="rounded-lg border border-border bg-bg-card px-2 py-1.5 text-[10px] text-text-muted transition-colors hover:border-gold/50 hover:text-text-dim"
+                            title="Fallback: hardcoded template (bez AI)"
+                          >
+                            Template
+                          </button>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
@@ -294,24 +379,110 @@ export function ReportsPanel({
             exit={{ opacity: 0, y: -6 }}
             className="space-y-3"
           >
-            <div className="text-xs text-text-muted">
-              Editiraš report za:{" "}
-              <span className="text-text">
-                {clients.find((c) => c.id === editingClientId)?.name}
-              </span>{" "}
-              · tjedan {weekStart}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs text-text-muted">
+                Editiraš report za:{" "}
+                <span className="text-text">
+                  {clients.find((c) => c.id === editingClientId)?.name}
+                </span>{" "}
+                · tjedan {weekStart}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {aiSource === "ai" && (
+                  <Badge tone="gold">✨ AI v2</Badge>
+                )}
+                {aiSource === "template" && (
+                  <Badge tone="neutral">Template</Badge>
+                )}
+                {aiSource === "existing" && (
+                  <Badge tone="neutral">Existing draft</Badge>
+                )}
+                {aiSource === "ai" && aiRated === null && (
+                  <>
+                    <span className="text-[10px] text-text-muted">
+                      AI dobro?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => rateAi("good")}
+                      className="rounded p-1 text-success transition-colors hover:bg-success/10"
+                      title="👍 Saved as good — AI uči ovo"
+                    >
+                      <ThumbsUp size={11} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => rateAi("bad")}
+                      className="rounded p-1 text-danger transition-colors hover:bg-danger/10"
+                    >
+                      <ThumbsDown size={11} />
+                    </button>
+                  </>
+                )}
+                {aiRated === "good" && (
+                  <span className="text-[10px] text-success">👍 Saved</span>
+                )}
+                {aiRated === "bad" && (
+                  <span className="text-[10px] text-warning">👎 Saved</span>
+                )}
+              </div>
             </div>
+
+            {aiPending && (
+              <div className="rounded-lg border border-gold/30 bg-gold/5 p-3 text-xs text-gold">
+                ✨ Claude piše report — fetcham real podatke (content, tasks,
+                outreach) za ovaj tjedan i sastavljam narrative…
+              </div>
+            )}
+
             <textarea
               className="input font-mono text-xs"
               rows={18}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                setContent(e.target.value);
+                if (aiSource === "ai") setAiSource(null);
+              }}
+              disabled={aiPending}
             />
+
+            {aiSource === "ai" && (
+              <div className="rounded-lg border border-border bg-bg-card/40 p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-text-muted">
+                    Regeneriraj s dodatnim kontekstom (npr. specifičan win, novi
+                    tretman, churn pitanje)
+                  </span>
+                </div>
+                <input
+                  className="input text-xs"
+                  value={customNotes}
+                  onChange={(e) => setCustomNotes(e.target.value)}
+                  placeholder="npr. 'Naglasi da smo dobili 3 booking-a za new aligners promo'"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const c = clients.find((x) => x.id === editingClientId);
+                      if (c) generateAI(c, customNotes);
+                    }}
+                    disabled={aiPending || !customNotes.trim()}
+                    className="flex items-center gap-1.5 rounded-md bg-gold/20 px-2 py-1 text-[11px] text-gold transition-colors hover:bg-gold/30 disabled:opacity-40"
+                  >
+                    <Wand2 size={11} />
+                    Regeneriraj s notama
+                  </button>
+                </div>
+              </div>
+            )}
+
             <ErrorBanner message={error} />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-text-muted">
-                Template auto-puni outreach + content brojke ovog tjedna.
-                Doteci akcijama prije slanja.
+                {aiSource === "ai"
+                  ? "Claude koristi tvoje 👍 reports kao few-shot. Tijekom vremena, drafts će izgledati sve više kao tvoji."
+                  : "Doteci akcijama prije slanja. Možeš svaki dio editirati."}
               </p>
               <div className="flex gap-2">
                 <GhostButton onClick={() => setEditingClientId(null)}>

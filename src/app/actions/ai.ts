@@ -229,6 +229,274 @@ export async function draftOutreachVariants(
 }
 
 // =====================================================================
+// AI Weekly Report v2 (narrative writer)
+// =====================================================================
+
+export interface GenerateReportInput {
+  clientId: string;
+  weekStart: string; // YYYY-MM-DD
+  customNotes?: string; // optional: things Leonardo wants highlighted
+}
+
+export interface GenerateReportResult {
+  ok: boolean;
+  report?: string;
+  error?: string;
+}
+
+const REPORT_PROMPT_V2 = `Ti si Leonardo Lamon, founder Lamon Agency. Pišeš tjedni izvještaj za klijenta.
+
+# Voice (apsolutno bitno)
+- **Direktan, peer-to-peer**, kao da pišeš e-mail prijatelju koji ti je platio za rezultat
+- 1. lice množine ("mi smo napravili", ne "Lamon Agency je proveo")
+- Brojke uvijek konkretne (X%, +Y, -Z) — nikad "značajno povećanje"
+- **Bez fluffa**: ne "u ovome tjednu smo aktivno radili na..." — odmah na akciju + rezultat
+- Hrvatski, premium, bez buzzword-a (ne "scale", "leverage", "synergize")
+
+# Struktura (svaki dio nova alineja)
+
+1. **Pozdrav + framing** (1 rečenica) — tone-set za tjedan
+2. **🎯 Ključne brojke** — bullet, 3-5 najvažnijih
+3. **🔧 Što smo napravili** — bullet, 3-4 specifične akcije s rezultatom (akcija → rezultat, ne samo akcija)
+4. **📋 Sljedeći tjedan** — bullet, 2-3 koraka s vremenskim okvirom
+5. (opcionalno) **⚠ Risk** ili **💡 Prilika** ili **❓ Trebam tvoj input** — samo ako stvarno ima što
+6. Potpis: "Pozz, Leonardo · Lamon Agency"
+
+# Pravila
+
+- **Maks ~250 riječi** ukupno
+- Ako ti fali konkretan podatak, **koristi placeholder \`{{POPUNI_RUČNO}}\`** umjesto izmišljanja
+- **Risk flag** uključi samo ako client.churn_risk je low/medium/high — nikad pretpostavi
+- Ako je tjedan bio slab (malo aktivnosti), budi iskren — "ovaj tjedan je bio fokus na pripremu, sljedeći donosi rezultate" — ne lagaj brojkama
+- **Personaliziraj** — koristi ime klijenta i specifičnost niche (klinika vs coach)
+
+# Output: SAMO tekst reporta, bez markdown headera tipa "# Report", bez objašnjenja, bez "Evo izvještaja:". Direktno tekst.`;
+
+interface ReportContext {
+  client: {
+    name: string;
+    type: string;
+    status: string;
+    monthly_revenue: number;
+    churn_risk: string | null;
+    next_action: string | null;
+    last_touchpoint_at: string | null;
+    notes: string | null;
+  };
+  weekStart: string;
+  weekEnd: string;
+  contentPosts: Array<{
+    platform: string;
+    title: string | null;
+    views: number;
+    likes: number;
+    comments: number;
+  }>;
+  totalViews: number;
+  totalLikes: number;
+  outreachCountThisWeek: number;
+  tasksDoneThisWeek: Array<{ title: string; completed_at: string | null }>;
+  tasksUpcoming: Array<{ title: string; due_date: string | null }>;
+}
+
+async function fetchReportContext(
+  clientId: string,
+  weekStart: string,
+): Promise<ReportContext | null> {
+  const supabase = await createClient();
+  const ws = new Date(weekStart);
+  const we = new Date(ws);
+  we.setDate(ws.getDate() + 6);
+  const weStr = we.toISOString().slice(0, 10);
+  const wsIso = ws.toISOString();
+  const weIso = new Date(we.getFullYear(), we.getMonth(), we.getDate() + 1).toISOString();
+
+  const [clientRes, postsRes, outreachRes, tasksDoneRes, tasksUpRes] =
+    await Promise.all([
+      supabase.from("clients").select("*").eq("id", clientId).maybeSingle(),
+      supabase
+        .from("content_posts")
+        .select("platform, title, views, likes, comments")
+        .gte("posted_at", wsIso)
+        .lt("posted_at", weIso)
+        .order("views", { ascending: false }),
+      supabase
+        .from("outreach")
+        .select("*", { count: "exact", head: true })
+        .gte("sent_at", wsIso)
+        .lt("sent_at", weIso),
+      supabase
+        .from("tasks")
+        .select("title, completed_at")
+        .eq("client_id", clientId)
+        .eq("status", "done")
+        .gte("completed_at", wsIso)
+        .lt("completed_at", weIso),
+      supabase
+        .from("tasks")
+        .select("title, due_date")
+        .eq("client_id", clientId)
+        .neq("status", "done")
+        .order("due_date", { ascending: true, nullsFirst: false })
+        .limit(5),
+    ]);
+
+  if (!clientRes.data) return null;
+
+  const posts = (postsRes.data ?? []) as Array<{
+    platform: string;
+    title: string | null;
+    views: number | null;
+    likes: number | null;
+    comments: number | null;
+  }>;
+  const totalViews = posts.reduce((s, p) => s + (p.views ?? 0), 0);
+  const totalLikes = posts.reduce((s, p) => s + (p.likes ?? 0), 0);
+
+  return {
+    client: {
+      name: clientRes.data.name,
+      type: clientRes.data.type,
+      status: clientRes.data.status,
+      monthly_revenue: Number(clientRes.data.monthly_revenue ?? 0),
+      churn_risk: clientRes.data.churn_risk,
+      next_action: clientRes.data.next_action,
+      last_touchpoint_at: clientRes.data.last_touchpoint_at,
+      notes: clientRes.data.notes,
+    },
+    weekStart,
+    weekEnd: weStr,
+    contentPosts: posts.map((p) => ({
+      platform: p.platform,
+      title: p.title,
+      views: p.views ?? 0,
+      likes: p.likes ?? 0,
+      comments: p.comments ?? 0,
+    })),
+    totalViews,
+    totalLikes,
+    outreachCountThisWeek: outreachRes.count ?? 0,
+    tasksDoneThisWeek: (tasksDoneRes.data ?? []) as Array<{
+      title: string;
+      completed_at: string | null;
+    }>,
+    tasksUpcoming: (tasksUpRes.data ?? []) as Array<{
+      title: string;
+      due_date: string | null;
+    }>,
+  };
+}
+
+async function fetchGoodReportExamples(
+  userId: string,
+  limit = 2,
+): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ai_feedback")
+    .select("output_text")
+    .eq("user_id", userId)
+    .eq("kind", "weekly_report")
+    .eq("rating", "good")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((r) => r.output_text as string);
+}
+
+export async function generateWeeklyReport(
+  input: GenerateReportInput,
+): Promise<GenerateReportResult> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { ok: false, error: "ANTHROPIC_API_KEY nije postavljen" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+
+    const ctx = await fetchReportContext(input.clientId, input.weekStart);
+    if (!ctx) return { ok: false, error: "Klijent nije pronađen" };
+
+    const goodExamples = userId ? await fetchGoodReportExamples(userId) : [];
+
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const goodSection =
+      goodExamples.length > 0
+        ? `\n# Tvoji prijašnji 'good-rated' izvještaji (najbolji signal — kopiraj tone i strukturu):\n${goodExamples
+            .map((t, i) => `--- Good report ${i + 1} ---\n${t}`)
+            .join("\n\n")}\n`
+        : "";
+
+    const ctxJson = {
+      klijent: {
+        ime: ctx.client.name,
+        tip: ctx.client.type,
+        status: ctx.client.status,
+        mrr_eur: ctx.client.monthly_revenue,
+        churn_risk: ctx.client.churn_risk,
+        next_action: ctx.client.next_action,
+        last_touchpoint_at: ctx.client.last_touchpoint_at,
+        notes_excerpt: ctx.client.notes?.slice(0, 500) ?? null,
+      },
+      tjedan: {
+        start: ctx.weekStart,
+        end: ctx.weekEnd,
+      },
+      content_posts_ovaj_tjedan: ctx.contentPosts.slice(0, 10),
+      content_total: {
+        posts: ctx.contentPosts.length,
+        total_views: ctx.totalViews,
+        total_likes: ctx.totalLikes,
+      },
+      outreach_count: ctx.outreachCountThisWeek,
+      tasks_done_for_client: ctx.tasksDoneThisWeek,
+      tasks_upcoming_for_client: ctx.tasksUpcoming,
+    };
+
+    const userMessage = `${goodSection}
+
+# Stvarni podaci za izvještaj (JSON):
+
+\`\`\`json
+${JSON.stringify(ctxJson, null, 2)}
+\`\`\`
+
+${input.customNotes ? `# Bitno: stvari koje Leonardo želi istaknuti:\n${input.customNotes}\n` : ""}
+
+Sad napiši tjedni izvještaj za **${ctx.client.name}** prema svim pravilima. Koristi {{POPUNI_RUČNO}} za detalje koji nisu u JSON-u (npr. specifične rezultate koje samo Leonardo zna).`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      system: [
+        {
+          type: "text",
+          text: REPORT_PROMPT_V2,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+    });
+
+    const block = message.content.find((b) => b.type === "text");
+    const report =
+      block && block.type === "text" ? block.text.trim() : "";
+    if (!report) return { ok: false, error: "AI nije vratio tekst" };
+    return { ok: true, report };
+  } catch (e) {
+    return {
+      ok: false,
+      error:
+        e instanceof Error
+          ? `Anthropic error: ${e.message}`
+          : "Nepoznata greška",
+    };
+  }
+}
+
+// =====================================================================
 // AI Lead Scorer
 // =====================================================================
 
@@ -448,8 +716,8 @@ async function fetchGoodLeadScoreExamples(
 }
 
 export interface FeedbackInput {
-  kind: "outreach_draft" | "lead_score";
-  input: DraftInput | ScoreLeadInput;
+  kind: "outreach_draft" | "lead_score" | "weekly_report";
+  input: DraftInput | ScoreLeadInput | GenerateReportInput;
   output: string;
   rating: "good" | "bad";
   notes?: string;
