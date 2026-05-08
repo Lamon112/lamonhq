@@ -8,7 +8,10 @@ import {
   deleteContentPost,
   updateContentStats,
 } from "@/app/actions/content";
-import { refreshYouTubeStats } from "@/app/actions/analytics";
+import {
+  refreshYouTubeStats,
+  refreshTikTokStats,
+} from "@/app/actions/analytics";
 import {
   StatTile,
   TabButton,
@@ -32,6 +35,7 @@ interface AnalyticsPanelProps {
   initialList: ContentPostRow[];
   initialStats: ContentStats;
   initialYoutube: ChannelStatsView;
+  initialTiktok: Array<{ handle: string; view: ChannelStatsView }>;
 }
 
 const PLATFORM_LABEL: Record<string, string> = {
@@ -47,10 +51,59 @@ function formatViews(n: number): string {
   return n.toString();
 }
 
+type ChannelPlatform = "youtube" | "instagram" | "tiktok" | "linkedin";
+
+function buildView(
+  prev: ChannelStatsView,
+  next: {
+    handle: string | null;
+    channel_id: string | null;
+    subscribers: number;
+    total_views: number;
+    video_count: number;
+    fetched_at: string;
+  },
+  platform: ChannelPlatform,
+): ChannelStatsView {
+  const newSnap = {
+    id: crypto.randomUUID(),
+    platform,
+    handle: next.handle,
+    channel_id: next.channel_id,
+    subscribers: next.subscribers,
+    total_views: next.total_views,
+    video_count: next.video_count,
+    fetched_at: next.fetched_at,
+  };
+  const prevSnap = prev.latest;
+  const sub = (k: keyof typeof newSnap) =>
+    prevSnap && newSnap[k] != null && prevSnap[k] != null
+      ? (newSnap[k] as number) - (prevSnap[k] as number)
+      : null;
+  return {
+    latest: newSnap,
+    previous: prevSnap,
+    deltaSubscribers: sub("subscribers"),
+    deltaTotalViews: sub("total_views"),
+    deltaVideoCount: sub("video_count"),
+    deltaSinceDays: prevSnap
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(newSnap.fetched_at).getTime() -
+              new Date(prevSnap.fetched_at).getTime()) /
+              86_400_000,
+          ),
+        )
+      : null,
+  };
+}
+
 export function AnalyticsPanel({
   initialList,
   initialStats,
   initialYoutube,
+  initialTiktok,
 }: AnalyticsPanelProps) {
   const [tab, setTab] = useState<Tab>("list");
   const [filter, setFilter] = useState<Platform>("all");
@@ -58,59 +111,89 @@ export function AnalyticsPanel({
   const [stats, setStats] = useState(initialStats);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // YouTube
   const [youtube, setYoutube] = useState(initialYoutube);
   const [ytRefreshing, setYtRefreshing] = useState(false);
   const [ytError, setYtError] = useState<string | null>(null);
+
+  // TikTok (map keyed by handle)
+  const [tiktok, setTiktok] = useState(initialTiktok);
+  const [ttRefreshing, setTtRefreshing] = useState(false);
+  const [ttError, setTtError] = useState<string | null>(null);
 
   const ytLatest = youtube.latest;
   const ytStale = !ytLatest
     ? true
     : Date.now() - new Date(ytLatest.fetched_at).getTime() > 10 * 60 * 1000;
 
+  const ttStale = tiktok.some(
+    (t) =>
+      !t.view.latest ||
+      Date.now() - new Date(t.view.latest.fetched_at).getTime() >
+        10 * 60 * 1000,
+  );
+
   async function refreshYoutube(force = false) {
     setYtRefreshing(true);
     setYtError(null);
     const res = await refreshYouTubeStats({ force });
     if (!res.ok) setYtError(res.error ?? "YouTube refresh failed");
-    if (res.ok && res.stats) {
-      const newSnap = {
-        id: crypto.randomUUID(),
-        platform: "youtube" as const,
-        handle: res.stats.handle,
-        channel_id: res.stats.channelId,
-        subscribers: res.stats.subscribers,
-        total_views: res.stats.totalViews,
-        video_count: res.stats.videoCount,
-        fetched_at: res.fetchedAt ?? new Date().toISOString(),
-      };
-      const prev = youtube.latest;
-      const sub = (k: keyof typeof newSnap) =>
-        prev && newSnap[k] != null && prev[k] != null
-          ? (newSnap[k] as number) - (prev[k] as number)
-          : null;
-      setYoutube({
-        latest: newSnap,
-        previous: prev,
-        deltaSubscribers: sub("subscribers"),
-        deltaTotalViews: sub("total_views"),
-        deltaVideoCount: sub("video_count"),
-        deltaSinceDays: prev
-          ? Math.max(
-              0,
-              Math.round(
-                (new Date(newSnap.fetched_at).getTime() -
-                  new Date(prev.fetched_at).getTime()) /
-                  86_400_000,
-              ),
-            )
-          : null,
-      });
+    if (res.ok && res.stats && res.fetchedAt) {
+      setYoutube((prev) =>
+        buildView(
+          prev,
+          {
+            handle: res.stats!.handle,
+            channel_id: res.stats!.channelId,
+            subscribers: res.stats!.subscribers,
+            total_views: res.stats!.totalViews,
+            video_count: res.stats!.videoCount,
+            fetched_at: res.fetchedAt!,
+          },
+          "youtube",
+        ),
+      );
     }
     setYtRefreshing(false);
   }
 
+  async function refreshTiktok(force = false) {
+    setTtRefreshing(true);
+    setTtError(null);
+    const res = await refreshTikTokStats({ force });
+    const errors = res.results.filter((r) => !r.ok);
+    if (errors.length)
+      setTtError(
+        errors.map((e) => `${e.handle}: ${e.error ?? "fail"}`).join(" · "),
+      );
+    setTiktok((prev) =>
+      prev.map((entry) => {
+        const r = res.results.find((x) => x.handle === entry.handle);
+        if (!r || !r.ok || !r.stats || !r.fetchedAt) return entry;
+        return {
+          handle: entry.handle,
+          view: buildView(
+            entry.view,
+            {
+              handle: r.stats.handle,
+              channel_id: r.stats.uniqueId,
+              subscribers: r.stats.followers,
+              total_views: r.stats.hearts,
+              video_count: r.stats.videoCount,
+              fetched_at: r.fetchedAt,
+            },
+            "tiktok",
+          ),
+        };
+      }),
+    );
+    setTtRefreshing(false);
+  }
+
   useEffect(() => {
     if (ytStale && !ytRefreshing) void refreshYoutube(false);
+    if (ttStale && !ttRefreshing) void refreshTiktok(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -222,79 +305,38 @@ export function AnalyticsPanel({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-border bg-bg-card/60 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-text-muted">
-              YouTube channel · auto
-            </div>
-            <div className="mt-0.5 flex items-baseline gap-2">
-              <span className="text-sm font-medium text-text">
-                {ytLatest?.handle ?? "@lamon.leonardo"}
-              </span>
-              {ytLatest?.fetched_at && (
-                <span className="text-[10px] text-text-dim">
-                  refreshed {formatRelative(ytLatest.fetched_at)}
-                </span>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => void refreshYoutube(true)}
-            disabled={ytRefreshing}
-            className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-text-muted transition-colors hover:border-gold/40 hover:text-gold disabled:opacity-50"
-            title="Force refresh"
-          >
-            <RefreshCw
-              size={12}
-              className={ytRefreshing ? "animate-spin" : ""}
-            />
-            {ytRefreshing ? "Sync…" : "Sync now"}
-          </button>
-        </div>
-        {ytError && (
-          <div className="mb-2 rounded border border-danger/40 bg-danger/10 px-2 py-1 text-[11px] text-danger">
-            {ytError}
-          </div>
-        )}
-        <div className="grid grid-cols-3 gap-2">
-          <StatTile
-            label="Subscribers"
-            value={
-              ytLatest?.subscribers != null
-                ? formatViews(ytLatest.subscribers)
-                : "—"
+      <ChannelHero
+        emoji="🎬"
+        platformLabel="YouTube"
+        view={youtube}
+        defaultHandle="@LeonardoLamonOfficial"
+        subsLabel="Subscribers"
+        viewsLabel="Total views"
+        videosLabel="Videos"
+        refreshing={ytRefreshing}
+        error={ytError}
+        onRefresh={() => void refreshYoutube(true)}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {tiktok.map((entry) => (
+          <ChannelHero
+            key={entry.handle}
+            emoji="🎵"
+            platformLabel="TikTok"
+            view={entry.view}
+            defaultHandle={entry.handle}
+            subsLabel="Followers"
+            viewsLabel="Total likes"
+            videosLabel="Videos"
+            refreshing={ttRefreshing}
+            error={
+              entry === tiktok[0] ? ttError : null /* show shared error once */
             }
-            hint={
-              youtube.deltaSubscribers != null && youtube.deltaSubscribers !== 0
-                ? `${youtube.deltaSubscribers > 0 ? "+" : ""}${youtube.deltaSubscribers}${youtube.deltaSinceDays ? ` · ${youtube.deltaSinceDays}d` : ""}`
-                : undefined
-            }
-            accent="gold"
+            onRefresh={() => void refreshTiktok(true)}
+            compact
           />
-          <StatTile
-            label="Total views"
-            value={
-              ytLatest?.total_views != null
-                ? formatViews(ytLatest.total_views)
-                : "—"
-            }
-            hint={
-              youtube.deltaTotalViews != null && youtube.deltaTotalViews !== 0
-                ? `${youtube.deltaTotalViews > 0 ? "+" : ""}${formatViews(youtube.deltaTotalViews)}`
-                : undefined
-            }
-          />
-          <StatTile
-            label="Videos"
-            value={ytLatest?.video_count?.toString() ?? "—"}
-            hint={
-              youtube.deltaVideoCount != null && youtube.deltaVideoCount !== 0
-                ? `${youtube.deltaVideoCount > 0 ? "+" : ""}${youtube.deltaVideoCount}`
-                : undefined
-            }
-          />
-        </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -541,6 +583,110 @@ export function AnalyticsPanel({
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+interface ChannelHeroProps {
+  emoji: string;
+  platformLabel: string;
+  view: ChannelStatsView;
+  defaultHandle: string;
+  subsLabel: string;
+  viewsLabel: string;
+  videosLabel: string;
+  refreshing: boolean;
+  error: string | null;
+  onRefresh: () => void;
+  compact?: boolean;
+}
+
+function ChannelHero({
+  emoji,
+  platformLabel,
+  view,
+  defaultHandle,
+  subsLabel,
+  viewsLabel,
+  videosLabel,
+  refreshing,
+  error,
+  onRefresh,
+  compact,
+}: ChannelHeroProps) {
+  const latest = view.latest;
+  return (
+    <div
+      className={
+        "rounded-lg border border-border bg-bg-card/60 " +
+        (compact ? "p-3" : "p-4")
+      }
+    >
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-wider text-text-muted">
+            {emoji} {platformLabel} · auto
+          </div>
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <span className="truncate text-sm font-medium text-text">
+              {latest?.handle ?? defaultHandle}
+            </span>
+            {latest?.fetched_at && (
+              <span className="shrink-0 text-[10px] text-text-dim">
+                {formatRelative(latest.fetched_at)}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={onRefresh}
+          disabled={refreshing}
+          className="flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] uppercase tracking-wider text-text-muted transition-colors hover:border-gold/40 hover:text-gold disabled:opacity-50"
+          title="Force refresh"
+        >
+          <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+          {refreshing ? "Sync…" : "Sync"}
+        </button>
+      </div>
+      {error && (
+        <div className="mb-2 rounded border border-danger/40 bg-danger/10 px-2 py-1 text-[11px] text-danger">
+          {error}
+        </div>
+      )}
+      <div className="grid grid-cols-3 gap-2">
+        <StatTile
+          label={subsLabel}
+          value={
+            latest?.subscribers != null ? formatViews(latest.subscribers) : "—"
+          }
+          hint={
+            view.deltaSubscribers != null && view.deltaSubscribers !== 0
+              ? `${view.deltaSubscribers > 0 ? "+" : ""}${view.deltaSubscribers}${view.deltaSinceDays ? ` · ${view.deltaSinceDays}d` : ""}`
+              : undefined
+          }
+          accent="gold"
+        />
+        <StatTile
+          label={viewsLabel}
+          value={
+            latest?.total_views != null ? formatViews(latest.total_views) : "—"
+          }
+          hint={
+            view.deltaTotalViews != null && view.deltaTotalViews !== 0
+              ? `${view.deltaTotalViews > 0 ? "+" : ""}${formatViews(view.deltaTotalViews)}`
+              : undefined
+          }
+        />
+        <StatTile
+          label={videosLabel}
+          value={latest?.video_count?.toString() ?? "—"}
+          hint={
+            view.deltaVideoCount != null && view.deltaVideoCount !== 0
+              ? `${view.deltaVideoCount > 0 ? "+" : ""}${view.deltaVideoCount}`
+              : undefined
+          }
+        />
+      </div>
     </div>
   );
 }

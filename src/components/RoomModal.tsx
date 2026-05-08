@@ -44,6 +44,7 @@ export interface RoomData {
     list: ContentPostRow[];
     stats: ContentStats;
     youtube: ChannelStatsView;
+    tiktok: Array<{ handle: string; view: ChannelStatsView }>;
   };
   competitor: {
     list: CompetitorRow[];
@@ -182,6 +183,7 @@ function RoomBody({
           initialList={data.content.list}
           initialStats={data.content.stats}
           initialYoutube={data.content.youtube}
+          initialTiktok={data.content.tiktok}
         />
       );
     case "competitor":

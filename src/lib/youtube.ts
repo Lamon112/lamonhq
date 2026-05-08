@@ -30,7 +30,7 @@ function requireKey(): string {
 }
 
 export function defaultHandle(): string {
-  return process.env.YOUTUBE_CHANNEL_HANDLE ?? "@lamon.leonardo";
+  return process.env.YOUTUBE_CHANNEL_HANDLE ?? "@LeonardoLamonOfficial";
 }
 
 /**

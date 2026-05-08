@@ -477,14 +477,17 @@ export interface ChannelStatsView {
 
 export async function getChannelStatsView(
   platform: ChannelStatsSnapshot["platform"] = "youtube",
+  handle?: string,
 ): Promise<ChannelStatsView> {
   const supabase = await createClient();
-  const { data } = await supabase
+  let q = supabase
     .from("social_channel_stats")
     .select(
       "id, platform, handle, channel_id, subscribers, total_views, video_count, fetched_at",
     )
-    .eq("platform", platform)
+    .eq("platform", platform);
+  if (handle) q = q.eq("handle", handle);
+  const { data } = await q
     .order("fetched_at", { ascending: false })
     .limit(2);
 
@@ -517,6 +520,17 @@ export async function getChannelStatsView(
     deltaVideoCount: sub("video_count"),
     deltaSinceDays,
   };
+}
+
+export async function getChannelStatsByHandles(
+  platform: ChannelStatsSnapshot["platform"],
+  handles: string[],
+): Promise<Array<{ handle: string; view: ChannelStatsView }>> {
+  const out: Array<{ handle: string; view: ChannelStatsView }> = [];
+  for (const h of handles) {
+    out.push({ handle: h, view: await getChannelStatsView(platform, h) });
+  }
+  return out;
 }
 
 // =====================================================================
