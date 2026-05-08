@@ -4,10 +4,12 @@ import { ActionBar } from "@/components/ActionBar";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { DailyBriefing } from "@/components/DailyBriefing";
 import { FollowUpsPanel } from "@/components/FollowUpsPanel";
+import { InboxTriage } from "@/components/InboxTriage";
 import { getRecentActivity } from "@/app/actions/activityLog";
 import { getXpStats } from "@/app/actions/xp";
 import { getTodaysBriefing } from "@/app/actions/briefing";
 import { getPendingFollowUps } from "@/app/actions/followUps";
+import { getPendingInbound } from "@/app/actions/inbound";
 import { createClient } from "@/lib/supabase/server";
 import {
   getHQStats,
@@ -62,6 +64,7 @@ export default async function HQPage() {
     xpStats,
     todaysBriefing,
     followUps,
+    inboundMessages,
   ] = await Promise.all([
     getHQStats(),
     getOutreachStats(),
@@ -85,6 +88,7 @@ export default async function HQPage() {
     getXpStats(),
     getTodaysBriefing(),
     getPendingFollowUps(),
+    getPendingInbound(),
   ]);
 
   const userMeta = {
@@ -104,6 +108,7 @@ export default async function HQPage() {
       <ResourceBar stats={stats} xp={xpStats} user={userMeta} />
       <DailyBriefing initialBriefing={todaysBriefing} />
       <FollowUpsPanel initialDrafts={followUps} />
+      <InboxTriage initialMessages={inboundMessages} />
       <Building
         data={{
           outreach: { list: outreachList, stats: outreachStats },
