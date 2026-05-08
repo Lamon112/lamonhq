@@ -1,5 +1,6 @@
 "use server";
 
+import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { searchText, type PlaceResult } from "@/lib/places";
@@ -9,6 +10,7 @@ import {
   type ApolloOrg,
   type ApolloPerson,
 } from "@/lib/apollo";
+import { scrapeSite } from "@/lib/scraper";
 import { logActivity } from "./activityLog";
 
 export interface ProspectorInput {
@@ -20,6 +22,15 @@ export interface ProspectorInput {
   count?: number;
   /** ISO country bias for Places, e.g. "hr" */
   regionCode?: string;
+}
+
+export interface ClinicOwner {
+  name: string;
+  role?: string;
+  linkedin?: string;
+  email?: string;
+  phone?: string;
+  source?: "website" | "apollo";
 }
 
 export interface ProspectCandidate {
@@ -34,6 +45,23 @@ export interface ProspectCandidate {
   googleMapsUri?: string;
   apolloOrg?: ApolloOrg;
   topPeople?: ApolloPerson[];
+  /** AI-extracted owners/directors from website (and Apollo if present) */
+  owners?: ClinicOwner[];
+  /** AI-scored ICP 0-20 */
+  icpScore?: number;
+  icpBreakdown?: {
+    lice_branda: number;
+    edge: number;
+    premium: number;
+    dokaz: number;
+    brzina_odluke: number;
+  };
+  /** Short list of premium/edge signals AI saw (services, awards, brand cues) */
+  premiumSignals?: string[];
+  /** AI's one-line reasoning for the score */
+  scoreReasoning?: string;
+  /** Diagnostics: which website paths were scraped */
+  scrapedPages?: string[];
 }
 
 export interface ProspectorResult {
@@ -43,6 +71,188 @@ export interface ProspectorResult {
   /** Diagnostics: how many enrich/top_people calls succeeded */
   enrichedCount?: number;
   peopleCount?: number;
+  /** Diagnostics: how many candidates AI scored */
+  scoredCount?: number;
+}
+
+const ENRICH_SYSTEM_PROMPT = `Ti si AI Lead Enricher za Lamon Agency (Lamon HQ — agencija koja prodaje "Rast paket" za B2B klinike: 1.997€ setup + 1.497€/mj za AI receptionist + 24/7 booking system).
+
+Dobio si scraped tekst s web stranice klinike. Tvoj zadatak: izvući vlasnike/direktore/ključno osoblje + score-ati klinika protiv ICP-a Lamon Agencije.
+
+# ICP kriteriji (svaki 0-4, total 0-20):
+
+- **lice_branda** (0-4): Postoji li jasno "lice" branda — vlasnik / founder / istaknuti doktor s prepoznatljivim imenom? Premium klinike obično imaju to. 0 = anonimna, 4 = vrlo jasno lice.
+- **edge** (0-4): Imaju li jasnu razliku od konkurencije (USP, niche specijalnost, posebna metoda, awards)? 0 = generic, 4 = jasan edge.
+- **premium** (0-4): Pozicioniranje i cijena premium tier (ne discount)? Tragovi: estetska medicina, conservative dentistry, "luksuz", visokokvalitetni materijali, after-hours support, designer interijer. 0 = budget, 4 = clearly premium.
+- **dokaz** (0-4): Postoje testimonials, case studies, prije/poslije slike, results, partneri, awards? 0 = ni traga, 4 = jako bogato.
+- **brzina_odluke** (0-4): Mali decision-making (1-2 osobe, vlasnik = doktor) = bitno. Velike grupe / lanci s upravom = sporo. 0 = veliki lanac, 4 = solo praksa s vlasnikom-doktorom.
+
+# Vlasnici / decision makers
+
+Iz scraped texta izvuci konkretna imena ljudi koji su vlasnici, direktori, founderi ILI top doktori s LinkedIn-om (ako vidiš). Tipično na "Tim", "O nama", "Liječnici" stranici.
+
+Format: { name, role, linkedin?, email?, phone? }
+
+Ako tekst ne pokazuje konkretne vlasnike (npr. samo opis usluga), vrati \`owners: []\` i \`scoreReasoning\` napomeni.
+
+# Premium signals
+
+Ekstraktiraj **3-5 konkretnih kratkih natuknica** o premium/edge tragovima koje vidiš (npr. "European Society of Implantology member", "designer interijer s mramornim podom", "after-hours emergency", "20+ godina iskustva"). Ne generic — konkretno.
+
+# Format izlaza — STRIKT JSON, ništa drugo:
+
+{
+  "owners": [{"name": "dr. Marko Marčelić", "role": "Founder & glavni doktor", "linkedin": "https://...", "email": null, "phone": null}],
+  "icp_breakdown": {
+    "lice_branda": 3,
+    "edge": 2,
+    "premium": 4,
+    "dokaz": 3,
+    "brzina_odluke": 4
+  },
+  "icp_score": 16,
+  "premium_signals": ["...", "..."],
+  "score_reasoning": "1 rečenica zašto si dao taj score."
+}
+
+NE dodaj markdown code fence, NE objašnjenja, samo JSON.`;
+
+interface ParsedEnrichment {
+  owners: Array<{
+    name: string;
+    role?: string;
+    linkedin?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }>;
+  icp_breakdown: {
+    lice_branda: number;
+    edge: number;
+    premium: number;
+    dokaz: number;
+    brzina_odluke: number;
+  };
+  icp_score: number;
+  premium_signals: string[];
+  score_reasoning: string;
+}
+
+function parseEnrichment(raw: string): ParsedEnrichment | null {
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+  try {
+    return JSON.parse(cleaned) as ParsedEnrichment;
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1)) as ParsedEnrichment;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+async function enrichAndScoreClinic(
+  anthropic: Anthropic,
+  c: ProspectCandidate,
+): Promise<ProspectCandidate> {
+  // 1. Try to scrape the website (fail silently — Apollo + Places data still useful)
+  let scrapedText: string | null = null;
+  let scrapedPages: string[] = [];
+  if (c.website) {
+    const scraped = await scrapeSite(c.website);
+    if (scraped) {
+      scrapedText = scraped.combinedText;
+      scrapedPages = scraped.pages.map((p) => p.url);
+    }
+  }
+
+  // 2. Build context for AI
+  const apolloHints: string[] = [];
+  if (c.apolloOrg?.industry)
+    apolloHints.push(`Industry: ${c.apolloOrg.industry}`);
+  if (c.apolloOrg?.estimated_num_employees)
+    apolloHints.push(`Employees: ${c.apolloOrg.estimated_num_employees}`);
+  if (c.apolloOrg?.linkedin_url)
+    apolloHints.push(`Org LinkedIn: ${c.apolloOrg.linkedin_url}`);
+  if (c.rating !== undefined && c.reviewCount !== undefined)
+    apolloHints.push(`Google rating: ${c.rating} (${c.reviewCount} reviews)`);
+
+  // Apollo top_people (if any) — use as decision-maker hints
+  const apolloPeopleSummary =
+    c.topPeople && c.topPeople.length > 0
+      ? c.topPeople
+          .slice(0, 5)
+          .map((p) => {
+            const fullName =
+              [p.first_name, p.last_name].filter(Boolean).join(" ") ||
+              p.name ||
+              "?";
+            return `- ${fullName}${p.title ? ` (${p.title})` : ""}${p.linkedin_url ? ` ${p.linkedin_url}` : ""}`;
+          })
+          .join("\n")
+      : null;
+
+  const userMessage = `# Klinika
+**Name:** ${c.name}
+**Address:** ${c.address ?? "?"}
+**Website:** ${c.website ?? "?"}
+**Phone:** ${c.phone ?? "?"}
+
+# Apollo enrich data
+${apolloHints.length > 0 ? apolloHints.join("\n") : "(no Apollo data)"}
+
+${apolloPeopleSummary ? `# Apollo top people\n${apolloPeopleSummary}` : ""}
+
+# Scraped website content (multiple pages combined)
+${scrapedText ? scrapedText : "(website not reachable or no content)"}
+
+Sad ekstraktiraj vlasnike + score-aj ICP po pravilima. STRIKT JSON.`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1500,
+      system: [
+        {
+          type: "text",
+          text: ENRICH_SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+    });
+    const textBlock = message.content.find((b) => b.type === "text");
+    const raw =
+      textBlock && textBlock.type === "text" ? textBlock.text : "";
+    const parsed = parseEnrichment(raw);
+    if (!parsed) return { ...c, scrapedPages };
+
+    return {
+      ...c,
+      scrapedPages,
+      owners: parsed.owners.map((o) => ({
+        name: o.name,
+        role: o.role,
+        linkedin: o.linkedin ?? undefined,
+        email: o.email ?? undefined,
+        phone: o.phone ?? undefined,
+        source: "website",
+      })),
+      icpScore: parsed.icp_score,
+      icpBreakdown: parsed.icp_breakdown,
+      premiumSignals: parsed.premium_signals,
+      scoreReasoning: parsed.score_reasoning,
+    };
+  } catch {
+    return { ...c, scrapedPages };
+  }
 }
 
 interface ApolloConfig {
@@ -100,7 +310,7 @@ export async function runProspector(
   let peopleCount = 0;
 
   // 2. For each place, optionally enrich via Apollo (free tier)
-  const candidates: ProspectCandidate[] = await Promise.all(
+  const baseCandidates: ProspectCandidate[] = await Promise.all(
     placesRes.places.map(async (p: PlaceResult) => {
       const c: ProspectCandidate = {
         placeId: p.id,
@@ -138,30 +348,34 @@ export async function runProspector(
     }),
   );
 
+  // 3. AI enrich + ICP score per candidate (parallel, scrapes website + Claude)
+  let scoredCount = 0;
+  let candidates: ProspectCandidate[] = baseCandidates;
+  if (process.env.ANTHROPIC_API_KEY) {
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    candidates = await Promise.all(
+      baseCandidates.map(async (c) => {
+        const enriched = await enrichAndScoreClinic(anthropic, c);
+        if (typeof enriched.icpScore === "number") scoredCount++;
+        return enriched;
+      }),
+    );
+  }
+
   return {
     ok: true,
     candidates,
     enrichedCount,
     peopleCount,
+    scoredCount,
   };
 }
 
 export interface AddCandidatesInput {
-  candidates: Array<{
-    name: string;
-    address?: string;
-    website?: string;
-    phone?: string;
-    placeId: string;
-    googleMapsUri?: string;
-    employeeCount?: number;
-    industry?: string;
-    organizationLinkedin?: string;
-    /** Single decision-maker pre-selected for this lead row */
-    decisionMakerName?: string;
-    decisionMakerTitle?: string;
-    decisionMakerLinkedin?: string;
-  }>;
+  /** Full enriched ProspectCandidate snapshots — saves all AI work */
+  candidates: ProspectCandidate[];
 }
 
 export async function addProspectsToPipeline(
@@ -174,21 +388,60 @@ export async function addProspectsToPipeline(
   const userId = userData.user.id;
   let added = 0;
   for (const c of input.candidates) {
-    const leadName = c.decisionMakerName
-      ? `${c.name} / ${c.decisionMakerName}`
-      : c.name;
+    // Pick the primary owner (first AI-extracted, fallback to Apollo top person)
+    const primaryOwner = c.owners?.[0];
+    const fallbackPerson =
+      !primaryOwner && c.topPeople && c.topPeople.length > 0
+        ? c.topPeople[0]
+        : null;
+    const ownerName =
+      primaryOwner?.name ??
+      (fallbackPerson
+        ? [fallbackPerson.first_name, fallbackPerson.last_name]
+            .filter(Boolean)
+            .join(" ") ||
+          fallbackPerson.name ||
+          undefined
+        : undefined);
+    const ownerRole = primaryOwner?.role ?? fallbackPerson?.title ?? undefined;
+    const ownerLinkedin =
+      primaryOwner?.linkedin ?? fallbackPerson?.linkedin_url ?? undefined;
+    const ownerEmail = primaryOwner?.email ?? fallbackPerson?.email ?? undefined;
+    const ownerPhone = primaryOwner?.phone;
+
+    const leadName = ownerName ? `${c.name} / ${ownerName}` : c.name;
+
     const notesParts = [
-      c.decisionMakerTitle ? `Title: ${c.decisionMakerTitle}` : null,
-      c.decisionMakerLinkedin ? `LinkedIn: ${c.decisionMakerLinkedin}` : null,
-      c.organizationLinkedin ? `Org LinkedIn: ${c.organizationLinkedin}` : null,
-      c.industry ? `Industry: ${c.industry}` : null,
-      typeof c.employeeCount === "number"
-        ? `Employees: ${c.employeeCount}`
+      c.scoreReasoning ? `🤖 ${c.scoreReasoning}` : null,
+      c.premiumSignals && c.premiumSignals.length > 0
+        ? `✨ Premium signals: ${c.premiumSignals.join(" · ")}`
+        : null,
+      ownerRole ? `Title: ${ownerRole}` : null,
+      ownerLinkedin ? `LinkedIn: ${ownerLinkedin}` : null,
+      ownerPhone ? `Owner phone: ${ownerPhone}` : null,
+      c.apolloOrg?.linkedin_url
+        ? `Org LinkedIn: ${c.apolloOrg.linkedin_url}`
+        : null,
+      c.apolloOrg?.industry ? `Industry: ${c.apolloOrg.industry}` : null,
+      typeof c.apolloOrg?.estimated_num_employees === "number"
+        ? `Employees: ${c.apolloOrg.estimated_num_employees}`
+        : null,
+      c.rating !== undefined && c.reviewCount !== undefined
+        ? `Google: ⭐ ${c.rating} (${c.reviewCount})`
         : null,
       c.address ? `Address: ${c.address}` : null,
       c.phone ? `Phone: ${c.phone}` : null,
       c.website ? `Website: ${c.website}` : null,
       c.googleMapsUri ? `Maps: ${c.googleMapsUri}` : null,
+      c.owners && c.owners.length > 1
+        ? `Other contacts:\n${c.owners
+            .slice(1, 4)
+            .map(
+              (o) =>
+                `  - ${o.name}${o.role ? ` (${o.role})` : ""}${o.linkedin ? ` ${o.linkedin}` : ""}${o.email ? ` ${o.email}` : ""}`,
+            )
+            .join("\n")}`
+        : null,
       `Place ID: ${c.placeId}`,
     ]
       .filter(Boolean)
@@ -199,9 +452,11 @@ export async function addProspectsToPipeline(
       .insert({
         user_id: userId,
         name: leadName,
+        email: ownerEmail ?? null,
         source: "other",
         stage: "discovery",
-        icp_breakdown: {},
+        icp_score: c.icpScore ?? 0,
+        icp_breakdown: c.icpBreakdown ?? {},
         notes: notesParts,
       })
       .select("id")
@@ -212,11 +467,20 @@ export async function addProspectsToPipeline(
 
     void logActivity(userId, {
       type: "lead_scored",
-      title: `AI Prospector → ${leadName}`,
-      summary: c.industry ?? c.address ?? "Prospect added",
+      title: `AI Prospector → ${leadName}${typeof c.icpScore === "number" ? ` · ${c.icpScore}/20` : ""}`,
+      summary:
+        c.scoreReasoning ??
+        c.apolloOrg?.industry ??
+        c.address ??
+        "Prospect added",
       hqRoom: "lead_scorer",
       hqRowId: data.id,
-      tags: ["prospector", "places", c.industry].filter(Boolean) as string[],
+      tags: [
+        "prospector",
+        "places",
+        c.apolloOrg?.industry,
+        typeof c.icpScore === "number" && c.icpScore >= 14 ? "hot" : null,
+      ].filter(Boolean) as string[],
     });
   }
 

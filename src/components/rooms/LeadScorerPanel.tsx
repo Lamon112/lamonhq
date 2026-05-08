@@ -855,37 +855,15 @@ function ProspectorTab() {
     setBusyAdd(true);
     setError(null);
     setInfo(null);
-    const candidates = results.map((c, idx) => {
-      const personIdx = selectedPersons[idx];
-      const person =
-        typeof personIdx === "number" ? c.topPeople?.[personIdx] : undefined;
-      return {
-        name: c.name,
-        address: c.address,
-        website: c.website,
-        phone: c.phone,
-        placeId: c.placeId,
-        googleMapsUri: c.googleMapsUri,
-        employeeCount: c.apolloOrg?.estimated_num_employees,
-        industry: c.apolloOrg?.industry,
-        organizationLinkedin: c.apolloOrg?.linkedin_url,
-        decisionMakerName: person
-          ? [person.first_name, person.last_name].filter(Boolean).join(" ") ||
-            person.name
-          : undefined,
-        decisionMakerTitle: person?.title,
-        decisionMakerLinkedin: person?.linkedin_url,
-      };
-    });
     startTransition(async () => {
-      const res = await addProspectsToPipeline({ candidates });
+      const res = await addProspectsToPipeline({ candidates: results });
       setBusyAdd(false);
       if (!res.ok) {
         setError(res.error ?? "Add to pipeline greška");
         return;
       }
       setInfo(
-        `${res.added} klijenata dodano u Pipeline. Otvori List tab da vidiš.`,
+        `${res.added} klijenata dodano u Pipeline (s ICP score-om i kontaktima vlasnika). Otvori List tab da vidiš.`,
       );
     });
   }
@@ -970,8 +948,12 @@ function ProspectorTab() {
       {results.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-text-muted">
           <span>
-            ✅ {results.length} klinika · 🔬 {enrichedCount} enriched · 👥{" "}
-            {peopleCount} decision-makera nađeno
+            ✅ {results.length} klinika · 🔬 {enrichedCount} Apollo enriched ·
+            🤖{" "}
+            {results.filter((r) => typeof r.icpScore === "number").length}{" "}
+            AI-scored · 👥{" "}
+            {results.reduce((s, r) => s + (r.owners?.length ?? 0), 0)} vlasnika
+            izvučeno
           </span>
           <button
             type="button"
@@ -1000,6 +982,24 @@ function ProspectorTab() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
+                    {typeof c.icpScore === "number" && (
+                      <span
+                        className={
+                          "flex h-9 w-12 shrink-0 flex-col items-center justify-center rounded-md border text-xs font-bold " +
+                          (c.icpScore >= 15
+                            ? "border-success/60 bg-success/15 text-success"
+                            : c.icpScore >= 10
+                              ? "border-warning/60 bg-warning/15 text-warning"
+                              : "border-border bg-bg/60 text-text-muted")
+                        }
+                        title={c.scoreReasoning ?? "AI ICP score"}
+                      >
+                        <span className="leading-none">{c.icpScore}</span>
+                        <span className="text-[8px] opacity-70 uppercase tracking-wider">
+                          /20
+                        </span>
+                      </span>
+                    )}
                     <span className="text-sm font-semibold text-text">
                       {c.name}
                     </span>
@@ -1020,6 +1020,23 @@ function ProspectorTab() {
                       </span>
                     )}
                   </div>
+                  {c.scoreReasoning && (
+                    <p className="mt-1 text-[11px] italic text-text-dim">
+                      🤖 {c.scoreReasoning}
+                    </p>
+                  )}
+                  {c.premiumSignals && c.premiumSignals.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {c.premiumSignals.map((sig, i) => (
+                        <span
+                          key={i}
+                          className="rounded border border-purple-500/30 bg-purple-500/5 px-1.5 py-0.5 text-[9px] text-purple-300"
+                        >
+                          ✨ {sig}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {c.address && (
                     <p className="mt-0.5 text-[11px] text-text-dim">
                       📍 {c.address}
@@ -1063,84 +1080,72 @@ function ProspectorTab() {
                 </div>
               </div>
 
-              {c.topPeople && c.topPeople.length > 0 && (
+              {c.owners && c.owners.length > 0 && (
                 <div className="mt-3 rounded-md border border-purple-500/20 bg-purple-500/5 p-2">
                   <div className="mb-1 text-[10px] uppercase tracking-wider text-purple-300">
-                    Decision makers ({c.topPeople.length})
+                    🤖 AI izvukao vlasnike ({c.owners.length})
                   </div>
-                  <div className="space-y-1">
-                    {c.topPeople.map((p, pIdx) => {
-                      const fullName =
-                        [p.first_name, p.last_name]
-                          .filter(Boolean)
-                          .join(" ") ||
-                        p.name ||
-                        "?";
-                      const isSelected = selectedPersonIdx === pIdx;
-                      return (
-                        <label
-                          key={p.id}
-                          className={
-                            "flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1 text-[11px] transition-colors " +
-                            (isSelected
-                              ? "bg-purple-500/15 text-text"
-                              : "text-text-dim hover:bg-bg-card/60")
-                          }
-                        >
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name={`person-${idx}`}
-                              checked={isSelected}
-                              onChange={() => pickPerson(idx, pIdx)}
-                              className="accent-purple-500"
-                            />
-                            <span className="font-medium">{fullName}</span>
-                            {p.title && (
-                              <span className="text-text-muted">
-                                · {p.title}
-                              </span>
-                            )}
-                          </div>
-                          {p.linkedin_url && (
-                            <a
-                              href={p.linkedin_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-blue-400 hover:underline"
-                            >
-                              <ExternalLink size={10} className="inline" />
-                            </a>
+                  <div className="space-y-0.5">
+                    {c.owners.map((o, pIdx) => (
+                      <div
+                        key={`${idx}-owner-${pIdx}`}
+                        className="flex items-center justify-between gap-2 rounded px-2 py-1 text-[11px] text-text-dim hover:bg-bg-card/60"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          {pIdx === 0 && (
+                            <span className="rounded border border-success/40 bg-success/10 px-1 py-0 text-[9px] uppercase tracking-wider text-success">
+                              primary
+                            </span>
                           )}
-                        </label>
-                      );
-                    })}
-                    {selectedPersonIdx !== null &&
-                      selectedPersonIdx !== undefined && (
-                        <button
-                          type="button"
-                          onClick={() => pickPerson(idx, null)}
-                          className="text-[10px] text-text-muted hover:text-text-dim"
-                        >
-                          Odznači
-                        </button>
-                      )}
+                          <span className="font-medium text-text">
+                            {o.name}
+                          </span>
+                          {o.role && (
+                            <span className="text-text-muted">
+                              · {o.role}
+                            </span>
+                          )}
+                          {o.email && (
+                            <span className="rounded border border-success/30 bg-success/5 px-1 py-0 text-[9px] text-success">
+                              {o.email}
+                            </span>
+                          )}
+                          {o.phone && (
+                            <span className="text-text-muted">
+                              📞 {o.phone}
+                            </span>
+                          )}
+                        </div>
+                        {o.linkedin && (
+                          <a
+                            href={o.linkedin}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-400 hover:underline"
+                          >
+                            <ExternalLink size={10} className="inline" />
+                          </a>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {(!c.topPeople || c.topPeople.length === 0) && c.apolloOrg && (
-                <div className="mt-2 text-[10px] italic text-text-muted">
-                  Apollo enriched org, ali bez top decision-makera. Provjeri
-                  ručno na LinkedIn-u.
-                </div>
-              )}
-              {!c.apolloOrg && c.domain && (
-                <div className="mt-2 text-[10px] italic text-text-muted">
-                  Apollo nije imao podatke za {c.domain}.
-                </div>
-              )}
+              {(!c.owners || c.owners.length === 0) &&
+                c.scrapedPages &&
+                c.scrapedPages.length > 0 && (
+                  <div className="mt-2 text-[10px] italic text-text-muted">
+                    Web scraping nije našao konkretnog vlasnika — provjeri
+                    ručno na LinkedIn-u ili klinika nema "Tim" stranicu.
+                  </div>
+                )}
+              {(!c.scrapedPages || c.scrapedPages.length === 0) &&
+                c.website && (
+                  <div className="mt-2 text-[10px] italic text-text-muted">
+                    Website nije bio dostupan za AI scrape.
+                  </div>
+                )}
             </li>
           );
         })}
