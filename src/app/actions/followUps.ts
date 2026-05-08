@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { logActivity } from "./activityLog";
+import { pushTelegramNotification } from "./telegram";
 
 export interface PendingDraft {
   id: string;
@@ -400,7 +401,13 @@ export async function generateFollowUpsForAllUsers(): Promise<{
     const result = await generateFollowUpsForUser(userId, admin);
     if (!result.ok)
       errors.push(`user ${userId}: ${result.error ?? "unknown"}`);
-    else total += result.generated;
+    else {
+      total += result.generated;
+      if (result.generated > 0) {
+        const tgText = `📨 *Follow-ups spremni*\n\n${result.generated} draft${result.generated === 1 ? "" : "a"} čeka tvoj review za leadove tihe 4+ dana.\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
+        void pushTelegramNotification("followups", tgText, userId);
+      }
+    }
   }
   return { ok: errors.length === 0, totalGenerated: total, errors };
 }

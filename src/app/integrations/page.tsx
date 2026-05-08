@@ -1,15 +1,18 @@
 import Link from "next/link";
 import { getCalendlyStatus } from "@/app/actions/calendly";
 import { getNotionStatus } from "@/app/actions/notionSync";
+import { getTelegramStatus } from "@/app/actions/telegram";
 import { CalendlySetup } from "./CalendlySetup";
 import { NotionSetup } from "./NotionSetup";
+import { TelegramSetup } from "./TelegramSetup";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntegrationsPage() {
-  const [calendlyStatus, notionStatus] = await Promise.all([
+  const [calendlyStatus, notionStatus, telegramStatus] = await Promise.all([
     getCalendlyStatus(),
     getNotionStatus(),
+    getTelegramStatus(),
   ]);
 
   return (
@@ -42,6 +45,8 @@ export default async function IntegrationsPage() {
         <CalendlySetup initialStatus={calendlyStatus} />
         <div className="border-t border-border-strong" />
         <NotionSetup initialStatus={notionStatus} />
+        <div className="border-t border-border-strong" />
+        <TelegramSetup initialStatus={telegramStatus} />
       </main>
     </div>
   );

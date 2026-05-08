@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { pushTelegramNotification } from "./telegram";
 
 export interface BriefingAction {
   title: string;
@@ -465,7 +466,18 @@ export async function generateBriefingsForAllUsers(): Promise<{
         { onConflict: "user_id,briefing_date" },
       );
       if (error) errors.push(`user ${userId}: ${error.message}`);
-      else generated++;
+      else {
+        generated++;
+        // Push briefing summary to Telegram (no-op if not configured / disabled)
+        const top = parsed.top_actions
+          .slice(0, 5)
+          .map(
+            (a, i) => `${i + 1}. ${a.title}`,
+          )
+          .join("\n");
+        const tgText = `☀️ *Daily Briefing — ${ctx.weekday}*\n\n${parsed.greeting}\n\n*Top akcije:*\n${top}\n\n💪 _${parsed.motivational_hook}_\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
+        void pushTelegramNotification("briefing", tgText, userId);
+      }
     } catch (e) {
       errors.push(
         `user ${userId}: ${e instanceof Error ? e.message : "unknown"}`,

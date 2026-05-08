@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "./activityLog";
+import { pushTelegramNotification } from "./telegram";
 
 export type InboundCategory =
   | "interested"
@@ -209,6 +210,11 @@ export async function triageInbound(input: TriageInput): Promise<{
       )
       .single();
     if (error) return { ok: false, error: error.message };
+
+    // Push notification (only fires if user enabled inbound notifs)
+    const senderLabel = input.senderName ?? "lead";
+    const tgText = `📩 *Inbound triage* — _${parsed.category.toUpperCase()}_\n\n*Od:* ${senderLabel}\n*Sažetak:* ${parsed.summary}\n${parsed.suggested_stage ? `*Predlažem stage:* ${parsed.suggested_stage}\n` : ""}\n[Otvori HQ za reply](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
+    void pushTelegramNotification("inbound", tgText, userData.user.id);
 
     revalidatePath("/");
     return { ok: true, message: data as InboundMessage };
