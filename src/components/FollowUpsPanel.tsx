@@ -33,7 +33,7 @@ export function FollowUpsPanel({
   initialDrafts: PendingDraft[];
 }) {
   const [drafts, setDrafts] = useState(initialDrafts);
-  const [open, setOpen] = useState(initialDrafts.length > 0);
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>("");
   const [pending, startTransition] = useTransition();

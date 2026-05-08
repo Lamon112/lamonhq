@@ -26,7 +26,7 @@ export function DailyBriefing({
   initialBriefing: Briefing | null;
 }) {
   const [briefing, setBriefing] = useState<Briefing | null>(initialBriefing);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 

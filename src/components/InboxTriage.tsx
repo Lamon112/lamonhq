@@ -93,7 +93,7 @@ export function InboxTriage({
   initialMessages: InboundMessage[];
 }) {
   const [messages, setMessages] = useState(initialMessages);
-  const [open, setOpen] = useState(initialMessages.length > 0);
+  const [open, setOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
