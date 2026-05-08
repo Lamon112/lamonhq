@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LogOut, User } from "lucide-react";
+import { Database, LogOut, User } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import { formatEuro } from "@/lib/format";
@@ -142,6 +143,14 @@ export function ResourceBar({ stats, user }: ResourceBarProps) {
                 </div>
                 <div className="text-text-muted">{user.email}</div>
               </div>
+              <Link
+                href="/import"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-text-dim transition-colors hover:bg-bg-card hover:text-text"
+              >
+                <Database size={14} />
+                Import iz Notion-a
+              </Link>
               <form action={signOut}>
                 <button
                   type="submit"
