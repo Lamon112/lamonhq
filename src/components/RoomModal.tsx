@@ -31,6 +31,7 @@ import { AnalyticsPanel } from "./rooms/AnalyticsPanel";
 import { CompetitorPanel } from "./rooms/CompetitorPanel";
 import { CalendarPanel } from "./rooms/CalendarPanel";
 import { ReportsPanel } from "./rooms/ReportsPanel";
+import { BriefPanel } from "./rooms/BriefPanel";
 
 export interface RoomData {
   outreach: { list: OutreachRow[]; stats: OutreachStats };
@@ -194,6 +195,8 @@ function RoomBody({
           leads={data.leads.list}
         />
       );
+    case "brief":
+      return <BriefPanel initialList={data.leads.list} />;
     case "reports":
       return (
         <ReportsPanel

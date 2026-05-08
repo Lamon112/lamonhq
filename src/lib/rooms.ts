@@ -9,6 +9,7 @@ import {
   Users,
   Calendar,
   FileText,
+  Sparkles,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -22,7 +23,8 @@ export type RoomId =
   | "competitor"
   | "clients"
   | "calendar"
-  | "reports";
+  | "reports"
+  | "brief";
 
 export interface Room {
   id: RoomId;
@@ -122,13 +124,22 @@ const reports: Room = {
   floor: "operations",
 };
 
+const brief: Room = {
+  id: "brief",
+  name: "Brief Room",
+  tagline: "AI prep za nadolazeće sastanke",
+  icon: Sparkles,
+  emoji: "🧭",
+  floor: "operations",
+};
+
 export const FLOORS: Floor[] = [
   {
     id: "operations",
     number: 3,
     name: "Operations Hub",
-    subtitle: "Klijenti, kalendar, izvješća",
-    rooms: [clients, calendar, reports],
+    subtitle: "Klijenti, kalendar, brief",
+    rooms: [clients, calendar, brief],
   },
   {
     id: "intelligence",
