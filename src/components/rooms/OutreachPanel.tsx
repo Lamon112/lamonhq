@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   Mail,
   Send,
@@ -14,6 +14,8 @@ import {
   ThumbsDown,
   Layers,
   X as XIcon,
+  AtSign,
+  Zap,
 } from "lucide-react";
 import { addOutreach, updateOutreachStatus, deleteOutreach } from "@/app/actions/outreach";
 import {
@@ -21,6 +23,11 @@ import {
   draftOutreachVariants,
   saveAiFeedback,
 } from "@/app/actions/ai";
+import {
+  getGmailStatus,
+  sendViaGmail,
+  type GmailStatus,
+} from "@/app/actions/gmail";
 import { OUTREACH_TEMPLATES, type OutreachTemplate } from "@/lib/templates";
 import { formatRelative } from "@/lib/format";
 import type { OutreachRow, OutreachStats } from "@/lib/queries";
@@ -73,6 +80,25 @@ export function OutreachPanel({
   );
   const [message, setMessage] = useState("");
   const [pickedTemplate, setPickedTemplate] = useState<string | null>(null);
+
+  // Gmail send state
+  const [gmailStatus, setGmailStatus] = useState<GmailStatus | null>(null);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [sendInfo, setSendInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    getGmailStatus().then(setGmailStatus);
+  }, []);
+
+  const isEmailMode = platform === "email";
+  const canSendViaGmail =
+    isEmailMode &&
+    gmailStatus?.connected === true &&
+    recipientEmail.trim().length > 3 &&
+    /\S+@\S+\.\S+/.test(recipientEmail.trim()) &&
+    subject.trim().length > 0 &&
+    message.trim().length > 0;
 
   // AI v2 state
   const [aiHook, setAiHook] = useState<string>("");
@@ -230,6 +256,53 @@ export function OutreachPanel({
     });
   }
 
+  function submitViaGmail() {
+    setError(null);
+    setSendInfo(null);
+    if (!canSendViaGmail) {
+      setError("Provjeri lead name, recipient email, subject, body");
+      return;
+    }
+    startTransition(async () => {
+      const sendRes = await sendViaGmail({
+        to: recipientEmail.trim(),
+        subject: subject.trim(),
+        body: message,
+      });
+      if (!sendRes.ok) {
+        setError(`Gmail send: ${sendRes.error ?? "greška"}`);
+        return;
+      }
+      // Email se uspješno poslao — sad logaj kao outreach record
+      const enrichedMessage = `[To: ${recipientEmail.trim()}] [Subject: ${subject.trim()}]\n\n${message}`;
+      const result = await addOutreach({
+        leadName: leadName.trim() || recipientEmail.trim(),
+        platform: "email",
+        message: enrichedMessage,
+      });
+      const newRow: OutreachRow = {
+        id: result.id ?? crypto.randomUUID(),
+        lead_name: leadName.trim() || recipientEmail.trim(),
+        platform: "email",
+        message: enrichedMessage,
+        status: "sent",
+        sent_at: new Date().toISOString(),
+      };
+      setList((prev) => [newRow, ...prev]);
+      setStats((s) => ({ ...s, thisWeek: s.thisWeek + 1 }));
+      setSendInfo(
+        `📧 Email poslan iz ${sendRes.fromEmail} → ${recipientEmail.trim()}. Replies dolaze u Gmail inbox.`,
+      );
+      setLeadName("");
+      setRecipientEmail("");
+      setSubject("");
+      setMessage("");
+      setPickedTemplate(null);
+      onSendAnimation?.();
+      setTab("history");
+    });
+  }
+
   function setStatus(id: string, status: OutreachRow["status"]) {
     startTransition(async () => {
       const prev = list;
@@ -345,6 +418,40 @@ export function OutreachPanel({
                 </select>
               </Field>
             </div>
+
+            {isEmailMode && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+              >
+                <Field
+                  label="Recipient email *"
+                  hint={
+                    gmailStatus?.connected
+                      ? `Šalje se iz ${gmailStatus.email} kroz Gmail API`
+                      : "Spoji Gmail u /integrations da omogućiš stvarni send"
+                  }
+                >
+                  <input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="dr.marko@klinika-zagreb.hr"
+                    className="input"
+                  />
+                </Field>
+                <Field label="Subject *">
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Brzo pitanje za vašu kliniku"
+                    className="input"
+                  />
+                </Field>
+              </motion.div>
+            )}
 
             <Field
               label={`Poruka${pickedTemplate === "ai" ? " · ✨ AI draft" : pickedTemplate ? " · iz template-a" : ""}`}
@@ -520,19 +627,47 @@ export function OutreachPanel({
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            {sendInfo && (
+              <div className="rounded-md border border-success/40 bg-success/5 p-2 text-xs text-success">
+                {sendInfo}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-text-muted">
-                Šalju se broj-eve dok poruke su poslane stvarno (manual). Ovdje
-                samo log-ujemo aktivnost.
+                {isEmailMode
+                  ? gmailStatus?.connected
+                    ? "Send via Gmail = email stvarno odlazi + log u HQ. Log only = samo bilježi aktivnost."
+                    : "Spoji Gmail u /integrations za stvarni send."
+                  : "LinkedIn / IG / TikTok šalju se ručno; ovdje samo log-ujemo aktivnost."}
               </p>
-              <button
-                type="submit"
-                disabled={pending}
-                className="flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-bg transition-colors hover:bg-gold-bright disabled:opacity-50"
-              >
-                <Send size={14} />
-                {pending ? "Logging…" : "Log outreach"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="flex items-center gap-2 rounded-lg border border-gold/50 bg-bg-card px-4 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/10 disabled:opacity-50"
+                >
+                  <Send size={14} />
+                  {pending ? "Logging…" : "Log only"}
+                </button>
+                {isEmailMode && (
+                  <button
+                    type="button"
+                    onClick={submitViaGmail}
+                    disabled={pending || !canSendViaGmail}
+                    className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+                    title={
+                      gmailStatus?.connected
+                        ? "Šalje email kroz Gmail API + loga u HQ"
+                        : "Spoji Gmail u /integrations"
+                    }
+                  >
+                    <AtSign size={14} />
+                    {pending ? "Šaljem…" : "Send via Gmail"}
+                    <Zap size={12} className="-ml-0.5 opacity-70" />
+                  </button>
+                )}
+              </div>
             </div>
           </motion.form>
         )}

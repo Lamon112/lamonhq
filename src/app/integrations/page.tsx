@@ -2,18 +2,23 @@ import Link from "next/link";
 import { getCalendlyStatus } from "@/app/actions/calendly";
 import { getNotionStatus } from "@/app/actions/notionSync";
 import { getTelegramStatus } from "@/app/actions/telegram";
+import { getGmailStatus } from "@/app/actions/gmail";
 import { CalendlySetup } from "./CalendlySetup";
 import { NotionSetup } from "./NotionSetup";
 import { TelegramSetup } from "./TelegramSetup";
+import { GmailSetup } from "./GmailSetup";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntegrationsPage() {
-  const [calendlyStatus, notionStatus, telegramStatus] = await Promise.all([
-    getCalendlyStatus(),
-    getNotionStatus(),
-    getTelegramStatus(),
-  ]);
+  const [calendlyStatus, notionStatus, telegramStatus, gmailStatus] =
+    await Promise.all([
+      getCalendlyStatus(),
+      getNotionStatus(),
+      getTelegramStatus(),
+      getGmailStatus(),
+    ]);
 
   return (
     <div className="dot-grid min-h-screen">
@@ -42,6 +47,10 @@ export default async function IntegrationsPage() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-10 px-4 py-8 lg:px-8 lg:py-10">
+        <Suspense fallback={null}>
+          <GmailSetup initialStatus={gmailStatus} />
+        </Suspense>
+        <div className="border-t border-border-strong" />
         <CalendlySetup initialStatus={calendlyStatus} />
         <div className="border-t border-border-strong" />
         <NotionSetup initialStatus={notionStatus} />
