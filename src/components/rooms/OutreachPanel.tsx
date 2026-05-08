@@ -2,9 +2,25 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useTransition } from "react";
-import { Mail, Send, Sparkles, FileText, Trash2, Check, Wand2 } from "lucide-react";
+import {
+  Mail,
+  Send,
+  Sparkles,
+  FileText,
+  Trash2,
+  Check,
+  Wand2,
+  ThumbsUp,
+  ThumbsDown,
+  Layers,
+  X as XIcon,
+} from "lucide-react";
 import { addOutreach, updateOutreachStatus, deleteOutreach } from "@/app/actions/outreach";
-import { draftOutreach } from "@/app/actions/ai";
+import {
+  draftOutreach,
+  draftOutreachVariants,
+  saveAiFeedback,
+} from "@/app/actions/ai";
 import { OUTREACH_TEMPLATES, type OutreachTemplate } from "@/lib/templates";
 import { formatRelative } from "@/lib/format";
 import type { OutreachRow, OutreachStats } from "@/lib/queries";
@@ -58,6 +74,16 @@ export function OutreachPanel({
   const [message, setMessage] = useState("");
   const [pickedTemplate, setPickedTemplate] = useState<string | null>(null);
 
+  // AI v2 state
+  const [aiHook, setAiHook] = useState<string>("");
+  const [aiDraftRaw, setAiDraftRaw] = useState<string | null>(null);
+  const [aiRated, setAiRated] = useState<"good" | "bad" | null>(null);
+  const [variants, setVariants] = useState<
+    Array<{ angle: string; draft: string }> | null
+  >(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackNotes, setFeedbackNotes] = useState("");
+
   function applyTemplate(t: OutreachTemplate) {
     setMessage(t.body);
     setPlatform(
@@ -73,20 +99,100 @@ export function OutreachPanel({
       setError("Unesi lead name prije AI drafta");
       return;
     }
+    const hook = message.trim() || undefined;
+    setAiHook(hook ?? "");
     startTransition(async () => {
       const res = await draftOutreach({
         leadName: leadName.trim(),
         platform,
-        hook: message.trim() || undefined,
+        hook,
       });
       if (!res.ok) {
         setError(res.error ?? "AI greška");
         return;
       }
       setMessage(res.draft ?? "");
+      setAiDraftRaw(res.draft ?? null);
+      setAiRated(null);
       setPickedTemplate("ai");
+      setVariants(null);
     });
   }
+
+  function generateVariants() {
+    setError(null);
+    if (!leadName.trim()) {
+      setError("Unesi lead name prije variants");
+      return;
+    }
+    const hook = message.trim() || undefined;
+    setAiHook(hook ?? "");
+    startTransition(async () => {
+      const res = await draftOutreachVariants({
+        leadName: leadName.trim(),
+        platform,
+        hook,
+      });
+      if (!res.ok) {
+        setError(res.error ?? "AI greška");
+        return;
+      }
+      setVariants(res.variants ?? null);
+    });
+  }
+
+  function pickVariant(draft: string) {
+    setMessage(draft);
+    setAiDraftRaw(draft);
+    setPickedTemplate("ai");
+    setAiRated(null);
+    setVariants(null);
+  }
+
+  function rate(rating: "good" | "bad") {
+    if (!aiDraftRaw) return;
+    setAiRated(rating);
+    if (rating === "bad") {
+      setFeedbackOpen(true);
+      return;
+    }
+    saveFeedbackBackground(rating, "");
+  }
+
+  function saveFeedbackBackground(
+    rating: "good" | "bad",
+    notes: string,
+  ) {
+    if (!aiDraftRaw) return;
+    startTransition(async () => {
+      await saveAiFeedback({
+        kind: "outreach_draft",
+        input: {
+          leadName: leadName.trim(),
+          platform,
+          hook: aiHook || undefined,
+        },
+        output: aiDraftRaw,
+        rating,
+        notes,
+      });
+    });
+  }
+
+  function submitBadFeedback() {
+    saveFeedbackBackground("bad", feedbackNotes.trim());
+    setFeedbackOpen(false);
+    setFeedbackNotes("");
+  }
+
+  const BAD_FEEDBACK_CHIPS = [
+    "Pre brzo spomenuo proizvod",
+    "CTA nedovoljno konkretan",
+    "Predugo",
+    "Nije moj tone (zvuči robotski)",
+    "Hook nije specifičan",
+    "Drugo",
+  ];
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -253,21 +359,160 @@ export function OutreachPanel({
               />
             </Field>
 
-            <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={generateAiDraft}
-                disabled={pending || !leadName.trim()}
-                className="flex items-center gap-2 rounded-lg border border-gold/50 bg-gold/10 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/20 disabled:opacity-40"
-                title={!leadName.trim() ? "Unesi lead name prvo" : "Claude napiše prijedlog poruke u tvom voice-u"}
-              >
-                <Wand2 size={14} />
-                ✨ AI draft (Claude)
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={generateAiDraft}
+                  disabled={pending || !leadName.trim()}
+                  className="flex items-center gap-2 rounded-lg border border-gold/50 bg-gold/10 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/20 disabled:opacity-40"
+                  title="Claude napiše 1 prijedlog"
+                >
+                  <Wand2 size={14} />
+                  ✨ AI draft
+                </button>
+                <button
+                  type="button"
+                  onClick={generateVariants}
+                  disabled={pending || !leadName.trim()}
+                  className="flex items-center gap-2 rounded-lg border border-gold/50 bg-bg-card px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/10 disabled:opacity-40"
+                  title="Claude generira 3 različita angle-a (curiosity / social proof / direct)"
+                >
+                  <Layers size={14} />
+                  ✨ 3 variants
+                </button>
+                {aiDraftRaw && aiRated === null && (
+                  <div className="flex items-center gap-1 rounded-lg border border-border bg-bg-card px-2 py-1.5 text-[10px] text-text-muted">
+                    <span>AI je ovo dobro pogodio?</span>
+                    <button
+                      type="button"
+                      onClick={() => rate("good")}
+                      className="rounded p-1 text-success transition-colors hover:bg-success/10"
+                      title="👍 Dobro — AI uči ovo kao good example"
+                    >
+                      <ThumbsUp size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => rate("bad")}
+                      className="rounded p-1 text-danger transition-colors hover:bg-danger/10"
+                      title="👎 Loše — reci mi što je krivo"
+                    >
+                      <ThumbsDown size={12} />
+                    </button>
+                  </div>
+                )}
+                {aiRated === "good" && (
+                  <span className="text-[10px] text-success">
+                    👍 Saved · AI uči ovo
+                  </span>
+                )}
+                {aiRated === "bad" && !feedbackOpen && (
+                  <span className="text-[10px] text-warning">
+                    👎 Saved · sljedeći put bolje
+                  </span>
+                )}
+              </div>
               <p className="text-[10px] text-text-muted">
-                Claude Sonnet 4.6 · ~$0.005 po draftu
+                Claude Sonnet 4.6 · v2 prompt
               </p>
             </div>
+
+            {feedbackOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-2 rounded-lg border border-warning/40 bg-warning/5 p-3"
+              >
+                <div className="flex items-center justify-between text-xs text-warning">
+                  <span>Što je krivo? AI uči iz ovog feedbacka.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFeedbackOpen(false);
+                      setAiRated(null);
+                    }}
+                    className="rounded p-0.5 text-text-muted hover:bg-bg-card"
+                  >
+                    <XIcon size={12} />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {BAD_FEEDBACK_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => {
+                        setFeedbackNotes(chip);
+                      }}
+                      className={
+                        "rounded-md border px-2 py-1 text-[10px] transition-colors " +
+                        (feedbackNotes === chip
+                          ? "border-warning bg-warning/10 text-warning"
+                          : "border-border text-text-dim hover:border-warning/40")
+                      }
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={feedbackNotes}
+                  onChange={(e) => setFeedbackNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Detaljnije ako želiš…"
+                  className="input text-xs"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={submitBadFeedback}
+                    disabled={!feedbackNotes.trim()}
+                    className="rounded-md bg-warning px-3 py-1 text-[11px] font-medium text-bg disabled:opacity-40"
+                  >
+                    Save feedback
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {variants && variants.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-2 rounded-lg border border-gold/30 bg-gold/5 p-3"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gold">
+                    ✨ 3 varijante · klikni onu koja ti najbolje sjeda
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setVariants(null)}
+                    className="rounded p-0.5 text-text-muted hover:bg-bg-card"
+                  >
+                    <XIcon size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {variants.map((v, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => pickVariant(v.draft)}
+                      className="rounded-lg border border-border bg-bg-card/60 p-3 text-left transition-colors hover:border-gold/60"
+                    >
+                      <div className="mb-1.5 text-[10px] uppercase tracking-wider text-gold">
+                        {v.angle}
+                      </div>
+                      <pre className="whitespace-pre-wrap font-mono text-[11px] text-text-dim">
+                        {v.draft}
+                      </pre>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             {error && (
               <div className="rounded-md border border-danger/40 bg-danger/10 p-2 text-xs text-danger">
