@@ -123,6 +123,7 @@ export async function getOutreachStats(): Promise<OutreachStats> {
 
 export interface OutreachRow {
   id: string;
+  lead_id: string | null;
   lead_name: string | null;
   platform: string | null;
   message: string | null;
@@ -134,7 +135,7 @@ export async function getOutreachList(limit = 50): Promise<OutreachRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("outreach")
-    .select("id, lead_name, platform, message, status, sent_at")
+    .select("id, lead_id, lead_name, platform, message, status, sent_at")
     .order("sent_at", { ascending: false })
     .limit(limit);
   return (data ?? []) as OutreachRow[];

@@ -16,7 +16,9 @@ import {
   X as XIcon,
   AtSign,
   Zap,
+  MessageSquare,
 } from "lucide-react";
+import { triageInbound } from "@/app/actions/inbound";
 import { addOutreach, updateOutreachStatus, deleteOutreach } from "@/app/actions/outreach";
 import {
   draftOutreach,
@@ -30,6 +32,7 @@ import {
 } from "@/app/actions/gmail";
 import { OUTREACH_TEMPLATES, type OutreachTemplate } from "@/lib/templates";
 import { ApprovalQueue } from "./ApprovalQueue";
+import { PrimaryButton, GhostButton } from "@/components/ui/common";
 import { formatRelative } from "@/lib/format";
 import type { OutreachRow, OutreachStats } from "@/lib/queries";
 
@@ -73,6 +76,52 @@ export function OutreachPanel({
   const [stats, setStats] = useState(initialStats);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // Reply triage modal state
+  const [replyOutreach, setReplyOutreach] = useState<OutreachRow | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyPending, setReplyPending] = useState(false);
+  const [replyInfo, setReplyInfo] = useState<string | null>(null);
+
+  function openReplyTriage(row: OutreachRow) {
+    setReplyOutreach(row);
+    setReplyText("");
+    setReplyInfo(null);
+  }
+
+  async function submitReplyTriage() {
+    if (!replyOutreach || !replyText.trim()) return;
+    setReplyPending(true);
+    setReplyInfo(null);
+    const channel = (replyOutreach.platform ?? "manual") as
+      | "linkedin"
+      | "email"
+      | "instagram"
+      | "tiktok"
+      | "manual";
+    const res = await triageInbound({
+      rawText: replyText.trim(),
+      channel,
+      senderName: replyOutreach.lead_name ?? undefined,
+      leadId: replyOutreach.lead_id ?? undefined,
+    });
+    setReplyPending(false);
+    if (!res.ok) {
+      setReplyInfo(`❌ ${res.error}`);
+      return;
+    }
+    // Mark outreach as replied
+    await updateOutreachStatus(replyOutreach.id, "replied");
+    setList((prev) =>
+      prev.map((r) =>
+        r.id === replyOutreach.id ? { ...r, status: "replied" as const } : r,
+      ),
+    );
+    setReplyInfo(
+      "✅ Triage gotov — pogledaj Smart Inbox panel za AI drafte",
+    );
+    setTimeout(() => setReplyOutreach(null), 1500);
+  }
 
   // Form state
   const [leadName, setLeadName] = useState("");
@@ -241,6 +290,7 @@ export function OutreachPanel({
       // Optimistic UI update
       const newRow: OutreachRow = {
         id: result.id ?? crypto.randomUUID(),
+        lead_id: null,
         lead_name: leadName.trim(),
         platform,
         message,
@@ -283,6 +333,7 @@ export function OutreachPanel({
       });
       const newRow: OutreachRow = {
         id: result.id ?? crypto.randomUUID(),
+        lead_id: null,
         lead_name: leadName.trim() || recipientEmail.trim(),
         platform: "email",
         message: enrichedMessage,
@@ -738,13 +789,22 @@ export function OutreachPanel({
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {row.status !== "replied" && (
-                        <button
-                          onClick={() => setStatus(row.id, "replied")}
-                          className="rounded p-1.5 text-text-muted transition-colors hover:bg-success/10 hover:text-success"
-                          title="Mark replied"
-                        >
-                          <Check size={14} />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => openReplyTriage(row)}
+                            className="rounded p-1.5 text-text-muted transition-colors hover:bg-gold/10 hover:text-gold"
+                            title="📬 Reply received → AI triage"
+                          >
+                            <MessageSquare size={14} />
+                          </button>
+                          <button
+                            onClick={() => setStatus(row.id, "replied")}
+                            className="rounded p-1.5 text-text-muted transition-colors hover:bg-success/10 hover:text-success"
+                            title="Mark replied (bez triage-a)"
+                          >
+                            <Check size={14} />
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => remove(row.id)}
@@ -799,6 +859,61 @@ export function OutreachPanel({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {replyOutreach && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-xl border border-gold/30 bg-bg-elevated p-5 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-text">
+                  📬 Reply received → AI triage
+                </h3>
+                <p className="text-[11px] text-text-dim">
+                  {replyOutreach.lead_name} · {replyOutreach.platform ?? "?"}
+                </p>
+              </div>
+              <button
+                onClick={() => setReplyOutreach(null)}
+                className="text-text-dim hover:text-text"
+              >
+                <XIcon size={16} />
+              </button>
+            </div>
+            {replyOutreach.message && (
+              <div className="mb-3 rounded border border-border bg-bg/40 p-2 text-[11px] text-text-dim">
+                <div className="mb-1 text-[9px] uppercase tracking-wider text-text-muted">
+                  Tvoj outreach (kontekst za AI)
+                </div>
+                <p className="line-clamp-3">{replyOutreach.message}</p>
+              </div>
+            )}
+            <label className="block text-[10px] uppercase tracking-wider text-text-muted">
+              Što ti je odgovorio? Paste-aj njegov tekst:
+            </label>
+            <textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              rows={6}
+              placeholder="Bok Leonardo, hvala na poruci. Trenutno smo…"
+              className="mt-1 w-full rounded border border-border bg-bg/60 px-2 py-1.5 text-xs text-text focus:border-gold/40 focus:outline-none"
+            />
+            {replyInfo && (
+              <p className="mt-2 text-xs text-text-dim">{replyInfo}</p>
+            )}
+            <div className="mt-3 flex justify-end gap-2">
+              <GhostButton onClick={() => setReplyOutreach(null)}>
+                Cancel
+              </GhostButton>
+              <PrimaryButton
+                onClick={submitReplyTriage}
+                disabled={replyPending || !replyText.trim()}
+              >
+                {replyPending ? "Triage radi…" : "🤖 Triage + AI drafts"}
+              </PrimaryButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
