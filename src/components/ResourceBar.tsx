@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Database, LogOut, User } from "lucide-react";
+import { Cable, Database, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { signOut } from "@/app/actions/auth";
@@ -150,6 +150,14 @@ export function ResourceBar({ stats, user }: ResourceBarProps) {
               >
                 <Database size={14} />
                 Import iz Notion-a
+              </Link>
+              <Link
+                href="/integrations"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-text-dim transition-colors hover:bg-bg-card hover:text-text"
+              >
+                <Cable size={14} />
+                Integracije (Calendly)
               </Link>
               <form action={signOut}>
                 <button
