@@ -187,6 +187,11 @@ export interface RunHolmesInput {
   niche?: string | null;
   notesExcerpt?: string | null;
   hintCity?: string | null;
+  /**
+   * Pre-known company website URL (from leads.website_url). When set we
+   * skip the DDG search entirely and go straight to scraping it.
+   */
+  websiteUrl?: string | null;
 }
 
 export interface RunHolmesResult {
@@ -202,11 +207,14 @@ export async function runAgentHolmes(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, error: "ANTHROPIC_API_KEY nije postavljen" };
 
-  // Step 1: Find official website
-  const website = await findOfficialWebsite(
-    input.leadName,
-    input.hintCity ?? undefined,
-  );
+  // Step 1: Find official website. Prefer the pre-set URL on the lead
+  // (Leonardo can paste it manually); fall back to DDG search.
+  const website =
+    normalizeWebsite(input.websiteUrl) ??
+    (await findOfficialWebsite(
+      input.leadName,
+      input.hintCity ?? undefined,
+    ));
 
   // Step 2: Identify owner candidate
   const candidates = parseOwnerCandidates(input.leadName);
@@ -331,6 +339,14 @@ Sad vrati Holmes Report kao striktni JSON.`,
         e instanceof Error ? `Anthropic error: ${e.message}` : "AI greška",
     };
   }
+}
+
+function normalizeWebsite(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed.replace(/\/$/, "");
+  return `https://${trimmed.replace(/^\/+/, "").replace(/\/$/, "")}`;
 }
 
 function parseHolmesJson(raw: string): Omit<HolmesReport, "model" | "generated_at" | "evidence"> | null {

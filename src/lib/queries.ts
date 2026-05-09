@@ -377,6 +377,7 @@ export interface LeadRow {
     generated_at: string;
   } | null;
   email?: string | null;
+  website_url?: string | null;
   created_at: string;
   updated_at: string;
 }

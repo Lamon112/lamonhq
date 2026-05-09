@@ -20,7 +20,7 @@ export async function runHolmesForLead(
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, name, niche, notes")
+    .select("id, name, niche, notes, website_url")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { ok: false, error: "Lead nije pronađen" };
@@ -29,6 +29,7 @@ export async function runHolmesForLead(
     leadName: lead.name as string,
     niche: (lead.niche as string | null) ?? null,
     notesExcerpt: (lead.notes as string | null) ?? null,
+    websiteUrl: (lead.website_url as string | null) ?? null,
   });
 
   if (!result.ok || !result.report) {

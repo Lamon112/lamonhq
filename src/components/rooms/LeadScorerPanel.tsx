@@ -23,6 +23,8 @@ import {
   updateLead,
   deleteLead,
   bulkImportLeads,
+  setLeadWebsite,
+  bulkDiscoverWebsites,
 } from "@/app/actions/leads";
 import { scoreLead, saveAiFeedback } from "@/app/actions/ai";
 import {
@@ -632,6 +634,7 @@ export function LeadScorerPanel({
                 ))}
               </div>
               <BulkRescoreButton />
+              <BulkDiscoverWebsitesButton />
               <BulkDeepEnrichButton />
             </div>
 
@@ -738,6 +741,18 @@ export function LeadScorerPanel({
                               ))}
                             </div>
                           )}
+                        <WebsiteUrlField
+                          lead={l}
+                          onSaved={(url) =>
+                            setList((prev) =>
+                              prev.map((row) =>
+                                row.id === l.id
+                                  ? { ...row, website_url: url }
+                                  : row,
+                              ),
+                            )
+                          }
+                        />
                         <PersonEnrichmentBlock
                           lead={l}
                           onEnriched={(updated) =>
@@ -1544,6 +1559,126 @@ function BulkRescoreButton() {
       </button>
       {info && (
         <span className="text-[10px] text-success">{info}</span>
+      )}
+      {error && (
+        <span className="text-[10px] text-danger">{error}</span>
+      )}
+    </div>
+  );
+}
+
+// =====================================================================
+// Bulk Discover Websites (DDG search per Hot lead missing website_url)
+// =====================================================================
+
+function BulkDiscoverWebsitesButton() {
+  const [pending, startTransition] = useTransition();
+  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function run() {
+    setInfo(null);
+    setError(null);
+    startTransition(async () => {
+      const res = await bulkDiscoverWebsites();
+      if (!res.ok) {
+        setError("Bulk discover greška");
+        return;
+      }
+      setInfo(
+        `🌐 ${res.discovered} website-a pronađeno · ${res.skipped} preskočeno (već imaju)${res.errors.length ? ` · ${res.errors.length} grešaka` : ""}. Refresh za update.`,
+      );
+      setTimeout(() => window.location.reload(), 2200);
+    });
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={run}
+        disabled={pending}
+        className="flex items-center gap-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-medium text-cyan-300 hover:border-cyan-500/70 disabled:opacity-50"
+        title="DuckDuckGo search za official website svake Hot kline (only those bez website_url)."
+      >
+        {pending ? (
+          <Loader2 size={11} className="animate-spin" />
+        ) : (
+          "🌐"
+        )}
+        {pending ? "Tražim website-ove…" : "Discover websites"}
+      </button>
+      {info && <span className="text-[10px] text-success">{info}</span>}
+      {error && <span className="text-[10px] text-danger">{error}</span>}
+    </div>
+  );
+}
+
+// =====================================================================
+// WebsiteUrlField — manual override per lead
+// =====================================================================
+
+function WebsiteUrlField({
+  lead,
+  onSaved,
+}: {
+  lead: LeadRow;
+  onSaved: (url: string | null) => void;
+}) {
+  const [val, setVal] = useState(lead.website_url ?? "");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<boolean>(false);
+
+  function save() {
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      const res = await setLeadWebsite(lead.id, val);
+      if (!res.ok) {
+        setError(res.error ?? "Save fail");
+        return;
+      }
+      const cleaned = val.trim()
+        ? val.trim().startsWith("http")
+          ? val.trim().replace(/\/$/, "")
+          : `https://${val.trim().replace(/\/$/, "")}`
+        : null;
+      onSaved(cleaned);
+      setSaved(true);
+    });
+  }
+
+  return (
+    <div className="mb-2 flex items-center gap-1.5">
+      <span className="text-[10px] uppercase tracking-wider text-text-muted">
+        🌐
+      </span>
+      <input
+        type="text"
+        value={val}
+        onChange={(e) => {
+          setVal(e.target.value);
+          setSaved(false);
+        }}
+        onClick={(e) => e.stopPropagation()}
+        placeholder="drstimac.com"
+        className="flex-1 rounded border border-border bg-bg/60 px-2 py-1 text-[11px] text-text focus:border-cyan-500/40 focus:outline-none"
+      />
+      {val !== (lead.website_url ?? "") && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            save();
+          }}
+          disabled={pending}
+          className="rounded border border-cyan-500/40 bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-300 hover:border-cyan-500 disabled:opacity-50"
+        >
+          {pending ? "…" : "Save"}
+        </button>
+      )}
+      {saved && (
+        <span className="text-[10px] text-success">✓</span>
       )}
       {error && (
         <span className="text-[10px] text-danger">{error}</span>

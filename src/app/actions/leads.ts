@@ -335,3 +335,91 @@ export async function deleteLead(id: string): Promise<ActionResult> {
   revalidatePath("/");
   return { ok: true };
 }
+
+/**
+ * Manually set the official website URL for a lead. Holmes + every
+ * downstream pipeline reads this before falling back to web search.
+ */
+export async function setLeadWebsite(
+  leadId: string,
+  websiteUrl: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  let cleaned = websiteUrl.trim();
+  if (cleaned && !/^https?:\/\//i.test(cleaned)) cleaned = `https://${cleaned}`;
+  cleaned = cleaned.replace(/\/$/, "");
+  const { error } = await supabase
+    .from("leads")
+    .update({ website_url: cleaned || null })
+    .eq("id", leadId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * Bulk auto-discovery: for every Hot lead missing website_url, run a
+ * DDG search and save the best match. Sequential w/ 600ms politeness gap.
+ */
+export async function bulkDiscoverWebsites(): Promise<{
+  ok: boolean;
+  discovered: number;
+  skipped: number;
+  errors: string[];
+}> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user)
+    return {
+      ok: false,
+      discovered: 0,
+      skipped: 0,
+      errors: ["Niste prijavljeni"],
+    };
+
+  const { data: hotLeads } = await supabase
+    .from("leads")
+    .select("id, name, website_url")
+    .gte("icp_score", 15)
+    .in("stage", ["discovery", "pricing", "financing", "booking"]);
+
+  const todo = (hotLeads ?? []).filter(
+    (l) => !l.website_url || !(l.website_url as string).trim(),
+  );
+  if (todo.length === 0) {
+    return {
+      ok: true,
+      discovered: 0,
+      skipped: hotLeads?.length ?? 0,
+      errors: [],
+    };
+  }
+
+  // Lazy-import the DDG helper (server-only)
+  const { findOfficialWebsite } = await import("@/lib/duckduckgo");
+
+  let discovered = 0;
+  const errors: string[] = [];
+  for (const l of todo) {
+    try {
+      const url = await findOfficialWebsite(l.name as string);
+      if (url) {
+        await supabase
+          .from("leads")
+          .update({ website_url: url })
+          .eq("id", l.id);
+        discovered++;
+      }
+    } catch (e) {
+      errors.push(`${l.id}: ${e instanceof Error ? e.message : "unknown"}`);
+    }
+    await new Promise((r) => setTimeout(r, 600));
+  }
+  revalidatePath("/");
+  return {
+    ok: true,
+    discovered,
+    skipped: (hotLeads?.length ?? 0) - todo.length,
+    errors,
+  };
+}
