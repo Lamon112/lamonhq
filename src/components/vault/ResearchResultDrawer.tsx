@@ -37,6 +37,13 @@ interface FullActionRow {
   error_text: string | null;
   created_at: string;
   completed_at: string | null;
+  usage: {
+    cost_eur?: number;
+    cost_usd?: number;
+    web_search_calls?: number;
+    apollo_calls?: number;
+    places_calls?: number;
+  } | null;
 }
 
 export function ResearchResultDrawer({
@@ -232,17 +239,52 @@ function DrawerInner({
           )}
         </div>
 
-        {/* Footer with Notion link */}
-        {row?.notion_page_id && (
-          <div className="border-t border-border-strong px-4 py-3">
-            <a
-              href={`https://www.notion.so/${row.notion_page_id.replace(/-/g, "")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-200 hover:border-purple-400 hover:bg-purple-500/15"
-            >
-              <ExternalLink size={12} /> Open in Notion → 🧠 Knowledge Insights
-            </a>
+        {/* Footer with cost pill + Notion link */}
+        {row?.status === "completed" && (
+          <div className="border-t border-border-strong px-4 py-3 space-y-2">
+            {/* Cost / runtime pills */}
+            {row.usage && (
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-text-muted">
+                {typeof row.usage.cost_eur === "number" && (
+                  <span className="rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 font-mono font-bold text-emerald-300">
+                    €{row.usage.cost_eur.toFixed(row.usage.cost_eur < 1 ? 3 : 2)}
+                  </span>
+                )}
+                {row.completed_at && (
+                  <span className="rounded border border-border bg-bg-card px-1.5 py-0.5 font-mono">
+                    {Math.round(
+                      (new Date(row.completed_at).getTime() -
+                        new Date(row.created_at).getTime()) /
+                        1000,
+                    )}
+                    s
+                  </span>
+                )}
+                {typeof row.usage.web_search_calls === "number" &&
+                  row.usage.web_search_calls > 0 && (
+                    <span className="rounded border border-border bg-bg-card px-1.5 py-0.5 font-mono">
+                      🔍 {row.usage.web_search_calls}
+                    </span>
+                  )}
+                {typeof row.usage.apollo_calls === "number" &&
+                  row.usage.apollo_calls > 0 && (
+                    <span className="rounded border border-border bg-bg-card px-1.5 py-0.5 font-mono">
+                      Apollo {row.usage.apollo_calls}
+                    </span>
+                  )}
+              </div>
+            )}
+            {/* Notion link */}
+            {row.notion_page_id && (
+              <a
+                href={`https://www.notion.so/${row.notion_page_id.replace(/-/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-medium text-purple-200 hover:border-purple-400 hover:bg-purple-500/15"
+              >
+                <ExternalLink size={12} /> Open in Notion → 🧠 Knowledge Insights
+              </a>
+            )}
           </div>
         )}
       </motion.aside>

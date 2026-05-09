@@ -418,6 +418,12 @@ export interface PushInsightInput {
   resultMd: string;
   tags: string[];
   sources: Array<{ title: string; url: string }>;
+  /** Total cost in EUR. Surfaced as Cost (€) Notion property + Treasury burn aggregate. */
+  costEur?: number;
+  /** Wall-clock seconds from started_at to completed_at. */
+  durationSec?: number;
+  /** How many web_search Claude calls (or 0 for non-research kinds). */
+  searchCalls?: number;
 }
 
 /**
@@ -461,6 +467,18 @@ export async function pushInsightToNotion(
       ],
     },
   };
+
+  // Optional cost / runtime metadata — Notion DB has these props from
+  // 2026-05-09 update. Skip silently if value missing.
+  if (typeof input.costEur === "number") {
+    properties["Cost (€)"] = { number: Number(input.costEur.toFixed(4)) };
+  }
+  if (typeof input.durationSec === "number") {
+    properties["Duration (s)"] = { number: Math.round(input.durationSec) };
+  }
+  if (typeof input.searchCalls === "number") {
+    properties["Search Calls"] = { number: input.searchCalls };
+  }
 
   // Split markdown body into ≤2000-char paragraph blocks (Notion limit)
   const paragraphs = input.resultMd.split(/\n\n+/).filter(Boolean);

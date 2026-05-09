@@ -50,6 +50,8 @@ export interface AgentActionDef {
     | "Custom";
   icon: LucideIcon;
   estimatedSec: number;
+  /** Estimated cost per click in EUR. Shown to user BEFORE they fire. */
+  estimatedCostEur: number;
   /** Only for kind="research" — Claude system + user prompt. */
   systemPrompt?: string;
   prompt?: string;
@@ -118,6 +120,7 @@ const novaDeepBizImprovement: AgentActionDef = {
   notionLabel: "Deep Biz Improvement",
   icon: Lightbulb,
   estimatedSec: 180,
+  estimatedCostEur: 0.25,
   systemPrompt: NOVA_SYSTEM_PROMPT,
   prompt: `Istraži internet (zadnjih 12 mjeseci) i pronađi konkretne nove načine kako Lamon Agency može unaprijediti svoje poslovanje. Razmisli šire u 4 dimenzije:
 
@@ -143,6 +146,7 @@ const novaAiAutomatableBiz: AgentActionDef = {
   notionLabel: "AI Automatable Biz",
   icon: Sparkles,
   estimatedSec: 180,
+  estimatedCostEur: 0.25,
   systemPrompt: NOVA_SYSTEM_PROMPT,
   prompt: `Istraži internet i pronađi 5-7 konkretnih biznis modela koji 2026. SOLO osoba može pokrenuti uz Claude/AI uz minimalan vlastiti trud (1-3h/dan), s realnim potencijalom $5K-$30K/mj. Tip primjera: nedavno sam vidio case study gdje netko zaradi $15K/mj prodajući PDF guides za parenting niche — Claude generira sadržaj, Canva za design, Shopify store, YouTube influencer marketing ($700 + 15% recurring) za promociju.
 
@@ -173,6 +177,7 @@ const holmes10LeadsPipeline: AgentActionDef = {
   notionLabel: "Lead Recon",
   icon: Crosshair,
   estimatedSec: 600,
+  estimatedCostEur: 2.5,
   pipelineConfig: {
     niche: "premium dentalna klinika",
     location: "Zagreb",

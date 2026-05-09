@@ -21,6 +21,7 @@ import { createClient } from "@supabase/supabase-js";
 import { inngest } from "../client";
 import { getActionById } from "@/lib/agentActions";
 import { pushInsightToNotion } from "@/lib/notion";
+import { computeCost, extractAnthropicUsage } from "@/lib/cost";
 
 interface ResearchEventData {
   actionRowId: string; // uuid in agent_actions table
@@ -66,6 +67,8 @@ export const agentResearch = inngest.createFunction(
         action_type: string;
         title: string;
         prompt: string;
+        created_at: string;
+        started_at: string | null;
       };
     });
 
@@ -194,8 +197,12 @@ export const agentResearch = inngest.createFunction(
       return { text: collectedText, sources, usage };
     });
 
-    // ---------------- Step 4: parse summary + tags from output ----------------
+    // ---------------- Step 4: parse summary + tags + compute cost ----------------
     const parsed = parseAgentOutput(result.text);
+    const usageInputs = extractAnthropicUsage(result.usage);
+    const cost = computeCost(usageInputs);
+    const startedTs = new Date(row.started_at ?? row.created_at).getTime();
+    const durationSec = Math.max(0, (Date.now() - startedTs) / 1000);
 
     // ---------------- Step 5: push to Notion ----------------
     const notionResult = await step.run("push-to-notion", async () => {
@@ -211,6 +218,9 @@ export const agentResearch = inngest.createFunction(
         resultMd: result.text,
         tags: parsed.tags,
         sources: result.sources,
+        costEur: cost.cost_eur,
+        durationSec,
+        searchCalls: cost.web_search_calls ?? 0,
       });
     });
 
@@ -226,7 +236,7 @@ export const agentResearch = inngest.createFunction(
           sources: result.sources,
           tags: parsed.tags,
           notion_page_id: notionResult.ok ? notionResult.pageId : null,
-          usage: result.usage,
+          usage: { ...result.usage, ...cost },
           completed_at: new Date().toISOString(),
         })
         .eq("id", actionRowId);

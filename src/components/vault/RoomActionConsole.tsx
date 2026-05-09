@@ -209,7 +209,13 @@ function ConsoleInner({
                       </p>
                       <div className="flex items-center gap-2 text-[10px] text-text-muted">
                         <Hourglass size={10} />
-                        <span>~{Math.round(a.estimatedSec / 60)} min · max 5 web pretraga</span>
+                        <span>
+                          ~{Math.round(a.estimatedSec / 60)} min · €
+                          {a.estimatedCostEur < 1
+                            ? a.estimatedCostEur.toFixed(2)
+                            : a.estimatedCostEur.toFixed(2)}
+                          /klik
+                        </span>
                       </div>
                     </button>
                   );

@@ -25,6 +25,7 @@ import { searchText, type PlaceResult } from "@/lib/places";
 import { enrichOrganization } from "@/lib/apollo";
 import { runAgentHolmes } from "@/lib/agentHolmes";
 import { pushInsightToNotion } from "@/lib/notion";
+import { computeCost, type UsageInputs } from "@/lib/cost";
 
 interface PipelineEventData {
   actionRowId: string;
@@ -267,7 +268,25 @@ export const holmesPipeline = inngest.createFunction(
 
     await setProgress("Sastavljam master brief…", true);
 
-    // ------- Step 7: Compile master Notion brief -------
+    // ------- Step 7: Compute estimated cost -------
+    // Per-lead Holmes recon = ~50K input + 5K output Anthropic tokens.
+    // Plus Places (1 call) + Apollo (per enriched lead).
+    const reconCount = dossiers.filter((d) => d.ok).length;
+    const estimatedUsage: UsageInputs = {
+      input_tokens: reconCount * 50_000,
+      output_tokens: reconCount * 5_000,
+      apollo_calls: enriched.filter((e) => e.apolloOrg).length,
+      places_calls: 1,
+    };
+    const cost = computeCost(estimatedUsage);
+    const startedTs = new Date(
+      (row as { started_at?: string; created_at?: string }).started_at ??
+        (row as { created_at?: string }).created_at ??
+        new Date().toISOString(),
+    ).getTime();
+    const durationSec = Math.max(0, (Date.now() - startedTs) / 1000);
+
+    // ------- Step 8: Compile master Notion brief -------
     const brief = compileMasterBrief(cfg, dossiers);
     const notionResult = await step.run("push-to-notion", async () => {
       const token = process.env.NOTION_API_KEY;
@@ -280,10 +299,13 @@ export const holmesPipeline = inngest.createFunction(
         resultMd: brief.markdown,
         tags: ["sales", "opportunity", "competitor"],
         sources: brief.sources,
+        costEur: cost.cost_eur,
+        durationSec,
+        searchCalls: 0, // Holmes uses DDG (free) not Anthropic web_search
       });
     });
 
-    // ------- Step 8: Mark completed -------
+    // ------- Step 9: Mark completed -------
     await step.run("mark-completed", async () => {
       await supabase
         .from("agent_actions")
@@ -295,6 +317,7 @@ export const holmesPipeline = inngest.createFunction(
           tags: ["sales", "opportunity", "competitor"],
           sources: brief.sources,
           notion_page_id: notionResult.ok ? notionResult.pageId : null,
+          usage: cost,
           completed_at: new Date().toISOString(),
         })
         .eq("id", actionRowId);
