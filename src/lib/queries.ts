@@ -350,6 +350,33 @@ export interface LeadRow {
       phone?: string | null;
       whatsapp?: string | null;
     };
+    team?: {
+      members: Array<{
+        name: string;
+        role: string | null;
+        linkedin_url: string | null;
+        signals: string[];
+      }>;
+      size_estimate: "solo" | "small" | "mid" | "large";
+      structure_note: string;
+    };
+    recommended_contact?: {
+      name: string;
+      role: string | null;
+      why: string;
+      channel:
+        | "instagram"
+        | "linkedin"
+        | "email"
+        | "phone"
+        | "whatsapp"
+        | null;
+      fallback?: {
+        name: string;
+        role: string | null;
+        why: string;
+      };
+    };
     pitch_tier?: "starter" | "intermediate" | "veteran" | "dead";
     recommended_package?: string;
     social_depth?: {

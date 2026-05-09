@@ -19,7 +19,7 @@ import { StatTile, TabButton, Badge, PrimaryButton, GhostButton } from "@/compon
 import { formatRelative } from "@/lib/format";
 import type { LeadRow } from "@/lib/queries";
 
-type DetailTab = "profile" | "social" | "angle" | "publicity";
+type DetailTab = "profile" | "team" | "social" | "angle" | "publicity";
 
 interface HolmesBureauPanelProps {
   initialLeads: LeadRow[];
@@ -477,6 +477,9 @@ function SelectedDetail({
         <TabButton active={tab === "profile"} onClick={() => onTabChange("profile")}>
           👤 Profile
         </TabButton>
+        <TabButton active={tab === "team"} onClick={() => onTabChange("team")}>
+          👥 Tim
+        </TabButton>
         <TabButton active={tab === "social"} onClick={() => onTabChange("social")}>
           📊 Social Depth
         </TabButton>
@@ -551,6 +554,18 @@ function SelectedDetail({
                 </ul>
               </div>
             )}
+          </motion.div>
+        )}
+
+        {tab === "team" && (
+          <motion.div
+            key="team"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="space-y-3"
+          >
+            <TeamTab report={r} />
           </motion.div>
         )}
 
@@ -762,6 +777,128 @@ function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toString();
+}
+
+function TeamTab({ report }: { report: NonNullable<LeadRow["holmes_report"]> }) {
+  const team = report.team;
+  const rec = report.recommended_contact;
+  const sizeLabel: Record<string, string> = {
+    solo: "Solo praksa (1-3 doctors)",
+    small: "Mala praksa (4-8)",
+    mid: "Srednja klinika (9-20)",
+    large: "Premium / multi-lokacija (20+)",
+  };
+  return (
+    <div className="space-y-3">
+      {/* Decision-maker recommendation — top, prominent */}
+      {rec && (
+        <div className="rounded-lg border-2 border-amber-500/50 bg-amber-500/10 p-3">
+          <div className="text-[10px] uppercase tracking-wider text-amber-300">
+            🎯 Holmes preporuča kontaktirati
+          </div>
+          <div className="mt-1 flex flex-wrap items-baseline gap-2">
+            <span className="text-base font-semibold text-text">
+              {rec.name}
+            </span>
+            {rec.role && (
+              <span className="text-[11px] text-text-dim">{rec.role}</span>
+            )}
+            {rec.channel && (
+              <span className="ml-auto rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-200">
+                {CHANNEL_META[rec.channel]?.emoji ?? ""}{" "}
+                {CHANNEL_META[rec.channel]?.label ?? rec.channel}
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 text-[12px] text-text">{rec.why}</p>
+          {rec.fallback && (
+            <div className="mt-2 rounded border border-border bg-bg/40 px-2 py-1.5">
+              <div className="text-[9px] uppercase tracking-wider text-text-muted">
+                Fallback ako primary ne odgovori
+              </div>
+              <div className="mt-0.5 text-[12px] text-text">
+                <span className="font-medium">{rec.fallback.name}</span>
+                {rec.fallback.role && (
+                  <span className="text-text-dim"> · {rec.fallback.role}</span>
+                )}
+              </div>
+              <p className="mt-0.5 text-[11px] text-text-dim">
+                {rec.fallback.why}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Org structure */}
+      {team && (
+        <div className="rounded-lg border border-border bg-bg-card/40 p-3">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-text-muted">
+              📐 Org struktura
+            </span>
+            <span className="text-[11px] text-amber-300">
+              {sizeLabel[team.size_estimate] ?? team.size_estimate}
+            </span>
+          </div>
+          {team.structure_note && (
+            <p className="mt-1 text-[11px] text-text">{team.structure_note}</p>
+          )}
+          {team.members?.length > 0 ? (
+            <ul className="mt-2 space-y-1.5">
+              {team.members.map((m, i) => (
+                <li
+                  key={i}
+                  className="flex flex-wrap items-baseline gap-2 rounded border border-border bg-bg/40 p-2"
+                >
+                  <span className="text-sm font-medium text-text">
+                    {m.name}
+                  </span>
+                  {m.role && (
+                    <span className="text-[11px] text-text-dim">{m.role}</span>
+                  )}
+                  {m.signals?.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {m.signals.map((s, j) => (
+                        <span
+                          key={j}
+                          className="rounded border border-border bg-bg/60 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-text-muted"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {m.linkedin_url && (
+                    <a
+                      href={m.linkedin_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="ml-auto rounded border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-300 hover:border-blue-500"
+                    >
+                      💼 LinkedIn
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-[11px] text-text-dim">
+              Holmes nije identificirao članove tima (LinkedIn search prazan).
+            </p>
+          )}
+        </div>
+      )}
+
+      {!team && !rec && (
+        <p className="text-[11px] text-text-dim">
+          Holmes nije analizirao tim. Re-run da generira team analysis +
+          recommended_contact.
+        </p>
+      )}
+    </div>
+  );
 }
 
 const CHANNEL_META: Record<

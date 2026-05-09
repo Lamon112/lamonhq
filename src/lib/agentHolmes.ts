@@ -20,6 +20,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
   ddgSearch,
+  findClinicEmployees,
   findCompanySocialUrl,
   findOfficialWebsite,
   findPersonalInstagram,
@@ -105,6 +106,33 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
     Generiraj samo za kanale koji su u TOP 3 reachability. Skip dead/blocked kanale. Ako jedan kanal nije relevantan (npr. nema phone broj), izostavi ga.
 
+14. **team** — analiziraj team_search_hits + clinic-name + niche. Mapiraj zaposlenike koje vidiš (ime + uloga + LI URL + tag-ovi). Procijeni org veličinu:
+    - **solo** — 1-3 doktora, mala praksa
+    - **small** — 4-8 ljudi, srednja
+    - **mid** — 9-20 ljudi, multi-doktorska klinika
+    - **large** — 20+, premium / multi-lokacija s ops + marketing timom
+
+15. **recommended_contact** — KRITIČNI HOLMES DJELOKRUG. Odluči TKO je BEST FIRST CONTACT, ne samo "owner default". Logika:
+
+    - **Solo praksa (1-3 doctors)** → vlasnik (jedini decision-maker)
+    - **Mid-size (4-10 doctors)** → ako u team_search_hits postoji **"voditelj klinike" / "manager" / "operativni direktor"** s ≥1 god u toj klinici → preporuči NJEGA, fallback vlasnik. Razlog: u srednjoj praksi voditelj odlučuje o marketing/automatizaciji jer vlasnik radi pacijente.
+    - **Large/Premium (10+ doctors)** → traži **"marketing", "social media manager", "growth", "operations"** uloge — ti su DIREKTNI buyer-i naših usluga. Vlasnik = strategic only, dugačka deal cycle.
+    - **Special signal**: ako vlasnik ima jak osobni brand (publicity hits, viral content, premium positioning) — vlasnik želi peer-to-peer convo s Leonardom o BRAND VIZIJI. Tada vlasnik = primary čak i u mid praksi.
+    - **Special signal**: ako klinika ima zaseban "marketing" ili "PR" osobu — uvijek prvo nju, ne vlasnika.
+
+    Output recommended_contact:
+    \`\`\`
+    {
+      "name": "...",
+      "role": "...",
+      "why": "1-2 rečenice taktički zašto BAŠ NJEGA (npr. 'voditelj odlučuje o marketing budgetu, vlasnik klinički fokusiran')",
+      "channel": "instagram|linkedin|email|phone|whatsapp",
+      "fallback": { "name": "...", "role": "...", "why": "..." }  // optional - drugi izbor ako primary ne odgovori
+    }
+    \`\`\`
+
+16. **channel_drafts ADRESIRAJ NA recommended_contact**, ne na vlasnika ako su različiti. Pozdrav s imenom recommended_contact-a, hook prilagođen NJIHOVOJ ulozi (voditelj = pricaj o ROI/efikasnosti, marketing = pricaj o conversion/funnel, vlasnik = pricaj o viziji/brand).
+
    **OBAVEZNO**: U solution-u ili pivot-u SUPTILNO embed-aj da je Leonardov posao **razvoj privatnih ordinacija** — to je signal autoriteta koji svaka ordinacija želi imati za sebe. Ne mora biti cijela rečenica — može biti dio konteksta dok pričaš o nečem drugom. Primjeri:
    - "Bavim se razvojem privatnih ordinacija kroz 6 stupova — ovo (AI gatekeeper / chatbot / itd.) je glavni stup za vašu situaciju."
    - "Iz prakse razvoja privatnih ordinacija — vidio sam X kod sličnih tier-a."
@@ -125,6 +153,7 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 - publicity_hits: [{ url, title, snippet }]
 - linkedin_profile: { status, followers, reason } | null
 - instagram_profile: { status, followers, postCount, reason } | null
+- team_search_hits: [{ url, title, snippet }] — LinkedIn profili zaposlenika klinike
 
 # Output schema
 
@@ -171,6 +200,21 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
     "email": "string|null (full V8 ~1500-2000 chars, with Subject: line)",
     "phone": "string|null (3-min CALL SCRIPT format with stage labels)",
     "whatsapp": "string|null (text opener + voice memo prep bullets)"
+  },
+  "team": {
+    "members": [
+      { "name": "...", "role": "...|null", "linkedin_url": "...|null",
+        "signals": ["operations", "marketing", "founder", ...] }
+    ],
+    "size_estimate": "solo|small|mid|large",
+    "structure_note": "1-2 sentences about how the org works"
+  },
+  "recommended_contact": {
+    "name": "...",
+    "role": "...|null",
+    "why": "1-2 sentence tactical reason",
+    "channel": "instagram|linkedin|email|phone|whatsapp|null",
+    "fallback": { "name": "...", "role": "...", "why": "..." }
   },
   "pitch_tier": "starter|intermediate|veteran|dead",
   "recommended_package": "string"
@@ -230,6 +274,34 @@ export interface HolmesReport {
     whatsapp?: string;
   };
   primary_channel?: "instagram" | "linkedin" | "email" | "phone" | "whatsapp";
+  /**
+   * Org structure analysis. Holmes maps the team and decides who's the
+   * right decision-maker contact (not always the owner — sometimes a
+   * voditelj / marketing manager who actually buys our services).
+   */
+  team?: {
+    members: Array<{
+      name: string;
+      role: string | null;
+      linkedin_url: string | null;
+      signals: string[]; // e.g. ["operations", "marketing", "founder"]
+    }>;
+    size_estimate: "solo" | "small" | "mid" | "large";
+    structure_note: string;
+  };
+  recommended_contact?: {
+    name: string;
+    role: string | null;
+    why: string;
+    channel:
+      | "instagram"
+      | "linkedin"
+      | "email"
+      | "phone"
+      | "whatsapp"
+      | null;
+    fallback?: { name: string; role: string | null; why: string };
+  };
   pitch_tier?: "starter" | "intermediate" | "veteran" | "dead";
   recommended_package?: string;
   social_depth?: SocialDepth;
@@ -250,6 +322,13 @@ export interface HolmesEvidence {
   linkedin_profile: ChannelHealth | null;
   instagram_profile: ChannelHealth | null;
   social_depth: SocialDepth | null;
+  /**
+   * Team / employee discovery: LinkedIn site:search results for people
+   * who mention working at this clinic. Holmes synthesis uses this to
+   * map org structure and recommend the right decision-maker contact
+   * (sometimes a manager / voditelj instead of the owner).
+   */
+  team_search_hits?: SearchResult[];
 }
 
 export interface RunHolmesInput {
@@ -298,12 +377,13 @@ export async function runAgentHolmes(
   const ownerCandidate = candidates[0] ?? null;
   const ownerName = ownerCandidate?.fullName ?? null;
 
-  // Step 3: Run recon in parallel — this is the slow part (~30s worst case)
+  // Step 3: Run recon in parallel — this is the slow part (~30-45s worst case)
   const [
     websiteScrape,
     linkedinHits,
     instagramHits,
     publicityHits,
+    teamHits,
   ] = await Promise.all([
     website ? scrapeCompanyWebsite(website).catch(() => null) : Promise.resolve(null),
     ownerName
@@ -319,6 +399,7 @@ export async function runAgentHolmes(
     ownerName
       ? findPublicity(ownerName).catch(() => [])
       : Promise.resolve([] as SearchResult[]),
+    findClinicEmployees(input.leadName).catch(() => [] as SearchResult[]),
   ]);
 
   // Step 4: Pick best LI / IG candidate from search hits + verify alive
@@ -414,13 +495,14 @@ export async function runAgentHolmes(
     linkedin_profile: liProfile,
     instagram_profile: igProfile,
     social_depth: socialDepth ?? null,
+    team_search_hits: teamHits.slice(0, 12),
   };
 
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 6000, // bumped to fit channel_drafts × 5 platforms
+      max_tokens: 8000, // channel_drafts × 5 + team analysis + recommended_contact
       system: [
         {
           type: "text",

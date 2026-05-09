@@ -212,6 +212,51 @@ export async function findPublicity(
 }
 
 /**
+ * Search for employees at a given clinic by combining the company name
+ * with site:linkedin.com/in queries. Returns a list of LinkedIn personal
+ * profile URLs that mention working at this org.
+ *
+ * Used by Agent Holmes to map the org structure (who's the doctor /
+ * voditelj / marketing manager / etc) so we can recommend the right
+ * decision-maker contact, not always the owner.
+ */
+export async function findClinicEmployees(
+  clinicName: string,
+): Promise<SearchResult[]> {
+  const cleaned = clinicName
+    .replace(/\s*\/\s*[^/]+$/, "") // strip "/ Dr. X" tail
+    .trim();
+  // Two passes: first the broad "anyone at this clinic" search, then
+  // a narrower one biased toward operations / marketing / ops titles
+  // since those folks are usually the ones who actually buy our services.
+  const queries = [
+    `site:linkedin.com/in "${cleaned}"`,
+    `site:linkedin.com/in "${cleaned}" (voditelj OR manager OR marketing OR direktor OR operations)`,
+  ];
+  const seen = new Set<string>();
+  const out: SearchResult[] = [];
+  for (const q of queries) {
+    try {
+      const results = await ddgSearch(q, 8);
+      for (const r of results) {
+        if (
+          /linkedin\.com\/(?:[a-z]{2,3}\/)?in\//i.test(r.url) &&
+          !seen.has(r.url)
+        ) {
+          seen.add(r.url);
+          out.push(r);
+        }
+      }
+    } catch {
+      // ignore — DDG may flake; we'll work with whatever we got
+    }
+    // Be polite — small gap between consecutive DDG hits
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return out.slice(0, 12);
+}
+
+/**
  * Per-platform search to find a company's social-media profile URL when
  * the website scrape didn't surface it (often because of JS rendering or
  * a footer that links via image-only icons).
