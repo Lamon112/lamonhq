@@ -1,28 +1,33 @@
 "use client";
 
 /**
- * Per-agent themed scenes — each room is dressed so heavily that you
- * read its specialty in 1 second:
- *   Holmes   → 1940s noir detective bureau (corkboard + typewriter +
- *              trench coat + revolver + whiskey + venetian blinds)
- *   Jarvis   → Iron-Man arc-reactor command center (holo rings + AI
- *              core + screens with code + cooling pipes)
- *   Nova     → mad-scientist lab (periodic table + bubbling flasks +
- *              bunsen burner + DNA helix + centrifuge)
- *   Comms    → wartime operator hub (switchboard + dish + telegraph +
- *              world clocks + ticker tape)
- *   Treasury → Scrooge bank vault (massive door + gold mountains +
- *              dollar pile + scale + cigar + portrait)
- *   Steward  → boutique reception (chandelier + chesterfield + plant
- *              + visitor book + brass lamp)
- *   Atlas    → Hollywood PR studio (red carpet + spotlights + step-
- *              and-repeat backdrop + vanity bulbs + boom mic + awards)
- *   Mentat   → war room (tactical map + war table + bookshelf + bust
- *              + red phone + bookcase + chess set + flags)
- *   Forge    → blacksmith content foundry (furnace + anvil + bellows +
- *              wares wall + water trough + apron + chain + horseshoes)
+ * Per-agent themed scenes — HERO-FIRST design.
  *
- * All pure CSS / SVG / emoji — no asset files.
+ * Each room has ONE dominant feature (huge window, marquee, world map,
+ * holo viewport, neon sign, banner) that takes 50-65% of back wall so
+ * the room's function reads in milliseconds without reading text.
+ *
+ * Plus secondary furniture vignette in the lower half + side walls
+ * for richness.
+ *
+ *   Holmes   → noir bureau · HERO: arched window with venetian blinds +
+ *              dramatic streetlight + city silhouette + rain
+ *   Jarvis   → arc-reactor command · HERO: massive holographic Earth
+ *              with orbiting rings + "AI CORE ONLINE"
+ *   Nova     → mad-scientist lab · HERO: specimen observation tank with
+ *              floating atom inside + biohazard frame
+ *   Comms    → operator hub · HERO: huge world map with pulsing
+ *              connection arcs from Croatia to global hubs
+ *   Treasury → bank vault · HERO: massive vault door + "€30K GOAL"
+ *              progress banner + giant € insignia
+ *   Steward  → reception · HERO: cursive neon "Welcome" sign + panoramic
+ *              city window + "CLIENT HQ" text
+ *   Atlas    → PR studio · HERO: marquee bulbs spelling "★ ATLAS ★" +
+ *              ON-AIR red light + step-and-repeat backdrop
+ *   Mentat   → war room · HERO: huge tactical world map covering full
+ *              back wall + "▼ WAR ROOM ▼" stencil + strategy lines
+ *   Forge    → smithy · HERO: enormous glowing furnace + tall flames +
+ *              "⚒ FORGE ⚒" iron crest sign
  */
 
 import type { AgentId } from "@/lib/vault";
@@ -54,362 +59,298 @@ export function RoomFurniture({ agentId }: { agentId: AgentId }) {
 
 /* =================================================================== */
 /* HOLMES — film-noir detective bureau                                  */
+/* HERO: huge arched window with venetian blinds + streetlight beam     */
 /* =================================================================== */
 function HolmesFurniture() {
   return (
     <>
-      {/* Venetian blind shadow cast across whole back wall */}
+      {/* === HERO: Massive arched noir window === */}
+      <div className="absolute left-1/2 top-0 h-24 w-32 -translate-x-1/2 rounded-t-[40%] border-2 border-amber-900/90 bg-gradient-to-b from-stone-900 via-stone-950 to-blue-950 shadow-[inset_0_0_8px_rgba(0,0,0,0.7),0_2px_4px_rgba(0,0,0,0.5)]">
+        {/* Sky gradient (night with moon glow) */}
+        <div className="absolute inset-0 rounded-t-[40%] bg-gradient-to-b from-amber-100/8 via-blue-900/20 to-stone-950" />
+
+        {/* MOON behind blinds */}
+        <div className="absolute right-3 top-2 h-5 w-5 rounded-full bg-gradient-to-br from-amber-100 to-amber-300 shadow-[0_0_12px_rgba(254,240,138,0.7),inset_-2px_-2px_4px_rgba(180,120,60,0.4)]" />
+
+        {/* City building silhouettes outside */}
+        <div className="absolute bottom-0 left-0 right-0 h-8">
+          <div className="absolute bottom-0 left-1 h-5 w-3 bg-stone-950">
+            {/* windows */}
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
+            <div className="absolute right-0.5 top-1 h-px w-px bg-amber-300/80" />
+            <div className="absolute left-0.5 top-3 h-px w-px bg-amber-300/80" />
+          </div>
+          <div className="absolute bottom-0 left-5 h-7 w-4 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
+            <div className="absolute right-0.5 top-2 h-px w-px bg-amber-300/80" />
+            <div className="absolute left-0.5 top-4 h-px w-px bg-amber-300/80" />
+            <div className="absolute right-0.5 top-5 h-px w-px bg-amber-300/80" />
+          </div>
+          <div className="absolute bottom-0 left-10 h-4 w-3 bg-stone-950" />
+          <div className="absolute bottom-0 left-14 h-6 w-3 bg-stone-950">
+            <div className="absolute left-1 top-1 h-px w-px bg-amber-300/80" />
+            <div className="absolute left-1 top-3 h-px w-px bg-amber-300/80" />
+          </div>
+          <div className="absolute bottom-0 left-[4.5rem] h-5 w-4 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
+            <div className="absolute right-0.5 top-2 h-px w-px bg-amber-300/80" />
+          </div>
+          <div className="absolute bottom-0 right-1 h-7 w-3 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
+            <div className="absolute left-0.5 top-3 h-px w-px bg-amber-300/80" />
+            <div className="absolute left-0.5 top-5 h-px w-px bg-amber-300/80" />
+          </div>
+          {/* Glowing red "PRIVATE EYE" sign on building */}
+          <div className="absolute bottom-3 right-5 rounded-sm bg-red-700/90 px-px font-mono text-[5px] font-bold leading-none tracking-wider text-red-100 shadow-[0_0_4px_rgba(239,68,68,0.9)]">
+            BAR
+          </div>
+        </div>
+
+        {/* Rain streaks */}
+        <div className="absolute inset-0 rounded-t-[40%] opacity-50"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(15deg, rgba(165,243,252,0.3) 0 1px, transparent 1px 6px)",
+          }}
+        />
+
+        {/* Venetian blinds — horizontal slats covering window */}
+        <div className="absolute inset-0 rounded-t-[40%] overflow-hidden">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute inset-x-0 h-px bg-stone-700/90 shadow-[0_1px_0_rgba(0,0,0,0.5)]"
+              style={{ top: `${10 + i * 11}%` }}
+            />
+          ))}
+          {/* Blind cord */}
+          <div className="absolute right-1 top-1 h-full w-px bg-stone-600" />
+        </div>
+
+        {/* Window frame cross */}
+        <div className="absolute left-1/2 top-0 h-full w-0.5 -translate-x-1/2 bg-amber-950/80" />
+      </div>
+
+      {/* Streetlight beam slicing into room (yellow noir light) */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-25"
+        className="pointer-events-none absolute left-1/2 top-24 h-16 w-32 -translate-x-1/2 bg-gradient-to-b from-amber-200/15 via-amber-100/8 to-transparent"
         style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, rgba(0,0,0,0.6) 0 2px, transparent 2px 8px)",
+          clipPath: "polygon(20% 0, 80% 0, 100% 100%, 0 100%)",
+          filter: "blur(1.5px)",
         }}
       />
 
-      {/* "DETECTIVE" frosted door window — far left */}
-      <div className="absolute left-1 top-2 h-12 w-7 rounded-sm border border-amber-900/80 bg-gradient-to-b from-amber-100/15 to-amber-200/5 shadow-[inset_0_0_4px_rgba(0,0,0,0.5)]">
-        {/* "PRIVATE EYE" stencil */}
-        <div className="absolute inset-x-0 top-3 text-center font-mono text-[5px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200/70">
+      {/* === SIDE: "PRIVATE EYE" frosted door === */}
+      <div className="absolute left-1 top-1 h-16 w-8 rounded-sm border border-amber-900/80 bg-gradient-to-b from-amber-100/20 to-amber-200/5 shadow-[inset_0_0_4px_rgba(0,0,0,0.5)]">
+        <div className="absolute inset-x-0 top-3 text-center font-mono text-[6px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200/80">
           PRIVATE
         </div>
-        <div className="absolute inset-x-0 top-5 text-center font-mono text-[5px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200/70">
+        <div className="absolute inset-x-0 top-6 text-center font-mono text-[6px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200/80">
           EYE
         </div>
-        {/* Gold star badge */}
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] leading-none">★</div>
-        {/* Door handle */}
-        <div className="absolute right-0.5 top-7 h-1 w-0.5 rounded-full bg-amber-700" />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] leading-none">★</div>
+        <div className="absolute right-1 top-9 h-1 w-0.5 rounded-full bg-amber-700" />
       </div>
 
-      {/* Corkboard — center back wall, dense with evidence */}
-      <div
-        className="absolute left-10 top-2 h-16 w-28 rounded border border-amber-900/80 bg-amber-950/90"
-        style={{
-          boxShadow: "inset 0 0 8px rgba(0,0,0,0.7), 0 1px 0 rgba(180,120,60,0.2)",
-          backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(180,120,60,0.18) 0 2px, transparent 2px 5px)",
-        }}
-      >
-        {/* Pins (red) */}
-        <div className="absolute left-1 top-1 h-1 w-1 rounded-full bg-red-500 shadow-[0_0_3px_rgba(239,68,68,0.8)]" />
-        <div className="absolute right-1.5 top-2 h-1 w-1 rounded-full bg-red-500 shadow-[0_0_3px_rgba(239,68,68,0.8)]" />
-        <div className="absolute bottom-2 left-3 h-1 w-1 rounded-full bg-red-500 shadow-[0_0_3px_rgba(239,68,68,0.8)]" />
-        <div className="absolute bottom-1 right-2 h-1 w-1 rounded-full bg-red-500 shadow-[0_0_3px_rgba(239,68,68,0.8)]" />
-        <div className="absolute left-1/2 top-3 h-1 w-1 rounded-full bg-red-500 shadow-[0_0_3px_rgba(239,68,68,0.8)]" />
-        {/* Polaroid mug shots — 4 suspects */}
-        <div className="absolute left-1.5 top-1.5 h-3.5 w-3 border border-stone-400 bg-stone-200 p-px">
-          <div className="h-2 w-full bg-stone-700" />
-        </div>
-        <div className="absolute left-7 top-2.5 h-3.5 w-3 border border-stone-400 bg-stone-100 p-px">
-          <div className="h-2 w-full bg-amber-800" />
-        </div>
-        <div className="absolute right-2 top-2.5 h-3.5 w-3 border border-stone-400 bg-stone-100 p-px">
-          <div className="h-2 w-full bg-stone-600" />
-        </div>
-        <div className="absolute bottom-2.5 left-3.5 h-3.5 w-3 border border-stone-400 bg-stone-200 p-px">
-          <div className="h-2 w-full bg-amber-700" />
-        </div>
-        {/* Newspaper clipping — center */}
-        <div className="absolute left-1/2 top-7 h-3.5 w-4.5 -translate-x-1/2 bg-stone-100 p-px shadow-sm">
-          <div className="h-px w-full bg-stone-700" />
-          <div className="mt-px h-px w-3/4 bg-stone-700" />
-          <div className="mt-px h-px w-full bg-stone-700" />
-          <div className="mt-px h-px w-2/3 bg-stone-700" />
-        </div>
-        {/* Big "?" red marker */}
-        <div className="absolute right-1 bottom-1 font-serif text-[9px] font-bold leading-none text-red-500">?</div>
-        {/* Red string web — denser */}
-        <div
-          className="absolute left-3 top-3.5 h-px w-12 bg-red-500/80 shadow-[0_0_2px_rgba(239,68,68,0.6)]"
-          style={{ transform: "rotate(20deg)" }}
-        />
-        <div
-          className="absolute left-4 top-6 h-px w-14 bg-red-500/80 shadow-[0_0_2px_rgba(239,68,68,0.6)]"
-          style={{ transform: "rotate(-25deg)" }}
-        />
-        <div
-          className="absolute left-6 top-9 h-px w-10 bg-red-500/80 shadow-[0_0_2px_rgba(239,68,68,0.6)]"
-          style={{ transform: "rotate(15deg)" }}
-        />
-        <div
-          className="absolute left-8 top-11 h-px w-12 bg-red-500/80 shadow-[0_0_2px_rgba(239,68,68,0.6)]"
-          style={{ transform: "rotate(-10deg)" }}
-        />
-      </div>
-
-      {/* "CASE-12 OPEN" stamp under board */}
-      <div className="absolute left-11 top-[5.2rem] flex items-center gap-1">
-        <div className="rounded-sm border border-red-500/70 bg-red-950/40 px-1 font-mono text-[6px] font-bold uppercase tracking-wider text-red-300">
-          OPEN
-        </div>
-        <span className="font-mono text-[6px] uppercase tracking-wider text-amber-400/60">
-          CASE-12
-        </span>
-      </div>
-
-      {/* Coat rack with trench coat + fedora — far right back */}
-      <div className="absolute right-1 top-2 flex flex-col items-center">
-        {/* Hat (fedora) */}
-        <div className="h-1 w-3 rounded-full border border-stone-700 bg-stone-800" />
-        <div className="h-1.5 w-2 -mt-px bg-stone-800" />
-        {/* Hook */}
-        <div className="h-px w-2 bg-stone-600" />
-        {/* Trench coat */}
-        <div className="relative mt-px h-7 w-3 bg-amber-800/90">
+      {/* === SIDE: Coat rack with fedora + trench coat === */}
+      <div className="absolute right-1 top-1 flex flex-col items-center">
+        <div className="h-1.5 w-4 rounded-full border border-stone-700 bg-stone-800" />
+        <div className="h-2 w-3 -mt-px bg-stone-800" />
+        <div className="h-px w-3 bg-stone-600" />
+        <div className="relative mt-px h-9 w-4 bg-amber-800/95 shadow-md">
           <div className="absolute inset-x-px top-0 h-px bg-amber-700" />
-          {/* Belt */}
-          <div className="absolute left-0 right-0 top-3 h-px bg-amber-950" />
-          {/* Lapel */}
-          <div className="absolute left-px top-1 h-2 w-px bg-amber-900" />
-          <div className="absolute right-px top-1 h-2 w-px bg-amber-900" />
+          <div className="absolute left-0 right-0 top-4 h-px bg-amber-950" />
+          <div className="absolute left-px top-1 h-3 w-px bg-amber-900" />
+          <div className="absolute right-px top-1 h-3 w-px bg-amber-900" />
         </div>
-        {/* Pole */}
         <div className="absolute -bottom-2 left-1/2 h-2 w-px -translate-x-1/2 bg-stone-600" />
       </div>
 
-      {/* Filing cabinet — back right */}
-      <div className="absolute right-9 top-12 h-12 w-7 border border-stone-700 bg-gradient-to-b from-stone-700 to-stone-900 shadow-[inset_0_0_4px_rgba(0,0,0,0.5),2px_2px_3px_rgba(0,0,0,0.4)]">
-        {/* 3 drawers */}
-        <div className="border-b border-stone-900 px-1 py-1">
-          <div className="h-0.5 w-2 rounded-sm bg-stone-500" />
-        </div>
-        <div className="border-b border-stone-900 px-1 py-1">
-          <div className="h-0.5 w-2 rounded-sm bg-stone-500" />
-        </div>
-        <div className="px-1 py-1">
-          <div className="h-0.5 w-2 rounded-sm bg-stone-500" />
-        </div>
-        {/* Top label */}
-        <div className="absolute -top-1 left-0.5 h-1 w-3 bg-amber-100/80" />
-      </div>
-      {/* Stack of files on top of cabinet */}
-      <div className="absolute right-9 top-[2.7rem] h-1 w-7 bg-amber-100" />
-      <div className="absolute right-9 top-[2.45rem] h-1 w-7 bg-amber-200" />
-      <div className="absolute right-9 top-[2.2rem] h-1 w-6 bg-amber-100" />
-
-      {/* Bookshelf — left wall, packed */}
-      <div className="absolute left-1 bottom-12 h-10 w-7 border border-amber-900/80 bg-amber-950/90 shadow-[inset_0_0_3px_rgba(0,0,0,0.6)]">
-        {/* Shelf 1 — books */}
-        <div className="border-b border-amber-900 px-px py-px">
-          <div className="flex items-end gap-px">
-            <div className="h-2 w-px bg-red-700" />
-            <div className="h-2.5 w-px bg-stone-700" />
-            <div className="h-2 w-px bg-emerald-800" />
-            <div className="h-2.5 w-px bg-amber-700" />
-            <div className="h-2 w-px bg-stone-800" />
-            <div className="h-2.5 w-px bg-red-900" />
-            <div className="h-2 w-px bg-stone-600" />
-          </div>
-        </div>
-        {/* Shelf 2 — more books */}
-        <div className="border-b border-amber-900 px-px py-px">
-          <div className="flex items-end gap-px">
-            <div className="h-2 w-px bg-stone-700" />
-            <div className="h-2.5 w-px bg-emerald-800" />
-            <div className="h-2 w-px bg-red-800" />
-            <div className="h-2.5 w-px bg-amber-800" />
-            <div className="h-2 w-px bg-stone-800" />
-          </div>
-        </div>
-        {/* Shelf 3 — decanter + glass */}
-        <div className="px-1 py-1">
-          {/* Whiskey decanter */}
-          <div className="absolute bottom-1 left-1 h-3 w-1.5 rounded-b border border-amber-300/80 bg-gradient-to-b from-amber-200/30 to-amber-700/80 shadow-[inset_0_0_1px_rgba(255,255,255,0.4)]">
-            <div className="absolute -top-0.5 left-1/2 h-0.5 w-0.5 -translate-x-1/2 rounded-t bg-stone-600" />
-          </div>
-          {/* Glass */}
-          <div className="absolute bottom-1 left-3.5 h-2 w-1 rounded-b border border-stone-300/70 bg-amber-700/60" />
-        </div>
-      </div>
-
-      {/* Desk — bottom right with everything on it */}
-      <div className="absolute right-2 bottom-2 h-2 w-20 rounded-sm border border-amber-950 bg-gradient-to-b from-amber-900 to-amber-950 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.6),0_1px_0_rgba(180,120,60,0.1)]" />
-      {/* Desk legs */}
+      {/* === BOTTOM: Desk packed with noir props === */}
+      <div className="absolute right-2 bottom-2 h-2 w-24 rounded-sm border border-amber-950 bg-gradient-to-b from-amber-900 to-amber-950 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.6),0_1px_0_rgba(180,120,60,0.1)]" />
       <div className="absolute right-3 bottom-0 h-2 w-0.5 bg-amber-950" />
-      <div className="absolute right-20 bottom-0 h-2 w-0.5 bg-amber-950" />
-      {/* Desk drawer */}
-      <div className="absolute right-12 bottom-2.5 h-1 w-3 border border-amber-950 bg-amber-900" />
+      <div className="absolute right-24 bottom-0 h-2 w-0.5 bg-amber-950" />
 
-      {/* Banker's green desk lamp */}
+      {/* Banker's lamp */}
       <div className="absolute right-3 bottom-4 h-3 w-3">
         <div className="absolute bottom-0 left-1/2 h-2 w-px -translate-x-1/2 bg-stone-600" />
-        <div className="absolute top-0 left-0 h-1.5 w-3 rounded-t-full bg-emerald-700 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-        <div className="absolute top-1.5 left-1/2 h-px w-2 -translate-x-1/2 bg-emerald-900" />
-        {/* Light cone */}
+        <div className="absolute top-0 left-0 h-1.5 w-3 rounded-t-full bg-emerald-700 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
         <div
-          className="absolute left-1/2 top-1.5 h-2 w-3 -translate-x-1/2 bg-gradient-to-b from-emerald-200/40 to-transparent"
+          className="absolute left-1/2 top-1.5 h-3 w-3 -translate-x-1/2 bg-gradient-to-b from-emerald-200/50 to-transparent"
           style={{ clipPath: "polygon(40% 0, 60% 0, 100% 100%, 0 100%)" }}
         />
       </div>
 
-      {/* Typewriter on desk */}
-      <div className="absolute right-7 bottom-4 h-2.5 w-4 rounded-sm border border-stone-800 bg-gradient-to-b from-stone-700 to-stone-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]">
-        {/* Carriage roll */}
+      {/* Typewriter */}
+      <div className="absolute right-7 bottom-4 h-3 w-5 rounded-sm border border-stone-800 bg-gradient-to-b from-stone-700 to-stone-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]">
         <div className="absolute -top-px left-0 right-0 h-0.5 bg-stone-600" />
-        {/* Paper sticking up */}
-        <div className="absolute -top-2 left-1/2 h-2 w-2 -translate-x-1/2 bg-stone-100">
-          <div className="m-px h-px w-1 bg-stone-700" />
+        <div className="absolute -top-2.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 bg-stone-100">
+          <div className="m-px h-px w-1.5 bg-stone-700" />
+          <div className="m-px mt-px h-px w-1 bg-stone-700" />
         </div>
-        {/* Keys (3 rows of dots) */}
         <div className="absolute inset-x-0.5 top-1 flex flex-col gap-px">
           <div className="flex justify-around">
-            <div className="h-px w-px rounded-full bg-stone-300" />
-            <div className="h-px w-px rounded-full bg-stone-300" />
-            <div className="h-px w-px rounded-full bg-stone-300" />
-            <div className="h-px w-px rounded-full bg-stone-300" />
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-px w-px rounded-full bg-stone-300" />
+            ))}
           </div>
           <div className="flex justify-around">
-            <div className="h-px w-px rounded-full bg-stone-300" />
-            <div className="h-px w-px rounded-full bg-stone-300" />
-            <div className="h-px w-px rounded-full bg-stone-300" />
-            <div className="h-px w-px rounded-full bg-stone-300" />
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-px w-px rounded-full bg-stone-300" />
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Magnifier on desk */}
-      <div className="absolute right-12 bottom-3.5 text-[11px] leading-none">🔍</div>
+      {/* Magnifier */}
+      <div className="absolute right-[3.25rem] bottom-3 text-[14px] leading-none">🔍</div>
 
-      {/* Stack of case files */}
-      <div className="absolute right-16 bottom-3.5 h-1 w-3 bg-amber-100/90" />
-      <div className="absolute right-16 bottom-[1.05rem] h-px w-3 bg-stone-300" />
-      <div className="absolute right-16 bottom-[1.2rem] h-1 w-3 bg-amber-200/90" />
+      {/* Case files stack */}
+      <div className="absolute right-[4.5rem] bottom-3.5 h-1 w-3 bg-amber-100/90" />
+      <div className="absolute right-[4.5rem] bottom-[1.05rem] h-px w-3 bg-stone-300" />
+      <div className="absolute right-[4.5rem] bottom-[1.2rem] h-1 w-3 bg-amber-200/90" />
 
-      {/* Rotary phone — left of desk */}
-      <div className="absolute right-[4.75rem] bottom-3.5 h-2 w-2.5">
-        {/* Body */}
+      {/* Rotary phone */}
+      <div className="absolute right-[5.25rem] bottom-3.5 h-2 w-2.5">
         <div className="absolute bottom-0 left-0 h-1 w-2.5 rounded-sm bg-stone-900" />
-        {/* Receiver */}
-        <div className="absolute top-0 left-0 right-0 h-1 rounded-full bg-stone-800 shadow-[inset_0_0_1px_rgba(0,0,0,0.5)]" />
-        {/* Dial */}
+        <div className="absolute top-0 left-0 right-0 h-1 rounded-full bg-stone-800" />
         <div className="absolute bottom-0.5 left-1 h-px w-px rounded-full bg-stone-600" />
       </div>
 
-      {/* Ashtray with cigarette + smoke */}
+      {/* Ashtray with cigarette */}
       <div className="absolute right-1.5 bottom-3.5">
-        <div className="h-1 w-1.5 rounded-full bg-stone-700" />
-        <div className="absolute -top-px left-1/2 h-px w-2 -translate-x-1/2 bg-stone-200" />
-        {/* Smoke wisp */}
-        <div className="absolute -top-3 left-1/2 h-3 w-px -translate-x-1/2 bg-gradient-to-t from-stone-400/50 to-transparent blur-[0.5px]" />
+        <div className="h-1 w-2 rounded-full bg-stone-700" />
+        <div className="absolute -top-px left-0 h-px w-2.5 bg-stone-200" />
+        <div className="absolute -top-px left-2.5 h-px w-px rounded-full bg-orange-400 shadow-[0_0_3px_rgba(251,146,60,0.9)]" />
+        <div className="absolute -top-4 left-1.5 h-4 w-px bg-gradient-to-t from-stone-400/60 to-transparent blur-[0.5px]" />
       </div>
 
-      {/* Floor rug — vintage red/amber */}
-      <div className="absolute bottom-0 left-1/4 right-1/4 h-1 rounded-sm border border-amber-900/40 bg-gradient-to-r from-amber-900/40 via-red-900/30 to-amber-900/40" />
+      {/* "OPEN" red stamp on right side */}
+      <div className="absolute right-[5.5rem] bottom-9 -rotate-12 rounded-sm border-2 border-red-500/90 bg-red-950/30 px-1 py-0.5 font-mono text-[7px] font-bold uppercase leading-none tracking-[0.15em] text-red-400 shadow-[0_0_4px_rgba(239,68,68,0.4)]">
+        CASE OPEN
+      </div>
     </>
   );
 }
 
 /* =================================================================== */
-/* JARVIS — Iron-Man arc-reactor command center                         */
+/* JARVIS — arc-reactor command center                                  */
+/* HERO: massive holographic Earth + AI CORE banner                     */
 /* =================================================================== */
 function JarvisFurniture() {
   return (
     <>
-      {/* Wall of monitors — 3x2 grid (back wall) */}
-      <div className="absolute left-2 top-1 grid grid-cols-3 gap-0.5">
+      {/* === HERO: Giant holographic Earth viewport === */}
+      <div className="absolute left-1/2 top-1 h-[5.5rem] w-32 -translate-x-1/2">
+        {/* Holographic frame brackets (corner markers) */}
+        <div className="absolute -left-1 -top-1 h-3 w-3 border-l-2 border-t-2 border-cyan-400/80 shadow-[0_0_4px_rgba(6,182,212,0.6)]" />
+        <div className="absolute -right-1 -top-1 h-3 w-3 border-r-2 border-t-2 border-cyan-400/80 shadow-[0_0_4px_rgba(6,182,212,0.6)]" />
+        <div className="absolute -left-1 -bottom-1 h-3 w-3 border-l-2 border-b-2 border-cyan-400/80 shadow-[0_0_4px_rgba(6,182,212,0.6)]" />
+        <div className="absolute -right-1 -bottom-1 h-3 w-3 border-r-2 border-b-2 border-cyan-400/80 shadow-[0_0_4px_rgba(6,182,212,0.6)]" />
+
+        {/* Holographic Earth in center */}
+        <div className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2">
+          {/* Planet sphere */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-700 via-blue-900 to-stone-950 shadow-[inset_-3px_-3px_8px_rgba(0,0,0,0.7),0_0_16px_rgba(6,182,212,0.6)]">
+            {/* Continent shapes */}
+            <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full opacity-90">
+              <ellipse cx="32" cy="32" rx="30" ry="30" fill="none" stroke="rgba(34,211,238,0.4)" strokeWidth="0.5" />
+              {/* Continents (rough shapes) */}
+              <path d="M 18 22 Q 22 20 26 24 Q 28 30 22 32 Q 16 30 18 22 Z" fill="rgba(16,185,129,0.6)" />
+              <path d="M 35 18 Q 42 16 46 22 Q 48 28 42 30 Q 36 28 35 18 Z" fill="rgba(16,185,129,0.6)" />
+              <path d="M 25 38 Q 30 36 38 42 Q 36 48 30 50 Q 22 46 25 38 Z" fill="rgba(16,185,129,0.6)" />
+              <path d="M 44 40 Q 50 42 50 48 Q 46 52 42 50 Q 40 44 44 40 Z" fill="rgba(16,185,129,0.6)" />
+              {/* Latitude lines */}
+              <ellipse cx="32" cy="32" rx="30" ry="8" fill="none" stroke="rgba(34,211,238,0.3)" strokeWidth="0.3" />
+              <ellipse cx="32" cy="32" rx="30" ry="20" fill="none" stroke="rgba(34,211,238,0.3)" strokeWidth="0.3" />
+              {/* Longitude lines */}
+              <ellipse cx="32" cy="32" rx="8" ry="30" fill="none" stroke="rgba(34,211,238,0.3)" strokeWidth="0.3" />
+              <ellipse cx="32" cy="32" rx="20" ry="30" fill="none" stroke="rgba(34,211,238,0.3)" strokeWidth="0.3" />
+            </svg>
+          </div>
+          {/* Orbiting rings */}
+          <div className="absolute inset-0 rounded-full border border-cyan-400/40 shadow-[0_0_4px_rgba(6,182,212,0.3)]"
+            style={{ transform: "scale(1.2) rotateX(60deg)" }}
+          />
+          <div className="absolute inset-0 rounded-full border border-cyan-300/40"
+            style={{ transform: "scale(1.4) rotateX(60deg) rotateZ(30deg)" }}
+          />
+          {/* Satellite */}
+          <div className="absolute right-0 top-1/2 h-1 w-1 rounded-full bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.9)]"
+            style={{ transform: "translateX(8px)" }}
+          />
+        </div>
+
+        {/* Telemetry text — top */}
+        <div className="absolute left-0 top-0 font-mono text-[5px] leading-none text-cyan-400/80">
+          LAT: 45.81°N
+        </div>
+        <div className="absolute right-0 top-0 font-mono text-[5px] leading-none text-cyan-400/80">
+          LON: 15.97°E
+        </div>
+        {/* Stats — bottom */}
+        <div className="absolute left-0 bottom-0 font-mono text-[5px] leading-none text-emerald-400/90">
+          PING: 12ms
+        </div>
+        <div className="absolute right-0 bottom-0 font-mono text-[5px] leading-none text-emerald-400/90">
+          UPTIME: 247d
+        </div>
+      </div>
+
+      {/* === BIG GLOWING SIGN: AI CORE ONLINE === */}
+      <div className="absolute left-1/2 top-[5.8rem] -translate-x-1/2 flex items-center gap-1 rounded-sm border border-cyan-400/60 bg-cyan-950/80 px-2 py-px shadow-[0_0_6px_rgba(6,182,212,0.6),inset_0_0_3px_rgba(34,211,238,0.4)]">
+        <div className="h-1 w-1 animate-pulse rounded-full bg-cyan-300 shadow-[0_0_3px_rgba(125,211,252,1)]" />
+        <span className="font-mono text-[7px] font-bold uppercase leading-none tracking-[0.2em] text-cyan-200">
+          AI CORE · ONLINE
+        </span>
+      </div>
+
+      {/* === SIDE: 6-monitor wall (left side, smaller) === */}
+      <div className="absolute left-1 top-1 grid grid-cols-2 gap-0.5">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="h-4 w-6 rounded-sm border border-yellow-900/80 bg-yellow-950/90 shadow-[inset_0_0_4px_rgba(250,204,21,0.5),0_1px_2px_rgba(0,0,0,0.5)]"
+            className="h-3 w-4 rounded-sm border border-yellow-900/80 bg-yellow-950/90 shadow-[inset_0_0_3px_rgba(250,204,21,0.5)]"
           >
             {i === 0 && (
               <>
-                <div className="m-px h-px w-4 bg-yellow-400/80" />
+                <div className="m-px h-px w-2 bg-yellow-400/80" />
                 <div className="m-px h-px w-3 bg-yellow-400/60" />
-                <div className="m-px h-px w-4 bg-yellow-400/80" />
-                <div className="m-px h-px w-2 bg-yellow-400/40" />
               </>
             )}
             {i === 1 && (
               <div className="flex h-full items-center justify-center">
-                <div className="h-2.5 w-2.5 rounded-full border border-cyan-300/80 shadow-[0_0_2px_rgba(165,243,252,0.6)]">
-                  <div className="absolute inset-0.5 rounded-full border border-cyan-300/40" />
-                </div>
+                <div className="h-1.5 w-1.5 rounded-full border border-cyan-300/80" />
               </div>
             )}
             {i === 2 && (
-              <div className="m-px flex h-3 items-end gap-px">
+              <div className="m-px flex h-2 items-end gap-px">
                 <div className="h-1 w-px bg-emerald-400" />
                 <div className="h-2 w-px bg-emerald-400" />
                 <div className="h-1.5 w-px bg-emerald-400" />
-                <div className="h-2.5 w-px bg-emerald-400" />
-                <div className="h-2 w-px bg-emerald-400" />
-                <div className="h-1 w-px bg-emerald-400" />
               </div>
             )}
             {i === 3 && (
-              <>
-                <div className="m-px h-px w-2 bg-emerald-400/80" />
-                <div className="m-px h-px w-3 bg-emerald-400/60" />
-                <div className="m-px h-px w-1 bg-yellow-400/60" />
-                <div className="m-px h-px w-3 bg-emerald-400/40" />
-              </>
+              <div className="m-px h-px w-3 bg-red-400/80" />
             )}
             {i === 4 && (
-              <div className="m-px h-3 w-full">
-                {/* Fake "blueprint" lines */}
-                <div className="h-px w-3 bg-cyan-400/60" />
-                <div className="m-px h-2 w-2 border border-cyan-400/50" />
-              </div>
+              <div className="m-px h-px w-2 bg-cyan-400/80" />
             )}
             {i === 5 && (
               <>
-                <div className="m-px h-px w-3 bg-red-400/80" />
-                <div className="m-px h-px w-2 bg-red-400/80" />
-                <div className="m-px h-px w-4 bg-red-400/80" />
+                <div className="m-px h-px w-2 bg-emerald-400/80" />
+                <div className="m-px h-px w-3 bg-emerald-400/60" />
               </>
             )}
           </div>
         ))}
       </div>
 
-      {/* "JARVIS-PRIME" nameplate above monitors */}
-      <div className="absolute left-2 top-[5.5rem] flex items-center gap-1">
-        <div className="h-1 w-1 rounded-full bg-yellow-400 shadow-[0_0_3px_rgba(250,204,21,0.9)]" />
-        <span className="font-mono text-[6px] font-bold uppercase tracking-[0.2em] text-yellow-300/80">
-          JARVIS-PRIME · v4.7
-        </span>
-      </div>
-
-      {/* Floating arc-reactor / AI core — right side */}
-      <div className="absolute right-3 top-2 h-12 w-12">
-        <div className="absolute inset-0 rounded-full border border-cyan-400/30 shadow-[inset_0_0_8px_rgba(6,182,212,0.3),0_0_8px_rgba(6,182,212,0.4)]" />
-        <div className="absolute inset-1 rounded-full border border-cyan-400/40" />
-        <div className="absolute inset-2 rounded-full border border-cyan-400/50" />
-        {/* Inner spinning glyphs */}
-        <div className="absolute inset-3 flex items-center justify-center">
-          <div className="h-3 w-3 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(165,243,252,1)]" />
-        </div>
-        {/* Outer angular spokes */}
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-          <div
-            key={deg}
-            className="absolute left-1/2 top-1/2 h-px w-5 origin-left bg-cyan-300/70"
-            style={{ transform: `translate(-50%, -50%) rotate(${deg}deg)` }}
-          />
-        ))}
-      </div>
-
-      {/* Holographic data stream — vertical lines from arc reactor */}
-      <div className="absolute right-3 top-[3.5rem] h-3 w-12 opacity-70">
-        <div className="flex justify-around">
-          <div className="font-mono text-[5px] leading-none text-cyan-300">10110</div>
-          <div className="font-mono text-[5px] leading-none text-cyan-400">FX-9</div>
-          <div className="font-mono text-[5px] leading-none text-cyan-300">001</div>
-        </div>
-        <div className="mt-px flex justify-around">
-          <div className="font-mono text-[5px] leading-none text-emerald-300">OK</div>
-          <div className="font-mono text-[5px] leading-none text-cyan-300">BOOT</div>
-        </div>
-      </div>
-
-      {/* Server rack — left bottom */}
-      <div className="absolute bottom-2 left-2 h-14 w-8 border border-stone-800 bg-gradient-to-b from-stone-800 to-stone-950 shadow-[inset_0_0_4px_rgba(0,0,0,0.6),2px_2px_3px_rgba(0,0,0,0.4)]">
+      {/* === SIDE: Server rack (right) === */}
+      <div className="absolute right-1 top-1 h-12 w-7 border border-stone-800 bg-gradient-to-b from-stone-800 to-stone-950 shadow-[inset_0_0_3px_rgba(0,0,0,0.6)]">
         <div className="m-1 h-px bg-stone-700" />
-        {/* LED column 1 */}
         <div className="absolute left-1 top-3 flex flex-col gap-px">
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className={
@@ -421,9 +362,8 @@ function JarvisFurniture() {
             />
           ))}
         </div>
-        {/* LED column 2 */}
         <div className="absolute right-1 top-3 flex flex-col gap-px">
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className={
@@ -435,574 +375,463 @@ function JarvisFurniture() {
             />
           ))}
         </div>
-        {/* Disk drive slits */}
-        <div className="absolute bottom-3 left-1 right-1 h-px bg-stone-700" />
-        <div className="absolute bottom-2 left-1 right-1 h-px bg-stone-700" />
-        <div className="absolute bottom-1 left-1 right-1 h-px bg-stone-700" />
       </div>
 
-      {/* Cooling pipes (vertical, blue glow) — between rack and console */}
-      <div className="absolute bottom-2 left-11 h-12 w-px bg-cyan-500/60 shadow-[0_0_2px_rgba(6,182,212,0.5)]" />
-      <div className="absolute bottom-2 left-12 h-12 w-px bg-cyan-500/60 shadow-[0_0_2px_rgba(6,182,212,0.5)]" />
-      <div className="absolute bottom-12 left-11 h-px w-2 bg-cyan-500/60" />
-
-      {/* Holographic blueprint table — center bottom */}
-      <div className="absolute bottom-2 left-1/2 h-8 w-16 -translate-x-1/2">
-        {/* Table base */}
-        <div className="absolute bottom-0 left-1/2 h-2 w-12 -translate-x-1/2 rounded border border-stone-700 bg-stone-900 shadow-[inset_0_0_3px_rgba(6,182,212,0.3)]">
-          {/* Buttons */}
-          <div className="absolute left-1 top-0.5 h-px w-px rounded-full bg-red-400" />
-          <div className="absolute left-3 top-0.5 h-px w-px rounded-full bg-yellow-400" />
-          <div className="absolute left-5 top-0.5 h-px w-px rounded-full bg-emerald-400" />
+      {/* === BOTTOM: Holo console with controls === */}
+      <div className="absolute bottom-2.5 left-1/2 h-3 w-20 -translate-x-1/2 rounded border border-stone-700 bg-gradient-to-b from-stone-800 to-stone-950 shadow-[inset_0_0_3px_rgba(6,182,212,0.4)]">
+        {/* Buttons */}
+        <div className="absolute left-1 top-0.5 flex gap-1">
+          <div className="h-1 w-1 rounded-full bg-red-500 shadow-[0_0_2px_rgba(239,68,68,0.7)]" />
+          <div className="h-1 w-1 rounded-full bg-yellow-400 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
+          <div className="h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_2px_rgba(16,185,129,0.7)]" />
         </div>
-        {/* Holographic projection ABOVE table */}
-        <div className="absolute bottom-2 left-1/2 h-6 w-10 -translate-x-1/2 opacity-70">
-          {/* Wireframe globe */}
-          <div className="absolute left-1/2 top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-cyan-400/70 shadow-[0_0_4px_rgba(6,182,212,0.6)]">
-            <div className="absolute inset-0 rounded-full border border-cyan-400/50"
-              style={{ transform: "scaleX(0.4)" }}
-            />
-            <div className="absolute inset-0 rounded-full border border-cyan-400/50"
-              style={{ transform: "scaleY(0.4)" }}
-            />
-          </div>
-          {/* Light cone from table to hologram */}
-          <div
-            className="absolute bottom-0 left-1/2 h-6 w-8 -translate-x-1/2 bg-gradient-to-t from-cyan-400/30 to-transparent"
-            style={{ clipPath: "polygon(35% 100%, 65% 100%, 100% 0, 0 0)" }}
-          />
+        {/* Sliders */}
+        <div className="absolute right-2 top-0.5 flex gap-px">
+          <div className="h-2 w-px bg-cyan-400/70" />
+          <div className="h-2 w-px bg-cyan-400/40" />
+          <div className="h-2 w-px bg-cyan-400/70" />
+          <div className="h-2 w-px bg-cyan-400/40" />
+          <div className="h-2 w-px bg-cyan-400/70" />
         </div>
       </div>
 
-      {/* Side cabinet with red emergency button */}
-      <div className="absolute bottom-2 right-2 h-6 w-4 border border-stone-700 bg-stone-900 shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]">
-        {/* Big red button */}
-        <div className="absolute top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-red-600 shadow-[0_0_3px_rgba(248,113,113,0.8),inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Dial */}
-        <div className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-yellow-500/70 bg-stone-950">
-          <div className="absolute left-1/2 top-1/2 h-px w-1 -translate-x-1/2 -translate-y-1/2 origin-left rotate-45 bg-yellow-300" />
-        </div>
-      </div>
+      {/* Cooling pipes (sides of console) */}
+      <div className="absolute bottom-2.5 left-3 h-3 w-px bg-cyan-500/60 shadow-[0_0_2px_rgba(6,182,212,0.5)]" />
+      <div className="absolute bottom-2.5 right-3 h-3 w-px bg-cyan-500/60 shadow-[0_0_2px_rgba(6,182,212,0.5)]" />
     </>
   );
 }
 
 /* =================================================================== */
 /* NOVA — mad-scientist research lab                                    */
+/* HERO: huge specimen tank + biohazard frame                           */
 /* =================================================================== */
 function NovaFurniture() {
   return (
     <>
-      {/* Periodic table on back wall — left */}
-      <div className="absolute left-1 top-1 h-8 w-12 border border-cyan-700/70 bg-cyan-950/80 shadow-[inset_0_0_3px_rgba(6,182,212,0.3)]">
-        {/* Title bar */}
-        <div className="border-b border-cyan-800 px-px py-px font-mono text-[5px] font-bold leading-none tracking-wider text-cyan-300">
-          PERIODIC
+      {/* === HERO: Massive specimen observation tank === */}
+      <div className="absolute left-1/2 top-1 h-24 w-28 -translate-x-1/2">
+        {/* Yellow biohazard warning stripes around frame */}
+        <div className="absolute -inset-1 rounded-sm bg-gradient-to-br from-yellow-400/20 to-stone-900"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, rgba(250,204,21,0.6) 0 3px, rgba(0,0,0,0.6) 3px 6px)",
+          }}
+        />
+        {/* Glass tank */}
+        <div className="absolute inset-0 rounded border-2 border-cyan-700/80 bg-gradient-to-b from-cyan-900/30 via-cyan-950/50 to-emerald-950/60 shadow-[inset_0_0_8px_rgba(6,182,212,0.4),0_0_8px_rgba(6,182,212,0.2)]">
+          {/* Glass reflection sheen */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded" />
+
+          {/* Bubbles rising */}
+          <div className="absolute bottom-3 left-3 h-1 w-1 rounded-full bg-cyan-200/80" />
+          <div className="absolute bottom-6 left-5 h-px w-px rounded-full bg-cyan-100/80" />
+          <div className="absolute bottom-4 right-4 h-1 w-1 rounded-full bg-cyan-200/80" />
+          <div className="absolute bottom-8 left-1/2 h-px w-px rounded-full bg-cyan-100/80" />
+          <div className="absolute bottom-12 right-3 h-px w-px rounded-full bg-cyan-100/80" />
+          <div className="absolute bottom-10 left-3 h-px w-px rounded-full bg-cyan-100/80" />
+
+          {/* Floating atomic structure / specimen in center */}
+          <div className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2">
+            {/* Nucleus */}
+            <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-cyan-300 to-emerald-500 shadow-[0_0_8px_rgba(34,211,238,0.9),inset_-1px_-1px_2px_rgba(0,0,0,0.4)]" />
+            {/* Electron orbits */}
+            <div className="absolute inset-0 rounded-full border border-cyan-400/60"
+              style={{ transform: "rotateX(70deg)" }}
+            />
+            <div className="absolute inset-0 rounded-full border border-cyan-400/60"
+              style={{ transform: "rotateX(70deg) rotateZ(60deg)" }}
+            />
+            <div className="absolute inset-0 rounded-full border border-cyan-400/60"
+              style={{ transform: "rotateX(70deg) rotateZ(120deg)" }}
+            />
+            {/* Electrons */}
+            <div className="absolute right-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.9)]" />
+            <div className="absolute left-0 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-pink-400 shadow-[0_0_4px_rgba(244,114,182,0.9)]" />
+            <div className="absolute left-1/2 bottom-0 h-1 w-1 -translate-x-1/2 rounded-full bg-emerald-300 shadow-[0_0_4px_rgba(110,231,183,0.9)]" />
+          </div>
+
+          {/* Scanline */}
+          <div className="pointer-events-none absolute inset-x-0 top-1/3 h-px bg-cyan-300/60 shadow-[0_0_4px_rgba(6,182,212,0.7)]" />
         </div>
-        {/* Element grid */}
-        <div className="grid grid-cols-7 gap-px p-px">
-          {[...Array(21)].map((_, i) => (
+
+        {/* Top warning label */}
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 rounded border border-yellow-500/80 bg-yellow-950 px-1.5 font-mono text-[6px] font-bold uppercase leading-none tracking-wider text-yellow-300 shadow-[0_0_4px_rgba(250,204,21,0.5)]">
+          ⚠ BIOHAZARD · LV-4
+        </div>
+
+        {/* Sample data readouts */}
+        <div className="absolute -bottom-1 left-1 font-mono text-[5px] leading-none text-cyan-300/80">
+          pH 7.2
+        </div>
+        <div className="absolute -bottom-1 right-1 font-mono text-[5px] leading-none text-emerald-300/80">
+          T: 36.6°C
+        </div>
+      </div>
+
+      {/* === SIDE: Periodic table — left === */}
+      <div className="absolute left-1 top-1 h-12 w-7 border border-cyan-700/70 bg-cyan-950/80 shadow-[inset_0_0_3px_rgba(6,182,212,0.3)]">
+        <div className="border-b border-cyan-800 px-px py-px font-mono text-[4px] font-bold leading-none text-cyan-300">
+          PT
+        </div>
+        <div className="grid grid-cols-3 gap-px p-px">
+          {[...Array(15)].map((_, i) => (
             <div
               key={i}
               className={
                 "aspect-square " +
-                (i % 4 === 0
-                  ? "bg-cyan-400/70"
-                  : i % 3 === 0
-                  ? "bg-cyan-300/50"
-                  : "bg-cyan-600/30")
+                (i % 4 === 0 ? "bg-cyan-400/70" : i % 3 === 0 ? "bg-cyan-300/50" : "bg-cyan-600/30")
               }
             />
           ))}
         </div>
       </div>
 
-      {/* Star map / nebula — right back */}
-      <div className="absolute right-1 top-1 h-8 w-14 rounded border border-cyan-700/60 bg-gradient-to-br from-cyan-950 via-stone-950 to-stone-950 shadow-[inset_0_0_5px_rgba(6,182,212,0.2)]">
-        {[
-          [12, 8],
-          [28, 15],
-          [42, 6],
-          [55, 22],
-          [70, 10],
-          [82, 18],
-          [18, 30],
-          [38, 40],
-          [62, 32],
-          [80, 50],
-          [25, 60],
-          [50, 70],
-          [72, 65],
-          [90, 80],
-          [10, 50],
-        ].map(([x, y], i) => (
-          <div
-            key={i}
-            className="absolute h-px w-px rounded-full bg-cyan-200 shadow-[0_0_2px_rgba(165,243,252,0.9)]"
-            style={{ left: `${x}%`, top: `${y}%` }}
-          />
-        ))}
-        {/* Galaxy spiral */}
-        <div className="absolute right-1 bottom-1 h-3 w-3 rounded-full border border-cyan-400/50 bg-cyan-500/10 shadow-[0_0_4px_rgba(6,182,212,0.5)]">
-          <div className="absolute inset-0.5 rounded-full border border-cyan-400/40" />
-        </div>
-      </div>
-
-      {/* DNA helix — center wall, vertical */}
-      <div className="absolute left-14 top-1 h-12 w-3">
+      {/* === SIDE: DNA helix on right wall === */}
+      <div className="absolute right-1 top-1 h-12 w-3">
         <svg viewBox="0 0 12 48" className="h-full w-full" aria-hidden>
-          {/* Sine waves crossing */}
-          <path
-            d="M 2 0 Q 10 6 2 12 Q -6 18 2 24 Q 10 30 2 36 Q -6 42 2 48"
-            stroke="rgb(34 211 238)"
-            strokeWidth="0.5"
-            fill="none"
-          />
-          <path
-            d="M 10 0 Q 2 6 10 12 Q 18 18 10 24 Q 2 30 10 36 Q 18 42 10 48"
-            stroke="rgb(125 211 252)"
-            strokeWidth="0.5"
-            fill="none"
-          />
-          {/* Base pairs */}
+          <path d="M 2 0 Q 10 6 2 12 Q -6 18 2 24 Q 10 30 2 36 Q -6 42 2 48"
+            stroke="rgb(34 211 238)" strokeWidth="0.6" fill="none" />
+          <path d="M 10 0 Q 2 6 10 12 Q 18 18 10 24 Q 2 30 10 36 Q 18 42 10 48"
+            stroke="rgb(125 211 252)" strokeWidth="0.6" fill="none" />
           {[6, 14, 22, 30, 38, 46].map((y) => (
-            <line
-              key={y}
-              x1={3}
-              x2={9}
-              y1={y}
-              y2={y}
-              stroke="rgb(34 211 238)"
-              strokeWidth="0.3"
-            />
+            <line key={y} x1={3} x2={9} y1={y} y2={y}
+              stroke="rgb(34 211 238)" strokeWidth="0.4" />
           ))}
         </svg>
       </div>
 
-      {/* Lab coat hanging — left wall */}
-      <div className="absolute left-2 top-10 flex flex-col items-center">
-        <div className="h-px w-2 bg-stone-600" />
-        <div className="relative h-7 w-4 bg-stone-100/95 shadow-sm">
-          <div className="absolute left-px top-0 h-2 w-px bg-stone-300" />
-          <div className="absolute right-px top-0 h-2 w-px bg-stone-300" />
-          {/* Pocket */}
-          <div className="absolute left-px bottom-2 h-1.5 w-1 border border-stone-400" />
-          {/* Pen in pocket */}
-          <div className="absolute left-px bottom-2.5 h-px w-px bg-cyan-500" />
-          {/* Buttons */}
-          <div className="absolute left-1/2 top-2 h-px w-px -translate-x-1/2 rounded-full bg-stone-400" />
-          <div className="absolute left-1/2 top-3.5 h-px w-px -translate-x-1/2 rounded-full bg-stone-400" />
-          <div className="absolute left-1/2 top-5 h-px w-px -translate-x-1/2 rounded-full bg-stone-400" />
-        </div>
-      </div>
+      {/* === BOTTOM: Lab counter packed with experiments === */}
+      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-cyan-900/70 bg-gradient-to-b from-cyan-950/80 to-stone-950" />
 
-      {/* "DR. NOVA" name tag */}
-      <div className="absolute left-1 top-[1.1rem] rounded border border-cyan-500/60 bg-cyan-950/80 px-1 font-mono text-[5px] font-bold uppercase leading-none tracking-wider text-cyan-300">
-        DR.NOVA
-      </div>
-
-      {/* Lab counter — bottom (full width) */}
-      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-cyan-900/70 bg-gradient-to-b from-cyan-950/80 to-stone-950 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.5)]" />
-
-      {/* Bunsen burner with blue flame */}
+      {/* Bunsen burner */}
       <div className="absolute bottom-2.5 left-2 h-4 w-2">
-        {/* Base */}
         <div className="absolute bottom-0 left-0 right-0 h-1 rounded-sm bg-stone-700" />
-        {/* Tube */}
         <div className="absolute bottom-1 left-1/2 h-2 w-px -translate-x-1/2 bg-stone-500" />
-        {/* Flame (blue with yellow tip) */}
-        <div className="absolute bottom-3 left-1/2 h-2 w-1 -translate-x-1/2 rounded-t-full bg-gradient-to-t from-blue-500 via-cyan-300 to-yellow-200 shadow-[0_0_4px_rgba(6,182,212,0.7),0_0_8px_rgba(34,211,238,0.4)] blur-[0.3px]" />
+        <div className="absolute bottom-3 left-1/2 h-2.5 w-1.5 -translate-x-1/2 rounded-t-full bg-gradient-to-t from-blue-500 via-cyan-300 to-yellow-200 shadow-[0_0_5px_rgba(6,182,212,0.8),0_0_10px_rgba(34,211,238,0.5)] blur-[0.3px]" />
       </div>
 
-      {/* Erlenmeyer flask with bubbling liquid */}
+      {/* Erlenmeyer with bubbling purple */}
       <div className="absolute bottom-2.5 left-5 h-5 w-3">
-        {/* Cone shape */}
         <div className="absolute bottom-0 left-0 right-0 h-3"
           style={{
-            background:
-              "linear-gradient(to bottom, transparent 0, transparent 30%, rgba(168,85,247,0.7) 30%, rgba(192,132,252,0.7) 100%)",
+            background: "linear-gradient(to bottom, transparent 0, transparent 25%, rgba(168,85,247,0.8) 25%, rgba(192,132,252,0.85) 100%)",
             clipPath: "polygon(35% 0, 65% 0, 100% 100%, 0 100%)",
-            border: "1px solid rgba(168,85,247,0.6)",
+            border: "1px solid rgba(168,85,247,0.7)",
             borderTop: "none",
           }}
         />
-        {/* Neck */}
         <div className="absolute bottom-3 left-1/2 h-2 w-1 -translate-x-1/2 rounded-t border border-stone-300/60 bg-purple-200/20" />
-        {/* Bubble */}
-        <div className="absolute bottom-1 left-1 h-px w-px rounded-full bg-purple-200 opacity-80" />
-        <div className="absolute bottom-2 left-1.5 h-px w-px rounded-full bg-purple-100 opacity-60" />
-        {/* Steam */}
-        <div className="absolute -top-1 left-1/2 h-2 w-px -translate-x-1/2 bg-gradient-to-t from-purple-200/40 to-transparent blur-[0.5px]" />
+        <div className="absolute -top-2 left-1/2 h-2 w-px -translate-x-1/2 bg-gradient-to-t from-purple-200/50 to-transparent blur-[0.5px]" />
       </div>
 
-      {/* Beaker with green liquid */}
-      <div className="absolute bottom-2.5 left-9 h-3 w-2">
-        <div className="absolute bottom-0 left-0 right-0 h-2 border border-stone-300/60 bg-emerald-400/60 rounded-b shadow-[inset_0_0_2px_rgba(16,185,129,0.5)]" />
-        {/* Lip */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-stone-400" />
-        {/* Measurement marks */}
-        <div className="absolute right-0 top-1 h-px w-px bg-stone-700" />
-        <div className="absolute right-0 top-1.5 h-px w-px bg-stone-700" />
-      </div>
-
-      {/* Test-tube rack — center bottom */}
-      <div className="absolute bottom-2.5 left-1/2 h-3 w-7 -translate-x-[60%]">
-        {/* Rack base */}
+      {/* Test-tube rack */}
+      <div className="absolute bottom-2.5 left-1/2 h-4 w-7 -translate-x-[60%]">
         <div className="absolute bottom-0 left-0 right-0 h-1 rounded bg-amber-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Tubes */}
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="absolute bottom-0.5 h-2.5 w-1 border border-stone-300/60 rounded-b bg-cyan-300/60"
+            className="absolute bottom-0.5 h-3 w-1 border border-stone-300/60 rounded-b"
             style={{
               left: `${i * 25 - 5}%`,
               backgroundImage:
                 i === 0
-                  ? "linear-gradient(to top, rgba(34,197,94,0.7), transparent 60%)"
+                  ? "linear-gradient(to top, rgba(34,197,94,0.8), transparent 60%)"
                   : i === 1
-                  ? "linear-gradient(to top, rgba(168,85,247,0.7), transparent 60%)"
+                  ? "linear-gradient(to top, rgba(168,85,247,0.8), transparent 60%)"
                   : i === 2
-                  ? "linear-gradient(to top, rgba(244,63,94,0.7), transparent 60%)"
+                  ? "linear-gradient(to top, rgba(244,63,94,0.8), transparent 60%)"
                   : i === 3
-                  ? "linear-gradient(to top, rgba(250,204,21,0.7), transparent 60%)"
-                  : "linear-gradient(to top, rgba(6,182,212,0.7), transparent 60%)",
+                  ? "linear-gradient(to top, rgba(250,204,21,0.8), transparent 60%)"
+                  : "linear-gradient(to top, rgba(6,182,212,0.8), transparent 60%)",
             }}
           />
         ))}
       </div>
 
-      {/* Microscope — right of center */}
+      {/* Microscope */}
       <div className="absolute bottom-2.5 right-9 h-7 w-4">
-        <div className="absolute bottom-0 left-0 right-0 h-1 rounded bg-stone-700 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Arm */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 rounded bg-stone-700" />
         <div className="absolute bottom-1 left-1/2 h-5 w-px -translate-x-1/2 bg-stone-600" />
-        {/* Eyepiece */}
         <div className="absolute top-0 left-1/2 h-2 w-1.5 -translate-x-1/2 rounded-t bg-stone-700" />
-        {/* Lens */}
-        <div className="absolute top-3 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full border border-cyan-500/80 bg-stone-900 shadow-[0_0_3px_rgba(6,182,212,0.5)]" />
+        <div className="absolute top-3 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full border border-cyan-500/80 bg-stone-900 shadow-[0_0_3px_rgba(6,182,212,0.6)]" />
       </div>
 
-      {/* Centrifuge — right side */}
+      {/* Centrifuge */}
       <div className="absolute bottom-2.5 right-3 h-5 w-5">
-        {/* Body */}
-        <div className="absolute bottom-0 left-0 right-0 h-3 rounded border border-stone-700 bg-stone-900 shadow-[inset_0_0_3px_rgba(0,0,0,0.6)]">
-          {/* LED */}
+        <div className="absolute bottom-0 left-0 right-0 h-3 rounded border border-stone-700 bg-stone-900">
           <div className="absolute right-1 top-1 h-px w-px rounded-full bg-emerald-400 shadow-[0_0_2px_rgba(16,185,129,0.9)]" />
         </div>
-        {/* Lid */}
         <div className="absolute top-1 left-0 right-0 h-2 rounded-t border border-stone-700 bg-stone-800">
-          {/* Spinning rotor inside */}
           <div className="absolute inset-1 rounded-full border border-stone-600">
             <div className="absolute left-1/2 top-1/2 h-px w-3 origin-left -translate-x-1/2 -translate-y-1/2 rotate-45 bg-stone-500" />
             <div className="absolute left-1/2 top-1/2 h-px w-3 origin-left -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-stone-500" />
           </div>
         </div>
       </div>
-
-      {/* Whiteboard with equation — right above counter */}
-      <div className="absolute right-3 top-10 h-6 w-10 rounded-sm border border-cyan-700/50 bg-stone-100/95 shadow-sm">
-        {/* Equations */}
-        <div className="m-px font-mono text-[5px] leading-tight text-stone-800">
-          <div>E=mc²</div>
-          <div className="text-cyan-700">∂x/∂t</div>
-          <div className="text-emerald-700">H₂O+Na</div>
-          <div>π·r²·h</div>
-        </div>
-      </div>
     </>
   );
 }
 
 /* =================================================================== */
-/* COMMS — wartime operator hub                                         */
+/* COMMS — global operator hub                                          */
+/* HERO: huge world map with connection arcs                            */
 /* =================================================================== */
 function CommsFurniture() {
   return (
     <>
-      {/* World clocks — back wall, 4 timezones */}
-      <div className="absolute left-2 top-1 flex gap-1">
+      {/* === HERO: Giant world map with connection arcs === */}
+      <div className="absolute left-1/2 top-1 h-20 w-36 -translate-x-1/2 rounded-sm border border-sky-700/80 bg-gradient-to-br from-sky-950 via-stone-950 to-sky-950 shadow-[inset_0_0_6px_rgba(14,165,233,0.4),0_0_8px_rgba(14,165,233,0.2)]">
+        {/* Header bar */}
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-sky-800/80 bg-sky-950/80 px-1 py-px">
+          <div className="flex items-center gap-1">
+            <div className="h-1 w-1 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_3px_rgba(16,185,129,0.9)]" />
+            <span className="font-mono text-[5px] font-bold uppercase leading-none tracking-wider text-sky-200">
+              GLOBAL COMMS · LIVE
+            </span>
+          </div>
+          <span className="font-mono text-[5px] leading-none text-sky-300/70">
+            24/7
+          </span>
+        </div>
+
+        {/* World map (continents, simplified) */}
+        <svg viewBox="0 0 144 64" className="absolute inset-0 mt-2 h-full w-full">
+          {/* Latitude/longitude grid */}
+          <g opacity="0.2">
+            {[0, 16, 32, 48].map((y) => (
+              <line key={y} x1={0} x2={144} y1={y} y2={y} stroke="rgb(14 165 233)" strokeWidth="0.3" />
+            ))}
+            {[0, 24, 48, 72, 96, 120].map((x) => (
+              <line key={x} x1={x} x2={x} y1={0} y2={64} stroke="rgb(14 165 233)" strokeWidth="0.3" />
+            ))}
+          </g>
+          {/* Continents (rough silhouettes) */}
+          {/* North America */}
+          <path d="M 12 18 Q 18 14 28 16 Q 32 22 30 30 Q 24 36 16 32 Q 10 26 12 18 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+          {/* South America */}
+          <path d="M 26 38 Q 30 36 32 42 Q 30 50 26 52 Q 24 46 26 38 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+          {/* Europe */}
+          <path d="M 60 18 Q 70 16 78 20 Q 76 26 70 28 Q 62 26 60 18 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+          {/* Africa */}
+          <path d="M 64 30 Q 72 28 76 36 Q 74 46 68 48 Q 62 42 64 30 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+          {/* Asia */}
+          <path d="M 80 18 Q 100 14 120 22 Q 118 30 110 32 Q 90 30 80 18 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+          {/* Australia */}
+          <path d="M 110 42 Q 120 40 124 46 Q 120 50 112 48 Q 108 44 110 42 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+
+          {/* Connection arcs from Croatia (Zagreb ~ 70,22) */}
+          <g opacity="0.8">
+            <path d="M 70 22 Q 50 8 20 22" stroke="rgb(244 114 182)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
+            <path d="M 70 22 Q 90 10 115 26" stroke="rgb(34 197 94)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
+            <path d="M 70 22 Q 75 36 70 44" stroke="rgb(250 204 21)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
+            <path d="M 70 22 Q 95 35 118 45" stroke="rgb(6 182 212)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
+          </g>
+
+          {/* Connection endpoints (pulsing) */}
+          <circle cx="70" cy="22" r="1.5" fill="rgb(254 240 138)" stroke="rgb(250 204 21)" strokeWidth="0.4">
+            {/* Croatia HQ marker */}
+          </circle>
+          <circle cx="20" cy="22" r="1" fill="rgb(244 114 182)" />
+          <circle cx="115" cy="26" r="1" fill="rgb(34 197 94)" />
+          <circle cx="70" cy="44" r="1" fill="rgb(250 204 21)" />
+          <circle cx="118" cy="45" r="1" fill="rgb(6 182 212)" />
+        </svg>
+
+        {/* "ZAG" label next to Croatia */}
+        <div className="absolute left-[50%] top-[35%] font-mono text-[4px] font-bold leading-none tracking-wider text-yellow-200/90 shadow-[0_0_2px_rgba(250,204,21,0.7)]">
+          ◆ZAG
+        </div>
+      </div>
+
+      {/* === BIG SIGN: ON AIR === */}
+      <div className="absolute right-2 top-1 flex items-center gap-1 rounded-sm border-2 border-red-500/90 bg-red-950 px-1.5 py-0.5 shadow-[0_0_8px_rgba(239,68,68,0.8),inset_0_0_3px_rgba(248,113,113,0.5)]">
+        <div className="h-1 w-1 animate-pulse rounded-full bg-red-300 shadow-[0_0_3px_rgba(252,165,165,1)]" />
+        <span className="font-mono text-[6px] font-bold uppercase leading-none tracking-[0.3em] text-red-100">
+          ON AIR
+        </span>
+      </div>
+
+      {/* === World clocks under map (smaller) === */}
+      <div className="absolute left-1/2 top-[5.4rem] -translate-x-1/2 flex gap-2">
         {[
           { label: "ZAG", time: "14:32" },
           { label: "NYC", time: "08:32" },
           { label: "LON", time: "13:32" },
           { label: "TYO", time: "22:32" },
         ].map((c) => (
-          <div
-            key={c.label}
-            className="flex flex-col items-center"
-          >
-            {/* Label */}
-            <div className="font-mono text-[5px] font-bold uppercase leading-none tracking-wider text-sky-300/80">
+          <div key={c.label} className="flex flex-col items-center">
+            <div className="font-mono text-[4px] font-bold uppercase leading-none tracking-wider text-sky-300/80">
               {c.label}
             </div>
-            {/* Clock face */}
-            <div className="mt-px h-4 w-4 rounded-full border border-sky-600/70 bg-stone-950 shadow-[inset_0_0_2px_rgba(14,165,233,0.4)]">
-              {/* Hour marks */}
-              {[0, 90, 180, 270].map((d) => (
-                <div
-                  key={d}
-                  className="absolute left-1/2 top-1/2 h-px w-1.5 origin-left bg-sky-400/60"
-                  style={{
-                    transform: `translate(-50%, -50%) rotate(${d}deg) translateX(4px)`,
-                  }}
-                />
-              ))}
-              {/* Hands */}
-              <div className="absolute left-1/2 top-1/2 h-px w-1.5 -translate-x-px -translate-y-px origin-left rotate-45 bg-sky-300" />
-              <div className="absolute left-1/2 top-1/2 h-px w-1 -translate-x-px -translate-y-px origin-left rotate-90 bg-sky-200" />
-              {/* Center */}
-              <div className="absolute left-1/2 top-1/2 h-px w-px -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-200" />
-            </div>
-            {/* Digital readout */}
-            <div className="mt-px font-mono text-[5px] leading-none text-sky-200/70">
-              {c.time}
+            <div className="mt-px h-2 w-2 rounded-full border border-sky-600/70 bg-stone-950">
+              <div className="absolute left-1/2 top-1/2 h-px w-1 -translate-x-px -translate-y-px origin-left rotate-45 bg-sky-300" />
+              <div className="absolute left-1/2 top-1/2 h-px w-px -translate-x-px -translate-y-px origin-left rotate-90 bg-sky-200" />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Vintage switchboard with patch cables — center back */}
-      <div className="absolute left-2 top-12 h-12 w-20 border border-sky-700/80 bg-sky-950/80 shadow-[inset_0_0_6px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.4)]">
-        {/* Plug holes (5x4 grid) */}
-        {[...Array(20)].map((_, i) => (
+      {/* === BOTTOM: Counter with switchboard + radio + telegraph === */}
+      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-sky-900/70 bg-gradient-to-b from-sky-950/80 to-stone-950" />
+
+      {/* Switchboard */}
+      <div className="absolute bottom-2.5 left-2 h-7 w-12 border border-sky-700/80 bg-sky-950/80 shadow-[inset_0_0_4px_rgba(0,0,0,0.5)]">
+        {[...Array(15)].map((_, i) => (
           <div
             key={i}
             className="absolute h-1 w-1 rounded-full bg-stone-950 ring-1 ring-stone-700"
             style={{
-              left: `${8 + (i % 5) * 18}%`,
-              top: `${15 + Math.floor(i / 5) * 22}%`,
+              left: `${10 + (i % 5) * 18}%`,
+              top: `${20 + Math.floor(i / 5) * 25}%`,
             }}
           />
         ))}
-        {/* Active LEDs */}
-        <div className="absolute left-[6%] top-[18%] h-px w-px rounded-full bg-sky-300 shadow-[0_0_2px_rgba(125,211,252,0.9)]" />
-        <div className="absolute left-[42%] top-[40%] h-px w-px rounded-full bg-emerald-300 shadow-[0_0_2px_rgba(110,231,183,0.9)]" />
-        <div className="absolute left-[78%] top-[40%] h-px w-px rounded-full bg-red-400 shadow-[0_0_2px_rgba(248,113,113,0.9)]" />
-        <div className="absolute left-[24%] top-[62%] h-px w-px rounded-full bg-yellow-300 shadow-[0_0_2px_rgba(253,224,71,0.9)]" />
-        {/* Patch cables */}
-        <svg viewBox="0 0 80 48" className="absolute inset-0 h-full w-full" aria-hidden>
-          <path d="M 10 12 Q 20 30, 32 18" fill="none" stroke="rgb(14 165 233)" strokeWidth="0.7" />
-          <path d="M 38 18 Q 56 36, 70 18" fill="none" stroke="rgb(244 114 182)" strokeWidth="0.7" />
-          <path d="M 24 28 Q 40 14, 60 28" fill="none" stroke="rgb(34 197 94)" strokeWidth="0.7" />
-          <path d="M 16 38 Q 32 30, 48 40" fill="none" stroke="rgb(250 204 21)" strokeWidth="0.7" />
+        <div className="absolute left-[8%] top-[22%] h-px w-px rounded-full bg-sky-300 shadow-[0_0_2px_rgba(125,211,252,0.9)]" />
+        <div className="absolute left-[44%] top-[48%] h-px w-px rounded-full bg-emerald-300 shadow-[0_0_2px_rgba(110,231,183,0.9)]" />
+        <div className="absolute left-[26%] top-[72%] h-px w-px rounded-full bg-yellow-300 shadow-[0_0_2px_rgba(253,224,71,0.9)]" />
+        <svg viewBox="0 0 48 28" className="absolute inset-0 h-full w-full">
+          <path d="M 6 8 Q 14 18, 24 12" fill="none" stroke="rgb(14 165 233)" strokeWidth="0.6" />
+          <path d="M 26 12 Q 34 22, 42 12" fill="none" stroke="rgb(244 114 182)" strokeWidth="0.6" />
         </svg>
       </div>
 
-      {/* "OPERATOR" label */}
-      <div className="absolute left-2.5 top-[2.85rem] rounded border border-sky-500/60 bg-sky-950 px-1 font-mono text-[5px] font-bold uppercase leading-none tracking-[0.2em] text-sky-300">
-        OPERATOR-1
-      </div>
-
-      {/* Big satellite dish — top right */}
-      <div className="absolute right-2 top-1 h-9 w-9">
-        <div className="absolute inset-0 rounded-full border-2 border-sky-500/80 bg-gradient-to-br from-sky-900 via-stone-900 to-stone-950 shadow-[inset_0_0_4px_rgba(14,165,233,0.4)]" />
-        <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-300 shadow-[0_0_3px_rgba(125,211,252,0.8)]" />
-        {/* Receiver pole */}
-        <div className="absolute left-1/2 top-1/2 h-px w-3 -translate-x-1/2 -translate-y-1/2 origin-left rotate-12 bg-sky-300" />
-        {/* Mount */}
-        <div className="absolute -bottom-1 left-1/2 h-1 w-px -translate-x-1/2 bg-stone-700" />
-        {/* Signal waves */}
-        <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-r border-t border-sky-400/40" />
-        <div className="absolute -right-2 -top-2 h-4 w-4 rounded-full border-r border-t border-sky-400/30" />
-      </div>
-
-      {/* Smaller dish */}
-      <div className="absolute right-12 top-3 h-5 w-5 rounded-full border-2 border-sky-500/60 bg-sky-950/40">
-        <div className="absolute left-1/2 top-1/2 h-px w-px -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400" />
-      </div>
-
-      {/* Telegraph machine on counter — bottom left */}
-      <div className="absolute bottom-2.5 left-2 h-3 w-5">
-        <div className="absolute bottom-0 left-0 right-0 h-1 rounded-sm bg-amber-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Brass key */}
-        <div className="absolute bottom-1 left-1.5 h-px w-2 bg-amber-500 shadow-[0_0_2px_rgba(217,119,6,0.5)]" />
-        <div className="absolute bottom-1 left-2 h-1.5 w-1 rounded-full bg-amber-700" />
-        {/* Sounder */}
-        <div className="absolute bottom-1 right-0.5 h-1.5 w-1 rounded bg-stone-800" />
-      </div>
-
-      {/* Radio transceiver — bottom center */}
-      <div className="absolute bottom-2.5 left-1/2 h-4 w-12 -translate-x-1/2 border border-sky-700 bg-stone-900 shadow-[inset_0_0_2px_rgba(14,165,233,0.3)]">
-        {/* Frequency dial — large */}
-        <div className="absolute left-1 top-0.5 h-3 w-3 rounded-full border border-sky-500/70 bg-stone-950 shadow-[inset_0_0_2px_rgba(0,0,0,0.6)]">
+      {/* Radio transceiver */}
+      <div className="absolute bottom-2.5 left-1/2 h-4 w-10 -translate-x-1/2 border border-sky-700 bg-stone-900">
+        <div className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full border border-sky-500/70 bg-stone-950">
           <div className="absolute left-1/2 top-1/2 h-1 w-px -translate-x-1/2 -translate-y-1/2 origin-bottom rotate-45 bg-sky-300" />
-          {/* Tick marks */}
-          {[0, 90, 180, 270].map((d) => (
-            <div
-              key={d}
-              className="absolute left-1/2 top-1/2 h-px w-1 origin-left bg-sky-400/60"
-              style={{ transform: `translate(-50%, -50%) rotate(${d}deg) translateX(3px)` }}
-            />
+        </div>
+        <div className="absolute left-4 top-0.5 h-1.5 w-2.5 border border-sky-700 bg-emerald-950">
+          <div className="m-px h-px w-1.5 bg-emerald-400/80" />
+        </div>
+        <div className="absolute right-0.5 top-0.5 flex flex-col gap-px">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-px w-1.5 bg-sky-700/70" />
           ))}
         </div>
-        {/* Display */}
-        <div className="absolute left-5 top-0.5 h-1.5 w-3 border border-sky-700 bg-emerald-950/80 shadow-[inset_0_0_1px_rgba(16,185,129,0.5)]">
-          <div className="m-px h-px w-2 bg-emerald-400/80" />
-        </div>
-        {/* Speaker grille */}
-        <div className="absolute right-1 top-0.5 flex flex-col gap-px">
-          <div className="h-px w-2 bg-sky-700/70" />
-          <div className="h-px w-2 bg-sky-700/70" />
-          <div className="h-px w-2 bg-sky-700/70" />
-          <div className="h-px w-2 bg-sky-700/70" />
-          <div className="h-px w-2 bg-sky-700/70" />
-        </div>
       </div>
 
-      {/* Headset hanging on hook — bottom right */}
-      <div className="absolute bottom-2.5 right-3 h-4 w-3">
+      {/* Telegraph */}
+      <div className="absolute bottom-2.5 right-8 h-3 w-4">
+        <div className="absolute bottom-0 left-0 right-0 h-1 rounded-sm bg-amber-900" />
+        <div className="absolute bottom-1 left-1 h-px w-2 bg-amber-500" />
+        <div className="absolute bottom-1 left-1.5 h-1 w-1 rounded-full bg-amber-700" />
+      </div>
+
+      {/* Headset */}
+      <div className="absolute bottom-2.5 right-2 h-4 w-3">
         <div className="absolute right-0 top-0 h-1 w-1 border-l border-t border-stone-600" />
         <div className="absolute top-1 left-0 h-2 w-3 rounded-full border-2 border-stone-700 border-b-transparent" />
         <div className="absolute bottom-0 left-0 h-1.5 w-1.5 rounded-full bg-stone-800" />
         <div className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-stone-800" />
-        {/* Mic */}
-        <div className="absolute bottom-1 right-0 h-px w-1 -rotate-12 bg-stone-700" />
       </div>
-
-      {/* Ticker tape running across bottom of back wall */}
-      <div className="absolute left-2 right-2 top-[5rem] h-1 overflow-hidden border-y border-stone-700 bg-stone-950">
-        <div className="font-mono text-[5px] leading-none text-emerald-400 whitespace-nowrap">
-          ◂ APX-DENTAL-CTC ✓ · MTG-SCHED 14:30 · INBND-MSG-3 · OUT-BTH ✓ · LEAD-12 HOT ▸
-        </div>
-      </div>
-
-      {/* Counter */}
-      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-sky-900/70 bg-gradient-to-b from-sky-950/80 to-stone-950" />
     </>
   );
 }
 
 /* =================================================================== */
 /* TREASURY — Scrooge bank vault                                        */
+/* HERO: massive vault door + €30K GOAL banner                          */
 /* =================================================================== */
 function TreasuryFurniture() {
   return (
     <>
-      {/* Massive vault door — dominant left feature */}
-      <div className="absolute left-1 top-1 h-24 w-24 rounded border-2 border-emerald-700/90 bg-gradient-to-br from-emerald-950 via-stone-900 to-stone-950 shadow-[inset_0_0_12px_rgba(0,0,0,0.7),0_0_10px_rgba(16,185,129,0.18)]">
+      {/* === HERO: Massive vault door (left) === */}
+      <div className="absolute left-2 top-1 h-24 w-24 rounded border-2 border-emerald-700/90 bg-gradient-to-br from-emerald-950 via-stone-900 to-stone-950 shadow-[inset_0_0_12px_rgba(0,0,0,0.7),0_0_12px_rgba(16,185,129,0.25)]">
         {/* Outer dial ring */}
         <div className="absolute inset-1 rounded-full border-2 border-emerald-600/80 bg-stone-950/40 shadow-[inset_0_0_8px_rgba(0,0,0,0.7)]">
-          {/* 12 dial ticks */}
           {[...Array(12)].map((_, i) => (
             <div
               key={i}
               className="absolute left-1/2 top-1/2 h-px w-2.5 origin-left bg-emerald-500/60"
-              style={{
-                transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateX(9px)`,
-              }}
+              style={{ transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateX(9px)` }}
             />
           ))}
-          {/* Numbers */}
-          <div className="absolute left-1/2 top-0.5 -translate-x-1/2 font-mono text-[5px] font-bold leading-none text-emerald-400/80">
+          <div className="absolute left-1/2 top-0.5 -translate-x-1/2 font-mono text-[6px] font-bold leading-none text-emerald-400/90">
             12
           </div>
-          <div className="absolute right-0.5 top-1/2 -translate-y-1/2 font-mono text-[5px] font-bold leading-none text-emerald-400/80">
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 font-mono text-[6px] font-bold leading-none text-emerald-400/90">
             3
           </div>
-          <div className="absolute left-1/2 bottom-0.5 -translate-x-1/2 font-mono text-[5px] font-bold leading-none text-emerald-400/80">
+          <div className="absolute left-1/2 bottom-0.5 -translate-x-1/2 font-mono text-[6px] font-bold leading-none text-emerald-400/90">
             6
           </div>
+          <div className="absolute left-1 top-1/2 -translate-y-1/2 font-mono text-[6px] font-bold leading-none text-emerald-400/90">
+            9
+          </div>
           {/* Center hub */}
-          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300 bg-emerald-700 shadow-[0_0_4px_rgba(16,185,129,0.7)]" />
+          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300 bg-emerald-700 shadow-[0_0_5px_rgba(16,185,129,0.8)]" />
           {/* Spokes */}
           {[0, 60, 120].map((deg) => (
             <div
               key={deg}
-              className="absolute left-1/2 top-1/2 h-0.5 w-9 origin-center bg-emerald-300/90 shadow-[0_0_2px_rgba(110,231,183,0.5)]"
+              className="absolute left-1/2 top-1/2 h-0.5 w-9 origin-center bg-emerald-300/95 shadow-[0_0_3px_rgba(110,231,183,0.6)]"
               style={{ transform: `translate(-50%, -50%) rotate(${deg}deg)` }}
             />
           ))}
-          {/* Spoke knobs */}
           {[0, 60, 120].map((deg) => (
             <div
               key={`k-${deg}`}
-              className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-300 shadow-[0_0_3px_rgba(110,231,183,0.7)]"
-              style={{
-                transform: `translate(-50%, -50%) rotate(${deg}deg) translateX(15px)`,
-              }}
+              className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-300 shadow-[0_0_4px_rgba(110,231,183,0.9)]"
+              style={{ transform: `translate(-50%, -50%) rotate(${deg}deg) translateX(15px)` }}
             />
           ))}
         </div>
         {/* Hinge bolts */}
-        <div className="absolute left-0.5 top-2 h-1 w-1 rounded-full bg-emerald-700 shadow-inner" />
-        <div className="absolute left-0.5 top-1/2 h-1 w-1 rounded-full bg-emerald-700 shadow-inner" />
-        <div className="absolute left-0.5 bottom-2 h-1 w-1 rounded-full bg-emerald-700 shadow-inner" />
-        {/* "VAULT" plate at top */}
-        <div className="absolute -top-1 left-1/2 -translate-x-1/2 rounded border border-emerald-600 bg-emerald-900 px-1 font-mono text-[5px] font-bold leading-none tracking-[0.2em] text-emerald-200 shadow-md">
+        <div className="absolute left-0.5 top-2 h-1.5 w-1.5 rounded-full bg-emerald-700 shadow-inner" />
+        <div className="absolute left-0.5 top-1/2 h-1.5 w-1.5 rounded-full bg-emerald-700 shadow-inner" />
+        <div className="absolute left-0.5 bottom-2 h-1.5 w-1.5 rounded-full bg-emerald-700 shadow-inner" />
+        {/* "VAULT" plate */}
+        <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded border border-emerald-600 bg-emerald-900 px-1.5 font-mono text-[6px] font-bold leading-none tracking-[0.2em] text-emerald-200 shadow-md">
           VAULT
         </div>
-        {/* OPEN/CLOSED LED */}
+        {/* OPEN LED */}
         <div className="absolute right-1 top-1 flex items-center gap-px">
-          <div className="h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_3px_rgba(16,185,129,0.9)]" />
-          <span className="font-mono text-[4px] font-bold uppercase leading-none text-emerald-300">
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(16,185,129,1)]" />
+          <span className="font-mono text-[5px] font-bold uppercase leading-none text-emerald-300">
             OPEN
           </span>
         </div>
       </div>
 
-      {/* Portrait of founder — back right */}
-      <div className="absolute right-2 top-1 h-9 w-7 border-2 border-amber-700 bg-gradient-to-b from-stone-700 to-stone-900 shadow-[0_2px_3px_rgba(0,0,0,0.6)]">
-        {/* Frame inner */}
-        <div className="absolute inset-0.5 border border-amber-900/70 bg-stone-800">
-          {/* Face silhouette */}
-          <div className="absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-200/80" />
-          {/* Body */}
-          <div className="absolute left-1/2 top-3 h-3 w-4 -translate-x-1/2 rounded-t bg-stone-700" />
-          {/* Bowtie */}
-          <div className="absolute left-1/2 top-3 h-px w-1 -translate-x-1/2 bg-red-700" />
+      {/* === HERO COMPANION: HUGE €30K GOAL banner (right) === */}
+      <div className="absolute right-2 top-1 h-24 w-24 rounded-sm border-2 border-yellow-500/80 bg-gradient-to-b from-yellow-950 via-stone-950 to-emerald-950 shadow-[inset_0_0_8px_rgba(250,204,21,0.3),0_0_10px_rgba(250,204,21,0.25)]">
+        {/* Header */}
+        <div className="absolute inset-x-0 top-0 border-b border-yellow-700/80 bg-yellow-900/80 py-px text-center font-mono text-[6px] font-bold uppercase leading-none tracking-[0.2em] text-yellow-200">
+          ◆ MRR GOAL ◆
         </div>
-        {/* Plaque */}
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-sm border border-amber-700 bg-amber-900 px-px font-mono text-[3px] font-bold uppercase leading-none text-amber-200">
-          FOUNDER
+        {/* GIANT € symbol */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-[36px] font-bold leading-none text-yellow-300 shadow-[0_0_8px_rgba(250,204,21,0.6)] drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]">
+          €
         </div>
+        {/* Target */}
+        <div className="absolute inset-x-0 bottom-3 text-center font-mono text-[8px] font-bold leading-none tracking-wider text-yellow-100">
+          30K
+        </div>
+        {/* Progress bar */}
+        <div className="absolute inset-x-1 bottom-1 h-1 rounded-full border border-yellow-700/60 bg-stone-950">
+          <div className="h-full w-[2%] rounded-full bg-gradient-to-r from-yellow-400 to-emerald-400 shadow-[0_0_3px_rgba(250,204,21,0.7)]" />
+        </div>
+        {/* Falling money particles */}
+        <div className="absolute left-2 top-3 font-mono text-[5px] leading-none text-emerald-300/70">$</div>
+        <div className="absolute right-2 top-5 font-mono text-[5px] leading-none text-emerald-300/70">€</div>
+        <div className="absolute left-3 top-7 font-mono text-[5px] leading-none text-emerald-300/70">$</div>
+        <div className="absolute right-3 top-9 font-mono text-[5px] leading-none text-emerald-300/70">€</div>
       </div>
 
-      {/* Cash counter machine — back right below portrait */}
-      <div className="absolute right-2 top-12 h-5 w-7 rounded border border-emerald-800 bg-stone-900 shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]">
-        {/* Display */}
-        <div className="absolute left-1 top-1 h-1.5 w-5 border border-emerald-700 bg-emerald-950 shadow-[inset_0_0_1px_rgba(16,185,129,0.5)]">
-          <div className="font-mono text-[4px] font-bold leading-none text-emerald-400">
-            €30K
-          </div>
-        </div>
-        {/* Slot for bills */}
-        <div className="absolute bottom-1 left-1 right-1 h-px bg-emerald-800" />
-        <div className="absolute bottom-1.5 left-1 right-1 h-px bg-emerald-700/60" />
-        {/* Bills sticking out */}
-        <div className="absolute -bottom-1 left-2 h-1 w-3 bg-emerald-300/90" />
-      </div>
-
-      {/* MASSIVE pile of gold coins — bottom center */}
-      <div className="absolute bottom-2.5 left-1/2 h-7 w-12 -translate-x-1/2">
-        {/* Pile shape */}
-        <svg viewBox="0 0 48 28" className="absolute inset-0 h-full w-full">
-          {/* Coins */}
+      {/* === BOTTOM: Pile of gold + cash bricks === */}
+      <div className="absolute bottom-2.5 left-1/2 h-8 w-14 -translate-x-1/2">
+        <svg viewBox="0 0 56 32" className="absolute inset-0 h-full w-full">
           {[
-            [4, 22, 3],
-            [10, 22, 3],
-            [16, 22, 3],
-            [22, 22, 3],
-            [28, 22, 3],
-            [34, 22, 3],
-            [40, 22, 3],
-            [7, 17, 3],
-            [13, 17, 3],
-            [19, 17, 3],
-            [25, 17, 3],
-            [31, 17, 3],
-            [37, 17, 3],
-            [10, 12, 3],
-            [16, 12, 3],
-            [22, 12, 3],
-            [28, 12, 3],
-            [34, 12, 3],
-            [13, 7, 3],
-            [19, 7, 3],
-            [25, 7, 3],
-            [31, 7, 3],
-            [16, 2, 3],
-            [22, 2, 3],
-            [28, 2, 3],
+            [4, 26, 3], [10, 26, 3], [16, 26, 3], [22, 26, 3], [28, 26, 3],
+            [34, 26, 3], [40, 26, 3], [46, 26, 3], [52, 26, 3],
+            [7, 21, 3], [13, 21, 3], [19, 21, 3], [25, 21, 3], [31, 21, 3],
+            [37, 21, 3], [43, 21, 3], [49, 21, 3],
+            [10, 16, 3], [16, 16, 3], [22, 16, 3], [28, 16, 3], [34, 16, 3],
+            [40, 16, 3], [46, 16, 3],
+            [13, 11, 3], [19, 11, 3], [25, 11, 3], [31, 11, 3], [37, 11, 3], [43, 11, 3],
+            [16, 6, 3], [22, 6, 3], [28, 6, 3], [34, 6, 3], [40, 6, 3],
+            [22, 1, 3], [28, 1, 3], [34, 1, 3],
           ].map(([cx, cy, r], i) => (
             <circle
               key={i}
@@ -1022,52 +851,22 @@ function TreasuryFurniture() {
             </radialGradient>
           </defs>
         </svg>
-        {/* Sparkles on top */}
-        <div className="absolute top-0 left-3 h-px w-px bg-yellow-100 shadow-[0_0_3px_rgba(254,240,138,1)]" />
-        <div className="absolute top-1 right-3 h-px w-px bg-yellow-100 shadow-[0_0_3px_rgba(254,240,138,1)]" />
+        <div className="absolute top-0 left-3 h-px w-px bg-yellow-100 shadow-[0_0_4px_rgba(254,240,138,1)]" />
+        <div className="absolute top-2 right-3 h-px w-px bg-yellow-100 shadow-[0_0_4px_rgba(254,240,138,1)]" />
       </div>
 
-      {/* Cash brick stacks — bottom right of pile */}
-      <div className="absolute bottom-2.5 right-12 flex items-end gap-px">
+      {/* Cash brick stack */}
+      <div className="absolute bottom-2.5 right-3 flex items-end gap-px">
         <div className="flex flex-col gap-px">
           {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-1 w-3 border border-emerald-700/80 bg-emerald-800 shadow-[inset_0_0_1px_rgba(16,185,129,0.4)]" />
+            <div key={i} className="h-1 w-3 border border-emerald-700/80 bg-emerald-800" />
           ))}
         </div>
-        <div className="flex flex-col gap-px">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-1 w-3 border border-emerald-700/80 bg-emerald-800 shadow-[inset_0_0_1px_rgba(16,185,129,0.4)]" />
-          ))}
-        </div>
-        {/* Gold bar stack */}
         <div className="ml-1 flex flex-col gap-px">
-          <div className="h-1 w-3 border border-yellow-700 bg-gradient-to-r from-yellow-500 via-yellow-300 to-yellow-500 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
-          <div className="h-1 w-3 border border-yellow-700 bg-gradient-to-r from-yellow-500 via-yellow-300 to-yellow-500 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
-          <div className="h-1 w-3 border border-yellow-700 bg-gradient-to-r from-yellow-500 via-yellow-300 to-yellow-500 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-1 w-3 border border-yellow-700 bg-gradient-to-r from-yellow-500 via-yellow-300 to-yellow-500 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
+          ))}
         </div>
-      </div>
-
-      {/* Scale (justice) — left of pile */}
-      <div className="absolute bottom-2.5 left-[6.5rem] h-5 w-4">
-        <div className="absolute bottom-0 left-1/2 h-3 w-px -translate-x-1/2 bg-stone-600" />
-        <div className="absolute top-1 left-0 right-0 h-px bg-stone-500" />
-        {/* Left pan */}
-        <div className="absolute top-1.5 left-0 h-px w-1.5 bg-stone-600" />
-        <div className="absolute top-2 left-0 h-1 w-1.5 border border-stone-600 bg-yellow-700/40" />
-        {/* Right pan */}
-        <div className="absolute top-1.5 right-0 h-px w-1.5 bg-stone-600" />
-        <div className="absolute top-2 right-0 h-1 w-1.5 border border-stone-600 bg-yellow-700/40" />
-        {/* Base */}
-        <div className="absolute bottom-0 left-1/2 h-px w-3 -translate-x-1/2 bg-stone-700" />
-      </div>
-
-      {/* Cigar in glass ashtray — far right corner */}
-      <div className="absolute bottom-2.5 right-2">
-        <div className="h-1 w-2 rounded-full bg-stone-700/80" />
-        <div className="absolute -top-px left-0 h-px w-2.5 -rotate-12 bg-amber-900" />
-        <div className="absolute -top-px left-2 h-px w-px rounded-full bg-orange-400 shadow-[0_0_2px_rgba(251,146,60,0.9)]" />
-        {/* Smoke */}
-        <div className="absolute -top-3 left-1 h-3 w-px bg-gradient-to-t from-stone-400/40 to-transparent blur-[0.5px]" />
       </div>
 
       {/* Counter strip */}
@@ -1078,34 +877,82 @@ function TreasuryFurniture() {
 
 /* =================================================================== */
 /* STEWARD — boutique reception                                         */
+/* HERO: cursive neon "Welcome" sign + panoramic city window            */
 /* =================================================================== */
 function StewardFurniture() {
   return (
     <>
-      {/* Crystal chandelier — center back wall */}
-      <div className="absolute left-1/2 top-0 h-6 w-10 -translate-x-1/2">
-        {/* Chain */}
-        <div className="absolute top-0 left-1/2 h-1 w-px -translate-x-1/2 bg-stone-600" />
-        {/* Frame */}
-        <div className="absolute top-1 left-1/2 h-1 w-8 -translate-x-1/2 rounded border border-amber-600/80 bg-amber-700/40" />
-        {/* Crystal drops */}
-        <div className="absolute top-2 left-1 h-3 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
-        <div className="absolute top-2 left-3 h-3 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
-        <div className="absolute top-2 left-5 h-4 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
-        <div className="absolute top-2 left-7 h-3 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
-        <div className="absolute top-2 right-1 h-3 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
-        {/* Light bulbs */}
-        <div className="absolute top-1.5 left-2 h-1 w-1 rounded-full bg-amber-200 shadow-[0_0_4px_rgba(254,240,138,1)]" />
-        <div className="absolute top-1.5 left-4.5 h-1 w-1 rounded-full bg-amber-200 shadow-[0_0_4px_rgba(254,240,138,1)]" />
-        <div className="absolute top-1.5 right-2 h-1 w-1 rounded-full bg-amber-200 shadow-[0_0_4px_rgba(254,240,138,1)]" />
+      {/* === HERO: Big panoramic city window === */}
+      <div className="absolute left-1/2 top-1 h-14 w-32 -translate-x-1/2 rounded-sm border-2 border-amber-700/80 bg-gradient-to-b from-blue-300/40 via-amber-200/15 to-amber-300/20 shadow-[inset_0_0_6px_rgba(0,0,0,0.4),0_2px_3px_rgba(0,0,0,0.3)]">
+        {/* Daylight gradient (warm afternoon) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-200/30 via-amber-100/15 to-amber-300/20 rounded-sm" />
+
+        {/* Sun */}
+        <div className="absolute right-3 top-1 h-3 w-3 rounded-full bg-amber-200 shadow-[0_0_8px_rgba(254,240,138,0.9)]" />
+
+        {/* Cityscape silhouettes */}
+        <div className="absolute bottom-0 left-0 right-0 h-7">
+          {/* buildings */}
+          <div className="absolute bottom-0 left-1 h-4 w-4 bg-stone-700/80" />
+          <div className="absolute bottom-0 left-6 h-5 w-3 bg-stone-700/80" />
+          <div className="absolute bottom-0 left-10 h-6 w-4 bg-stone-700/80" />
+          <div className="absolute bottom-0 left-[3.75rem] h-3 w-3 bg-stone-700/80" />
+          <div className="absolute bottom-0 left-20 h-5 w-5 bg-stone-700/80" />
+          <div className="absolute bottom-0 left-[6.5rem] h-7 w-4 bg-stone-700/80" />
+          <div className="absolute bottom-0 right-1 h-4 w-3 bg-stone-700/80" />
+          {/* Tiny office windows */}
+          <div className="absolute bottom-1 left-2 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-3 left-3 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-1 left-7 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-2 left-8 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-1 left-11 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-3 left-12 h-px w-px bg-amber-300/80" />
+        </div>
+
+        {/* Window frame cross */}
+        <div className="absolute left-1/3 top-0 h-full w-px bg-amber-800/70" />
+        <div className="absolute left-2/3 top-0 h-full w-px bg-amber-800/70" />
+        <div className="absolute inset-x-0 top-1/2 h-px bg-amber-800/70" />
+
+        {/* Window sill */}
+        <div className="absolute -bottom-1 -inset-x-2 h-1 bg-amber-800 shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
       </div>
 
-      {/* "AKTIVNI KLIJENTI" wall display — back left */}
-      <div className="absolute left-1 top-1 h-9 w-14 border border-emerald-700/80 bg-emerald-950/60 shadow-[inset_0_0_4px_rgba(16,185,129,0.3)]">
-        <div className="border-b border-emerald-800 bg-emerald-900/80 px-1 py-px">
-          <div className="font-mono text-[5px] font-bold uppercase leading-none tracking-wider text-emerald-300">
-            CLIENTS · 2
-          </div>
+      {/* === HERO: Glowing "Welcome" cursive neon === */}
+      <div className="absolute left-1/2 top-[3.85rem] -translate-x-1/2 rounded border-2 border-emerald-400/80 bg-emerald-950/40 px-2 py-0.5 shadow-[0_0_10px_rgba(16,185,129,0.7),inset_0_0_4px_rgba(110,231,183,0.5)]">
+        <span
+          className="font-serif text-[12px] font-bold italic leading-none text-emerald-200"
+          style={{
+            textShadow:
+              "0 0 4px rgba(110,231,183,0.9), 0 0 8px rgba(16,185,129,0.7)",
+          }}
+        >
+          Welcome
+        </span>
+      </div>
+
+      {/* === Subtitle: CLIENT HQ === */}
+      <div className="absolute left-1/2 top-[5.4rem] -translate-x-1/2 font-mono text-[6px] font-bold uppercase leading-none tracking-[0.4em] text-emerald-300/90">
+        ◇ CLIENT HQ ◇
+      </div>
+
+      {/* === SIDE: Crystal chandelier === */}
+      <div className="absolute left-2 top-1 h-7 w-7">
+        <div className="absolute top-0 left-1/2 h-1 w-px -translate-x-1/2 bg-stone-600" />
+        <div className="absolute top-1 left-1/2 h-1 w-6 -translate-x-1/2 rounded border border-amber-600/80 bg-amber-700/40" />
+        {/* Drops */}
+        <div className="absolute top-2 left-1 h-3 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
+        <div className="absolute top-2 left-3 h-4 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
+        <div className="absolute top-2 right-1 h-3 w-px bg-gradient-to-b from-amber-200/80 to-transparent shadow-[0_0_2px_rgba(254,240,138,0.6)]" />
+        {/* Bulbs */}
+        <div className="absolute top-1 left-1 h-1 w-1 rounded-full bg-amber-200 shadow-[0_0_4px_rgba(254,240,138,1)]" />
+        <div className="absolute top-1 right-1 h-1 w-1 rounded-full bg-amber-200 shadow-[0_0_4px_rgba(254,240,138,1)]" />
+      </div>
+
+      {/* === SIDE: Client roster screen (right) === */}
+      <div className="absolute right-2 top-1 h-9 w-9 border border-emerald-700/80 bg-emerald-950/60 shadow-[inset_0_0_3px_rgba(16,185,129,0.3)]">
+        <div className="border-b border-emerald-800 bg-emerald-900/80 px-px font-mono text-[5px] font-bold leading-none tracking-wider text-emerald-300">
+          CLIENTS · 2
         </div>
         <div className="space-y-px p-1">
           <div className="flex items-center gap-1">
@@ -1123,71 +970,34 @@ function StewardFurniture() {
         </div>
       </div>
 
-      {/* Framed artwork — back right */}
-      <div className="absolute right-2 top-1 h-7 w-9 border-2 border-amber-700 bg-stone-900 shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
-        <div className="absolute inset-0.5 bg-gradient-to-br from-emerald-900 via-emerald-700 to-stone-800">
-          {/* Mountains */}
-          <div className="absolute bottom-0 left-0 right-0 h-3"
-            style={{
-              clipPath: "polygon(0 100%, 20% 40%, 40% 70%, 60% 30%, 80% 60%, 100% 50%, 100% 100%)",
-              background: "linear-gradient(to bottom, rgb(20 83 45), rgb(6 78 59))",
-            }}
-          />
-          {/* Sun */}
-          <div className="absolute top-1 right-2 h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_3px_rgba(252,211,77,0.8)]" />
-        </div>
-      </div>
-
-      {/* Reception desk with terminal + clipboard — bottom left */}
-      <div className="absolute bottom-2.5 left-2 h-4 w-14 rounded-sm border border-emerald-700/80 bg-gradient-to-b from-emerald-950/80 to-stone-950 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.5)]">
-        {/* Front panel detail */}
-        <div className="absolute bottom-0 left-1 right-1 h-px bg-emerald-700/60" />
-        <div className="absolute bottom-1 left-1 right-1 h-px bg-emerald-800/60" />
-      </div>
-      {/* Terminal screen on desk */}
-      <div className="absolute bottom-[1.65rem] left-3 h-3 w-4 border border-emerald-700 bg-emerald-900/80 shadow-[inset_0_0_2px_rgba(16,185,129,0.5)]">
+      {/* === BOTTOM: Reception desk + chesterfield + plant === */}
+      <div className="absolute bottom-2.5 left-2 h-4 w-12 rounded-sm border border-emerald-700/80 bg-gradient-to-b from-emerald-950/80 to-stone-950 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.5)]" />
+      {/* Terminal */}
+      <div className="absolute bottom-[1.7rem] left-3 h-3 w-3.5 border border-emerald-700 bg-emerald-900/80 shadow-[inset_0_0_2px_rgba(16,185,129,0.5)]">
         <div className="m-px h-px w-2 bg-emerald-400/80" />
-        <div className="m-px mt-px h-px w-3 bg-emerald-400/60" />
+        <div className="m-px mt-px h-px w-2.5 bg-emerald-400/60" />
       </div>
-      {/* Sign-in clipboard */}
-      <div className="absolute bottom-[1.65rem] left-9 h-2 w-1.5 border border-stone-600 bg-stone-100 shadow-sm">
-        <div className="m-px h-px w-px bg-stone-700" />
-      </div>
-      {/* Brass desk lamp */}
-      <div className="absolute bottom-[1.65rem] left-12 h-3 w-2">
+      {/* Brass lamp */}
+      <div className="absolute bottom-[1.7rem] left-10 h-3 w-2">
         <div className="absolute bottom-0 left-1/2 h-2 w-px -translate-x-1/2 bg-amber-700" />
-        <div className="absolute top-0 left-0 h-1 w-2 rounded-t-full bg-amber-600 shadow-[0_0_3px_rgba(252,211,77,0.6)]" />
-        {/* Light cone */}
+        <div className="absolute top-0 left-0 h-1 w-2 rounded-t-full bg-amber-600 shadow-[0_0_4px_rgba(252,211,77,0.7)]" />
         <div
           className="absolute left-1/2 top-1 h-2 w-2 -translate-x-1/2 bg-gradient-to-b from-amber-200/40 to-transparent"
           style={{ clipPath: "polygon(40% 0, 60% 0, 100% 100%, 0 100%)" }}
         />
       </div>
 
-      {/* Visitor book on pedestal — bottom center */}
-      <div className="absolute bottom-2.5 left-1/2 h-4 w-3 -translate-x-1/2">
-        <div className="absolute bottom-0 left-1/2 h-3 w-1 -translate-x-1/2 bg-amber-900 shadow-[inset_-1px_0_1px_rgba(0,0,0,0.4)]" />
-        <div className="absolute top-0 left-0 right-0 h-1 rounded-sm border border-amber-700 bg-amber-100">
-          <div className="m-px h-px w-1 bg-stone-700" />
-        </div>
-      </div>
-
-      {/* Chesterfield leather sofa — bottom right */}
+      {/* Chesterfield sofa */}
       <div className="absolute bottom-2.5 right-2 h-4 w-9">
-        {/* Backrest */}
-        <div className="absolute top-0 left-0 right-0 h-2 rounded-t border border-amber-900 bg-gradient-to-b from-amber-700 to-amber-900 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.5)]">
-          {/* Tufting buttons */}
+        <div className="absolute top-0 left-0 right-0 h-2 rounded-t border border-amber-900 bg-gradient-to-b from-amber-700 to-amber-900">
           <div className="absolute left-1 top-1 h-px w-px rounded-full bg-amber-300" />
           <div className="absolute left-3 top-1 h-px w-px rounded-full bg-amber-300" />
           <div className="absolute left-5 top-1 h-px w-px rounded-full bg-amber-300" />
           <div className="absolute right-1 top-1 h-px w-px rounded-full bg-amber-300" />
         </div>
-        {/* Seat cushion */}
-        <div className="absolute top-2 left-0 right-0 h-1 bg-amber-700 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.4)]" />
-        {/* Armrests */}
+        <div className="absolute top-2 left-0 right-0 h-1 bg-amber-700" />
         <div className="absolute top-0 left-0 h-3 w-1 rounded-l border border-amber-900 bg-amber-800" />
         <div className="absolute top-0 right-0 h-3 w-1 rounded-r border border-amber-900 bg-amber-800" />
-        {/* Cushion / pillow */}
         <div className="absolute top-1 left-1.5 h-1 w-2 rounded bg-emerald-600/80" />
       </div>
 
@@ -1197,23 +1007,18 @@ function StewardFurniture() {
         <div className="absolute -top-px right-1 h-px w-1 bg-cyan-300/70" />
       </div>
 
-      {/* Tall potted plant — corner */}
-      <div className="absolute bottom-2.5 left-[5.5rem] flex flex-col items-center">
+      {/* Tall potted plant */}
+      <div className="absolute bottom-2.5 right-[5.5rem] flex flex-col items-center">
         <div className="relative h-5 w-3">
-          {/* Many leaves */}
           <div className="absolute left-0 top-0 h-3 w-1 origin-bottom -rotate-12 rounded-t-full bg-green-700" />
           <div className="absolute left-1 top-0 h-4 w-1 origin-bottom rounded-t-full bg-green-600" />
           <div className="absolute left-2 top-0 h-3 w-1 origin-bottom rotate-12 rounded-t-full bg-green-700" />
-          <div className="absolute left-0 top-1 h-2 w-1 origin-bottom -rotate-[30deg] rounded-t-full bg-green-800" />
-          <div className="absolute left-2 top-1 h-2 w-1 origin-bottom rotate-[30deg] rounded-t-full bg-green-800" />
         </div>
-        {/* Pot */}
         <div className="h-2 w-3 rounded-b border-t border-amber-700 bg-gradient-to-b from-amber-800 to-amber-950" />
       </div>
 
-      {/* Welcome mat / floor pattern */}
+      {/* Marble floor */}
       <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-emerald-700/40 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950">
-        {/* Marble veining */}
         <div className="absolute inset-0 opacity-30"
           style={{
             backgroundImage:
@@ -1227,23 +1032,69 @@ function StewardFurniture() {
 
 /* =================================================================== */
 /* ATLAS — Hollywood PR studio                                          */
+/* HERO: marquee bulbs spelling ATLAS + ON AIR red light                */
 /* =================================================================== */
 function AtlasFurniture() {
   return (
     <>
-      {/* Step-and-repeat backdrop — back wall */}
-      <div className="absolute left-2 top-1 h-12 w-32 border border-rose-700/80 bg-gradient-to-br from-rose-900/40 via-stone-900 to-rose-900/40 shadow-[inset_0_0_4px_rgba(244,63,94,0.3)]">
-        {/* Tiled "LAMON" logos */}
+      {/* === HERO: Big marquee with bulbs spelling "★ ATLAS ★" === */}
+      <div className="absolute left-1/2 top-1 h-10 w-32 -translate-x-1/2 rounded border-2 border-amber-600 bg-gradient-to-b from-rose-950 via-stone-900 to-rose-950 shadow-[0_0_8px_rgba(244,63,94,0.4),inset_0_0_4px_rgba(0,0,0,0.5)]">
+        {/* Bulbs — top row */}
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={`top-${i}`}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_4px_rgba(254,240,138,1)]"
+            style={{ top: -1, left: `${(i + 0.5) * 8}%` }}
+          />
+        ))}
+        {/* Bulbs — bottom row */}
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={`bot-${i}`}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_4px_rgba(254,240,138,1)]"
+            style={{ bottom: -1, left: `${(i + 0.5) * 8}%` }}
+          />
+        ))}
+        {/* Bulbs — left side */}
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={`l-${i}`}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_4px_rgba(254,240,138,1)]"
+            style={{ left: -1, top: `${(i + 0.5) * 24}%` }}
+          />
+        ))}
+        {/* Bulbs — right side */}
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={`r-${i}`}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_4px_rgba(254,240,138,1)]"
+            style={{ right: -1, top: `${(i + 0.5) * 24}%` }}
+          />
+        ))}
+        {/* Marquee text */}
         <div
-          className="absolute inset-0 opacity-80"
+          className="flex h-full items-center justify-center font-serif text-[16px] font-bold leading-none tracking-[0.2em] text-yellow-300"
           style={{
-            backgroundImage:
-              "repeating-linear-gradient(0deg, transparent 0 4px, rgba(244,63,94,0.15) 4px 5px), repeating-linear-gradient(90deg, transparent 0 8px, rgba(244,63,94,0.15) 8px 9px)",
+            textShadow:
+              "0 0 6px rgba(254,240,138,0.9), 0 0 12px rgba(250,204,21,0.7), 0 1px 0 rgba(0,0,0,0.6)",
           }}
-        />
-        {/* Logo tiles */}
-        <div className="grid h-full grid-cols-4 grid-rows-2 gap-px p-px">
-          {[...Array(8)].map((_, i) => (
+        >
+          ★ ATLAS ★
+        </div>
+      </div>
+
+      {/* === ON AIR red light === */}
+      <div className="absolute right-2 top-12 flex items-center gap-1 rounded-sm border-2 border-red-500/90 bg-red-950 px-1.5 py-0.5 shadow-[0_0_8px_rgba(239,68,68,0.9),inset_0_0_3px_rgba(248,113,113,0.5)]">
+        <div className="h-1 w-1 animate-pulse rounded-full bg-red-300 shadow-[0_0_3px_rgba(252,165,165,1)]" />
+        <span className="font-mono text-[6px] font-bold uppercase leading-none tracking-[0.3em] text-red-100">
+          ON AIR
+        </span>
+      </div>
+
+      {/* === Step-and-repeat backdrop (smaller, behind) === */}
+      <div className="absolute left-2 top-12 h-9 w-20 border border-rose-700/60 bg-gradient-to-br from-rose-900/30 via-stone-900 to-rose-900/30">
+        <div className="grid h-full grid-cols-3 grid-rows-3 gap-px p-px">
+          {[...Array(9)].map((_, i) => (
             <div
               key={i}
               className="flex items-center justify-center font-mono text-[5px] font-bold uppercase tracking-wider text-rose-200/60"
@@ -1254,20 +1105,30 @@ function AtlasFurniture() {
         </div>
       </div>
 
-      {/* Spotlights from above — 3 cones */}
+      {/* === Movie-poster frame === */}
+      <div className="absolute right-[3.25rem] top-12 h-9 w-7 border-2 border-amber-700 bg-stone-900 shadow-[0_2px_3px_rgba(0,0,0,0.5)]">
+        <div className="absolute inset-0.5 bg-gradient-to-b from-rose-700 via-rose-500 to-amber-300">
+          {/* Star */}
+          <div className="absolute left-1/2 top-2 -translate-x-1/2 text-[8px] leading-none text-yellow-200">★</div>
+          {/* Title */}
+          <div className="absolute inset-x-0 bottom-1 text-center font-serif text-[5px] font-bold leading-none text-yellow-100">
+            BLOCKBUSTER
+          </div>
+        </div>
+      </div>
+
+      {/* === Spotlights (3 cones) === */}
       {[20, 50, 80].map((x, i) => (
         <div key={i}>
-          {/* Lamp head */}
           <div
             className="absolute h-1.5 w-2 rounded-b border border-stone-700 bg-stone-800"
-            style={{ left: `${x}%`, top: 0, transform: "translateX(-50%)" }}
+            style={{ left: `${x}%`, top: "5.7rem", transform: "translateX(-50%)" }}
           />
-          {/* Light cone */}
           <div
-            className="pointer-events-none absolute h-12 w-8 bg-gradient-to-b from-yellow-200/35 to-transparent"
+            className="pointer-events-none absolute h-12 w-10 bg-gradient-to-b from-yellow-200/40 to-transparent"
             style={{
               left: `${x}%`,
-              top: "1.5rem",
+              top: "6.4rem",
               transform: "translateX(-50%)",
               clipPath: "polygon(35% 0, 65% 0, 100% 100%, 0 100%)",
               filter: "blur(1px)",
@@ -1276,150 +1137,73 @@ function AtlasFurniture() {
         </div>
       ))}
 
-      {/* "FAME WALL" sign */}
-      <div className="absolute left-2 top-[3.4rem] flex items-center gap-1">
-        <span className="text-[6px]">★</span>
-        <span className="font-mono text-[6px] font-bold uppercase tracking-[0.3em] text-rose-300">
-          FAME WALL
-        </span>
-        <span className="text-[6px]">★</span>
-      </div>
-
-      {/* Trophy shelf — left side, packed */}
-      <div className="absolute left-2 top-12 h-10 w-12">
-        <div className="h-px w-full bg-rose-700/60" />
-        <div className="flex items-end gap-px pl-px">
-          <span className="text-[10px] leading-none">🏆</span>
-          <span className="text-[10px] leading-none">🥇</span>
-          <span className="text-[9px] leading-none">🎬</span>
-          <span className="text-[8px] leading-none">⭐</span>
-        </div>
-        <div className="mt-2 h-px w-full bg-rose-700/40" />
-        {/* Magazine covers on shelf */}
-        <div className="mt-1 flex items-end gap-px pl-px">
-          <div className="h-3 w-2 border border-rose-600/80 bg-gradient-to-b from-rose-200 to-rose-500 shadow-[0_0_2px_rgba(244,63,94,0.4)]">
-            <div className="absolute bottom-px left-px h-px w-1 bg-rose-900/60" />
-          </div>
-          <div className="h-3 w-2 border border-rose-600/80 bg-gradient-to-b from-amber-200 to-rose-400">
-            <div className="absolute bottom-px left-px h-px w-1 bg-rose-900/60" />
-          </div>
-          <div className="h-3 w-2 border border-rose-600/80 bg-gradient-to-b from-cyan-200 to-rose-400">
-            <div className="absolute bottom-px left-px h-px w-1 bg-rose-900/60" />
-          </div>
-          <div className="h-3 w-2 border border-rose-600/80 bg-gradient-to-b from-purple-200 to-rose-400">
-            <div className="absolute bottom-px left-px h-px w-1 bg-rose-900/60" />
-          </div>
-        </div>
-      </div>
-
-      {/* Hollywood vanity mirror with bulbs — right back wall */}
-      <div className="absolute right-2 top-12 h-10 w-9 border-2 border-amber-600 bg-stone-800 shadow-[inset_0_0_3px_rgba(0,0,0,0.5)]">
-        {/* Mirror surface */}
+      {/* === BOTTOM: Vanity mirror + camera + ring light + director chair === */}
+      {/* Vanity mirror */}
+      <div className="absolute bottom-2.5 left-2 h-9 w-8 border-2 border-amber-600 bg-stone-800">
         <div className="absolute inset-1 border border-amber-700/60 bg-gradient-to-b from-stone-300/30 to-stone-500/30" />
-        {/* Reflection sheen */}
         <div className="absolute inset-1 bg-gradient-to-tr from-transparent via-white/15 to-transparent" />
-        {/* Bulbs around mirror */}
-        {[...Array(6)].map((_, i) => (
+        {[...Array(5)].map((_, i) => (
           <div
             key={`top-${i}`}
-            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_3px_rgba(254,240,138,0.9)]"
-            style={{ top: -1, left: `${(i + 0.5) * 14}%` }}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_3px_rgba(254,240,138,0.95)]"
+            style={{ top: -1, left: `${(i + 0.5) * 18}%` }}
           />
         ))}
-        {[...Array(4)].map((_, i) => (
+        {[...Array(3)].map((_, i) => (
           <div
             key={`l-${i}`}
-            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_3px_rgba(254,240,138,0.9)]"
-            style={{ left: -1, top: `${(i + 0.5) * 22}%` }}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_3px_rgba(254,240,138,0.95)]"
+            style={{ left: -1, top: `${(i + 0.5) * 28}%` }}
           />
         ))}
-        {[...Array(4)].map((_, i) => (
+        {[...Array(3)].map((_, i) => (
           <div
             key={`r-${i}`}
-            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_3px_rgba(254,240,138,0.9)]"
-            style={{ right: -1, top: `${(i + 0.5) * 22}%` }}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_3px_rgba(254,240,138,0.95)]"
+            style={{ right: -1, top: `${(i + 0.5) * 28}%` }}
           />
         ))}
       </div>
 
-      {/* Boom mic from above — center */}
-      <div className="absolute left-1/2 top-2 -translate-x-1/2">
-        {/* Pole */}
-        <div className="h-12 w-px bg-stone-700" />
-        {/* Mic head */}
-        <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full border border-stone-500 bg-stone-800 shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]">
-          <div className="absolute inset-0 rounded-full opacity-50"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0 1px, transparent 1px 2px)",
-            }}
-          />
-        </div>
-        {/* Wind muff */}
-        <div className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full bg-stone-700/40 blur-[0.5px]" />
-      </div>
-
-      {/* Camera on tripod — bottom right */}
-      <div className="absolute bottom-2.5 right-2 h-10 w-6">
-        {/* Camera body */}
-        <div className="absolute top-0 left-1/2 h-3 w-5 -translate-x-1/2 rounded border border-rose-700/80 bg-gradient-to-b from-stone-700 to-stone-900 shadow-[inset_0_0_2px_rgba(244,63,94,0.3)]">
-          {/* Lens */}
-          <div className="absolute -right-1 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border border-rose-500 bg-stone-950 shadow-[inset_0_0_2px_rgba(244,63,94,0.5)]">
-            <div className="absolute inset-0.5 rounded-full border border-stone-600" />
-          </div>
-          {/* Red REC light */}
-          <div className="absolute left-1 top-1 h-px w-px rounded-full bg-rose-400 shadow-[0_0_3px_rgba(251,113,133,0.9)]" />
-          {/* Viewfinder */}
-          <div className="absolute -top-1 left-1 h-1 w-1 rounded-sm border border-rose-700 bg-stone-800" />
-        </div>
-        {/* Tripod legs */}
-        <div className="absolute bottom-0 left-1/2 h-7 w-px -translate-x-1/2 bg-stone-700" />
-        <div className="absolute bottom-0 left-1/2 h-7 w-px -translate-x-1/2 origin-top -rotate-12 bg-stone-700" />
-        <div className="absolute bottom-0 left-1/2 h-7 w-px -translate-x-1/2 origin-top rotate-12 bg-stone-700" />
-        {/* Base feet */}
-        <div className="absolute bottom-0 left-0 h-px w-1 bg-stone-800" />
-        <div className="absolute bottom-0 right-0 h-px w-1 bg-stone-800" />
-        <div className="absolute bottom-0 left-1/2 h-px w-1 -translate-x-1/2 bg-stone-800" />
-      </div>
-
-      {/* Ring light — bottom left */}
-      <div className="absolute bottom-2.5 left-2 h-9 w-7">
-        {/* Ring */}
-        <div className="absolute top-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full border-[2.5px] border-yellow-200/90 bg-yellow-100/15 shadow-[0_0_8px_rgba(253,224,71,0.6),inset_0_0_4px_rgba(254,240,138,0.5)]">
-          <div className="absolute inset-1 rounded-full border border-yellow-300/40" />
-        </div>
-        {/* Stand */}
-        <div className="absolute bottom-0 left-1/2 h-5 w-px -translate-x-1/2 bg-stone-700" />
-        {/* Adjustment knob */}
-        <div className="absolute bottom-3 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full border border-stone-600 bg-stone-800" />
-        {/* Base */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-stone-700" />
-      </div>
-
-      {/* Director's chair with name — center bottom */}
+      {/* Director chair */}
       <div className="absolute bottom-2.5 left-1/2 h-7 w-5 -translate-x-1/2">
-        {/* Backrest with name */}
         <div className="absolute top-0 left-0 right-0 h-3 rounded-sm border border-rose-800 bg-rose-900 shadow-md">
           <div className="m-px font-mono text-[4px] font-bold uppercase leading-none text-rose-100">
             ATLAS
           </div>
         </div>
-        {/* Seat */}
-        <div className="absolute top-3 left-0 right-0 h-2 bg-rose-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Legs (X-shape) */}
+        <div className="absolute top-3 left-0 right-0 h-2 bg-rose-900" />
         <div className="absolute bottom-0 left-1/2 h-3 w-px -translate-x-1/2 origin-top rotate-[15deg] bg-stone-700" />
         <div className="absolute bottom-0 left-1/2 h-3 w-px -translate-x-1/2 origin-top -rotate-[15deg] bg-stone-700" />
       </div>
 
-      {/* Red carpet runner — floor strip with darker red */}
-      <div className="absolute bottom-1 left-1/4 right-1/4 h-1.5 rounded-sm bg-gradient-to-r from-rose-950 via-rose-800 to-rose-950 shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]">
-        {/* Gold trim edges */}
-        <div className="absolute inset-x-0 top-0 h-px bg-yellow-500/60" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-yellow-500/60" />
+      {/* Ring light */}
+      <div className="absolute bottom-2.5 right-12 h-9 w-7">
+        <div className="absolute top-0 left-1/2 h-5 w-5 -translate-x-1/2 rounded-full border-[2.5px] border-yellow-200/90 bg-yellow-100/15 shadow-[0_0_8px_rgba(253,224,71,0.7),inset_0_0_4px_rgba(254,240,138,0.5)]">
+          <div className="absolute inset-1 rounded-full border border-yellow-300/40" />
+        </div>
+        <div className="absolute bottom-0 left-1/2 h-5 w-px -translate-x-1/2 bg-stone-700" />
       </div>
 
-      {/* Hollywood star on floor */}
-      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] leading-none text-yellow-300 shadow-[0_0_3px_rgba(250,204,21,0.7)]">
+      {/* Camera tripod */}
+      <div className="absolute bottom-2.5 right-2 h-9 w-6">
+        <div className="absolute top-0 left-1/2 h-3 w-5 -translate-x-1/2 rounded border border-rose-700/80 bg-gradient-to-b from-stone-700 to-stone-900">
+          <div className="absolute -right-1 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border border-rose-500 bg-stone-950 shadow-[inset_0_0_2px_rgba(244,63,94,0.5)]">
+            <div className="absolute inset-0.5 rounded-full border border-stone-600" />
+          </div>
+          <div className="absolute left-1 top-1 h-px w-px rounded-full bg-rose-400 shadow-[0_0_3px_rgba(251,113,133,0.9)]" />
+        </div>
+        <div className="absolute bottom-0 left-1/2 h-6 w-px -translate-x-1/2 bg-stone-700" />
+        <div className="absolute bottom-0 left-1/2 h-6 w-px -translate-x-1/2 origin-top -rotate-12 bg-stone-700" />
+        <div className="absolute bottom-0 left-1/2 h-6 w-px -translate-x-1/2 origin-top rotate-12 bg-stone-700" />
+      </div>
+
+      {/* Red carpet */}
+      <div className="absolute bottom-1 left-1/4 right-1/4 h-1.5 rounded-sm bg-gradient-to-r from-rose-950 via-rose-800 to-rose-950 shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]">
+        <div className="absolute inset-x-0 top-0 h-px bg-yellow-500/70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-yellow-500/70" />
+      </div>
+      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] leading-none text-yellow-300 shadow-[0_0_4px_rgba(250,204,21,0.8)]">
         ★
       </div>
     </>
@@ -1428,48 +1212,87 @@ function AtlasFurniture() {
 
 /* =================================================================== */
 /* MENTAT — strategic war room                                          */
+/* HERO: huge tactical world map dominating the back wall               */
 /* =================================================================== */
 function MentatFurniture() {
   return (
     <>
-      {/* Big tactical map on back wall — center */}
-      <div className="absolute left-1/2 top-1 h-10 w-20 -translate-x-1/2 border border-violet-700/80 bg-violet-950/80 shadow-[inset_0_0_4px_rgba(139,92,246,0.3)]">
+      {/* === HERO: Massive tactical world map === */}
+      <div className="absolute left-1/2 top-1 h-[5.5rem] w-36 -translate-x-1/2 border-2 border-violet-700/90 bg-violet-950/80 shadow-[inset_0_0_6px_rgba(139,92,246,0.4),0_0_8px_rgba(139,92,246,0.15)]">
         {/* Header */}
-        <div className="border-b border-violet-800 bg-violet-900/70 px-1 font-mono text-[5px] font-bold leading-none tracking-wider text-violet-300">
-          ▼ TACTICAL OVERLAY
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-violet-700/80 bg-violet-900/80 px-1 py-px">
+          <div className="flex items-center gap-1">
+            <div className="h-1 w-1 animate-pulse rounded-full bg-red-400 shadow-[0_0_3px_rgba(248,113,113,1)]" />
+            <span className="font-mono text-[5px] font-bold uppercase leading-none tracking-[0.2em] text-violet-200">
+              ▼ WAR ROOM · TACTICAL
+            </span>
+          </div>
+          <span className="font-mono text-[5px] leading-none text-violet-300/80">
+            CONFIDENTIAL
+          </span>
         </div>
-        {/* Grid */}
+
+        {/* Grid background */}
         <div
-          className="absolute inset-x-0 bottom-0 top-2 opacity-50"
+          className="absolute inset-0 mt-2 opacity-40"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(0deg, rgba(139,92,246,0.4) 0 1px, transparent 1px 5px), repeating-linear-gradient(90deg, rgba(139,92,246,0.4) 0 1px, transparent 1px 5px)",
+              "repeating-linear-gradient(0deg, rgba(139,92,246,0.4) 0 1px, transparent 1px 8px), repeating-linear-gradient(90deg, rgba(139,92,246,0.4) 0 1px, transparent 1px 8px)",
           }}
         />
-        {/* Croatia outline (rough) */}
-        <svg viewBox="0 0 80 32" className="absolute inset-x-0 bottom-0 top-2 h-6 w-full opacity-60">
-          <path
-            d="M 10 10 L 25 8 L 40 14 L 55 10 L 70 16 L 65 22 L 55 26 L 40 24 L 25 28 L 15 22 Z"
-            fill="rgba(139,92,246,0.2)"
-            stroke="rgb(167 139 250)"
-            strokeWidth="0.4"
-          />
+
+        {/* World map (continents) */}
+        <svg viewBox="0 0 144 80" className="absolute inset-0 mt-3 h-full w-full">
+          {/* North America */}
+          <path d="M 12 18 Q 18 14 28 16 Q 32 22 30 30 Q 24 36 16 32 Q 10 26 12 18 Z" fill="rgba(139,92,246,0.3)" stroke="rgb(167 139 250)" strokeWidth="0.4" />
+          {/* South America */}
+          <path d="M 26 38 Q 30 36 32 42 Q 30 50 26 52 Q 24 46 26 38 Z" fill="rgba(139,92,246,0.3)" stroke="rgb(167 139 250)" strokeWidth="0.4" />
+          {/* Europe */}
+          <path d="M 60 18 Q 70 16 78 20 Q 76 26 70 28 Q 62 26 60 18 Z" fill="rgba(139,92,246,0.3)" stroke="rgb(167 139 250)" strokeWidth="0.4" />
+          {/* Africa */}
+          <path d="M 64 30 Q 72 28 76 36 Q 74 46 68 48 Q 62 42 64 30 Z" fill="rgba(139,92,246,0.3)" stroke="rgb(167 139 250)" strokeWidth="0.4" />
+          {/* Asia */}
+          <path d="M 80 18 Q 100 14 120 22 Q 118 30 110 32 Q 90 30 80 18 Z" fill="rgba(139,92,246,0.3)" stroke="rgb(167 139 250)" strokeWidth="0.4" />
+          {/* Australia */}
+          <path d="M 110 42 Q 120 40 124 46 Q 120 50 112 48 Q 108 44 110 42 Z" fill="rgba(139,92,246,0.3)" stroke="rgb(167 139 250)" strokeWidth="0.4" />
+
+          {/* Strategy lines */}
+          <g opacity="0.85">
+            <path d="M 70 22 L 22 22" stroke="rgb(248 113 113)" strokeWidth="0.6" strokeDasharray="3 1" fill="none" />
+            <path d="M 70 22 L 100 22" stroke="rgb(74 222 128)" strokeWidth="0.6" strokeDasharray="3 1" fill="none" />
+            <path d="M 70 22 L 70 38" stroke="rgb(250 204 21)" strokeWidth="0.6" strokeDasharray="3 1" fill="none" />
+            <path d="M 22 22 L 26 42" stroke="rgb(248 113 113)" strokeWidth="0.4" strokeDasharray="2 1" fill="none" />
+            <path d="M 100 22 L 116 44" stroke="rgb(74 222 128)" strokeWidth="0.4" strokeDasharray="2 1" fill="none" />
+          </g>
+
+          {/* Pinned positions */}
+          <circle cx="70" cy="22" r="2" fill="rgb(254 240 138)" stroke="rgb(250 204 21)" strokeWidth="0.5">
+            <animate attributeName="r" from="2" to="2.5" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="22" cy="22" r="1.5" fill="rgb(248 113 113)" />
+          <circle cx="100" cy="22" r="1.5" fill="rgb(74 222 128)" />
+          <circle cx="70" cy="38" r="1.5" fill="rgb(34 211 238)" />
+          <circle cx="116" cy="44" r="1.5" fill="rgb(167 139 250)" />
+          <circle cx="26" cy="42" r="1.5" fill="rgb(244 114 182)" />
         </svg>
-        {/* Pinned strategic positions */}
-        <div className="absolute left-3 top-4 h-1 w-1 rounded-full bg-red-400 shadow-[0_0_3px_rgba(248,113,113,0.9)]" />
-        <div className="absolute right-4 top-3 h-1 w-1 rounded-full bg-yellow-400 shadow-[0_0_3px_rgba(250,204,21,0.9)]" />
-        <div className="absolute left-6 bottom-2 h-1 w-1 rounded-full bg-green-400 shadow-[0_0_3px_rgba(74,222,128,0.9)]" />
-        <div className="absolute right-6 bottom-3 h-1 w-1 rounded-full bg-cyan-400 shadow-[0_0_3px_rgba(34,211,238,0.9)]" />
-        {/* Strategy lines (dashed) */}
-        <svg viewBox="0 0 80 32" className="absolute inset-0 h-full w-full" aria-hidden>
-          <path d="M 12 14 L 60 12" stroke="rgb(248 113 113)" strokeWidth="0.5" strokeDasharray="2 1" fill="none" />
-          <path d="M 12 14 L 24 26" stroke="rgb(74 222 128)" strokeWidth="0.5" strokeDasharray="2 1" fill="none" />
-          <path d="M 60 12 L 56 26" stroke="rgb(34 211 238)" strokeWidth="0.5" strokeDasharray="2 1" fill="none" />
-        </svg>
+
+        {/* HQ marker label */}
+        <div className="absolute left-[48%] top-[35%] font-mono text-[4px] font-bold leading-none tracking-wider text-yellow-200/95 shadow-[0_0_2px_rgba(250,204,21,0.7)]">
+          ◆HQ
+        </div>
+
+        {/* Compass rose — corner */}
+        <div className="absolute top-3 right-1 h-3 w-3 rounded-full border border-violet-400/60 bg-violet-950/40">
+          <div className="absolute left-1/2 top-0 h-1 w-px -translate-x-1/2 bg-red-400" />
+          <div className="absolute left-1/2 bottom-0 h-1 w-px -translate-x-1/2 bg-violet-300" />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-[3px] font-bold leading-none text-violet-200">
+            N
+          </div>
+        </div>
       </div>
 
-      {/* Bookshelf — left back wall, packed */}
-      <div className="absolute left-1 top-1 h-12 w-7 border border-violet-900 bg-stone-900 shadow-[inset_0_0_3px_rgba(0,0,0,0.5)]">
+      {/* === Bookshelf — left back === */}
+      <div className="absolute left-1 top-1 h-12 w-5 border border-violet-900 bg-stone-900 shadow-[inset_0_0_3px_rgba(0,0,0,0.5)]">
         {[0, 1, 2, 3].map((shelf) => (
           <div key={shelf} className="border-b border-stone-800 px-px py-px">
             <div className="flex items-end gap-px">
@@ -1479,15 +1302,13 @@ function MentatFurniture() {
                 "bg-emerald-800",
                 "bg-amber-800",
                 "bg-red-800",
-                "bg-stone-600",
-                "bg-blue-800",
               ]
-                .slice(0, 5 + (shelf % 2))
+                .slice(0, 3 + (shelf % 2))
                 .map((color, i) => (
                   <div
                     key={i}
-                    className={`h-2 w-px ${color}`}
-                    style={{ height: `${6 + (i % 3) * 2}px` }}
+                    className={`w-px ${color}`}
+                    style={{ height: `${5 + (i % 3) * 2}px` }}
                   />
                 ))}
             </div>
@@ -1495,17 +1316,8 @@ function MentatFurniture() {
         ))}
       </div>
 
-      {/* Bust on top of bookshelf */}
-      <div className="absolute left-1 top-[1.65rem] h-2 w-7 -mt-2 flex items-end justify-center">
-        <div className="flex flex-col items-center">
-          <div className="h-1 w-1 rounded-full bg-stone-300" />
-          <div className="h-1 w-2 bg-stone-400" />
-          <div className="h-px w-3 bg-stone-500" />
-        </div>
-      </div>
-
-      {/* Country flags row — back right wall */}
-      <div className="absolute right-1 top-2 flex flex-col gap-px">
+      {/* === Country flags row — right back === */}
+      <div className="absolute right-1 top-1 flex flex-col gap-px">
         {[
           ["bg-red-700", "bg-blue-700", "bg-white"],
           ["bg-blue-600", "bg-yellow-400", "bg-blue-600"],
@@ -1519,18 +1331,16 @@ function MentatFurniture() {
         ))}
       </div>
 
-      {/* Red phone (hotline) — right wall */}
-      <div className="absolute right-2 top-9 h-3 w-3">
-        <div className="absolute bottom-0 left-0 right-0 h-1.5 rounded bg-red-700 shadow-[0_0_3px_rgba(248,113,113,0.5)]" />
+      {/* === Red phone (hotline) === */}
+      <div className="absolute right-1 top-9 h-3 w-4">
+        <div className="absolute bottom-0 left-0 right-0 h-1.5 rounded bg-red-700 shadow-[0_0_4px_rgba(248,113,113,0.6)]" />
         <div className="absolute top-0 left-0 right-0 h-1 rounded-full bg-red-600" />
         <div className="absolute bottom-0.5 left-1/2 h-px w-px rounded-full bg-yellow-300" />
       </div>
 
-      {/* Big oval war table — bottom center */}
-      <div className="absolute bottom-2 left-1/2 h-7 w-24 -translate-x-1/2">
-        {/* Table top */}
+      {/* === BOTTOM: Big oval war table === */}
+      <div className="absolute bottom-2 left-1/2 h-7 w-[5.5rem] -translate-x-1/2">
         <div className="absolute top-0 left-0 right-0 h-4 rounded-full border-2 border-violet-700/90 bg-gradient-to-b from-violet-900/80 to-violet-950 shadow-[inset_0_0_6px_rgba(139,92,246,0.4),0_2px_4px_rgba(0,0,0,0.6)]">
-          {/* Tactical grid on table */}
           <div className="absolute inset-1 opacity-30"
             style={{
               backgroundImage:
@@ -1539,54 +1349,35 @@ function MentatFurniture() {
           />
           {/* Game pieces */}
           <div className="absolute left-3 top-1 h-1.5 w-1.5 rounded-full bg-red-400 shadow-[0_0_2px_rgba(248,113,113,0.7)]" />
-          <div className="absolute left-7 top-2 h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_2px_rgba(96,165,250,0.7)]" />
-          <div className="absolute left-1/2 top-1 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-yellow-400 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
-          <div className="absolute right-7 top-2 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_2px_rgba(74,222,128,0.7)]" />
-          <div className="absolute right-3 top-1 h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_2px_rgba(167,139,250,0.7)]" />
-          {/* Flag centerpiece */}
+          <div className="absolute left-7 top-2 h-1.5 w-1.5 rounded-full bg-blue-400" />
+          <div className="absolute left-1/2 top-1 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-yellow-400" />
+          <div className="absolute right-7 top-2 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <div className="absolute right-3 top-1 h-1.5 w-1.5 rounded-full bg-violet-400" />
+          {/* Centerpiece flag */}
           <div className="absolute left-1/2 bottom-1 h-1.5 w-px -translate-x-1/2 bg-stone-300" />
           <div className="absolute left-1/2 bottom-2 h-1 w-1.5 -translate-x-1/2 bg-violet-500" />
         </div>
-        {/* Table base */}
         <div className="absolute bottom-0 left-1/2 h-3 w-2 -translate-x-1/2 bg-stone-800" />
-        <div className="absolute bottom-0 left-1/2 h-px w-6 -translate-x-1/2 bg-stone-700" />
       </div>
 
-      {/* Standing globe — bottom right */}
+      {/* === Globe === */}
       <div className="absolute bottom-2.5 right-2 h-7 w-4">
-        <div className="absolute top-0 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full border border-violet-600/80 bg-gradient-to-br from-cyan-900 via-blue-950 to-stone-950 shadow-[inset_0_0_3px_rgba(139,92,246,0.5)]">
-          {/* Continents */}
+        <div className="absolute top-0 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full border border-violet-600/80 bg-gradient-to-br from-cyan-900 via-blue-950 to-stone-950">
           <div className="absolute left-0.5 top-1 h-px w-1 bg-emerald-300" />
           <div className="absolute right-0.5 top-1 h-px w-1.5 bg-emerald-300" />
           <div className="absolute left-0.5 bottom-1 h-px w-1.5 bg-emerald-300" />
-          <div className="absolute right-1 bottom-1 h-px w-px bg-emerald-300" />
-          {/* Equator */}
-          <div className="absolute left-0 right-0 top-1/2 h-px bg-violet-400/40" />
         </div>
-        {/* Stand */}
         <div className="absolute bottom-0 left-1/2 h-3 w-px -translate-x-1/2 bg-stone-700" />
-        <div className="absolute bottom-0 left-1/2 h-px w-3 -translate-x-1/2 bg-stone-700" />
       </div>
 
-      {/* Chess board — bottom left */}
+      {/* === Chess board === */}
       <div className="absolute bottom-2.5 left-2 h-3 w-4 border border-stone-700">
-        <div
-          className="h-full w-full"
+        <div className="h-full w-full"
           style={{
             backgroundImage:
               "repeating-conic-gradient(rgb(28 25 23) 0% 25%, rgb(245 245 244) 0% 50%) 50% / 4px 4px",
           }}
         />
-        {/* Piece on top */}
-        <div className="absolute -top-1 left-1 h-1 w-1 rounded-full bg-stone-200" />
-      </div>
-
-      {/* Liquor decanter on shelf — back center under map */}
-      <div className="absolute left-1/2 top-[3rem] h-3 w-2 -translate-x-1/2">
-        {/* Decanter */}
-        <div className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 rounded-b border border-amber-300/60 bg-gradient-to-b from-amber-300/40 to-amber-700/80" />
-        {/* Stopper */}
-        <div className="absolute top-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-t bg-amber-200/80" />
       </div>
     </>
   );
@@ -1594,157 +1385,109 @@ function MentatFurniture() {
 
 /* =================================================================== */
 /* FORGE — content blacksmith                                           */
+/* HERO: enormous glowing furnace + crossed-hammer iron crest           */
 /* =================================================================== */
 function ForgeFurniture() {
   return (
     <>
-      {/* Wares wall — weapons + tools */}
-      <div className="absolute left-12 top-2 h-12 w-20">
-        {/* Pegboard background */}
-        <div
-          className="absolute inset-0 rounded-sm border border-amber-900/70 bg-amber-950/50"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(0,0,0,0.5) 0.5px, transparent 0.5px)",
-            backgroundSize: "4px 4px",
-          }}
-        />
-        {/* Sword 1 */}
-        <div className="absolute left-1 top-1 h-10 w-px bg-stone-300/90 shadow-[0_0_2px_rgba(255,255,255,0.3)]" />
-        <div className="absolute left-1 top-9 h-px w-2 -translate-x-1/2 bg-amber-700" />
-        <div className="absolute left-1 top-1 h-1 w-px -translate-x-1/2 bg-amber-200" />
-        {/* Sword 2 */}
-        <div className="absolute right-1 top-1 h-10 w-px bg-stone-300/90 shadow-[0_0_2px_rgba(255,255,255,0.3)]" />
-        <div className="absolute right-1 top-9 h-px w-2 translate-x-1/2 bg-amber-700" />
-        <div className="absolute right-1 top-1 h-1 w-px translate-x-1/2 bg-amber-200" />
-        {/* Hammer 1 */}
-        <div className="absolute left-5 top-1 h-5 w-px bg-amber-800" />
-        <div className="absolute left-4 top-5 h-1.5 w-3 bg-stone-700 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Hammer 2 */}
-        <div className="absolute left-1/2 top-1 h-4 w-px bg-amber-800" />
-        <div className="absolute left-1/2 top-4 h-1.5 w-2.5 -translate-x-1/2 bg-stone-700 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
-        {/* Tongs */}
-        <div className="absolute right-5 top-1 h-5 w-px bg-stone-600" />
-        <div className="absolute right-5 top-5 h-px w-1.5 -rotate-[30deg] bg-stone-600" />
-        <div className="absolute right-5 top-5 h-px w-1.5 rotate-[30deg] bg-stone-600" />
-        {/* Axe */}
-        <div className="absolute left-9 top-1 h-6 w-px bg-amber-800" />
-        <div className="absolute left-9 top-1 h-2 w-2 bg-stone-600"
-          style={{ clipPath: "polygon(0 0, 100% 25%, 100% 75%, 0 100%)" }}
-        />
-        {/* Horseshoe */}
-        <div className="absolute left-[3.25rem] top-7 h-2 w-2 rounded-t-full border-2 border-stone-400 border-b-transparent" />
-        {/* Chain links */}
-        <div className="absolute right-7 top-7 flex flex-col gap-px">
-          <div className="h-1 w-1 rounded-full border border-stone-500" />
-          <div className="h-1 w-1 rounded-full border border-stone-500" />
-          <div className="h-1 w-1 rounded-full border border-stone-500" />
-        </div>
-      </div>
-
-      {/* "SMITHY" sign with anvil icon */}
-      <div className="absolute left-12 top-[3.7rem] flex items-center gap-1">
-        <span className="text-[7px] leading-none">⚒</span>
-        <span className="font-mono text-[6px] font-bold uppercase tracking-[0.3em] text-amber-300">
-          SMITHY · CONTENT FORGE
-        </span>
-        <span className="text-[7px] leading-none">⚒</span>
-      </div>
-
-      {/* MASSIVE forge furnace — left, glowing */}
-      <div className="absolute left-1 top-2 h-16 w-10 rounded-t border border-amber-700/90 bg-gradient-to-b from-stone-700 via-stone-800 to-stone-950 shadow-[inset_0_0_8px_rgba(0,0,0,0.7),0_0_12px_rgba(251,146,60,0.35)]">
+      {/* === HERO: ENORMOUS forge furnace dominating left === */}
+      <div className="absolute left-1 top-1 h-24 w-16 rounded-t border-2 border-amber-700/90 bg-gradient-to-b from-stone-700 via-stone-800 to-stone-950 shadow-[inset_0_0_10px_rgba(0,0,0,0.7),0_0_16px_rgba(251,146,60,0.45)]">
         {/* Brick texture */}
         <div
           className="absolute inset-0 opacity-50"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(0deg, rgba(120,53,15,0.5) 0 1px, transparent 1px 5px), repeating-linear-gradient(90deg, rgba(120,53,15,0.5) 0 1px, transparent 1px 7px)",
+              "repeating-linear-gradient(0deg, rgba(120,53,15,0.6) 0 1px, transparent 1px 5px), repeating-linear-gradient(90deg, rgba(120,53,15,0.6) 0 1px, transparent 1px 7px)",
           }}
         />
-        {/* Mouth opening */}
-        <div className="absolute inset-x-1 top-3 h-10 rounded-t-md border border-amber-900 bg-gradient-to-t from-yellow-200 via-orange-500 to-red-700 shadow-[inset_0_0_10px_rgba(0,0,0,0.5),0_0_14px_rgba(251,146,60,0.7)]">
-          {/* Flame flickers */}
-          <div className="absolute bottom-1 left-1 h-3 w-1 rounded-t-full bg-yellow-200/95 blur-[0.4px]" />
-          <div className="absolute bottom-1 left-3 h-4 w-1 rounded-t-full bg-yellow-300 blur-[0.4px]" />
-          <div className="absolute bottom-1 right-2 h-3 w-1 rounded-t-full bg-orange-300/95 blur-[0.4px]" />
-          <div className="absolute bottom-1 right-0.5 h-2 w-1 rounded-t-full bg-yellow-200/90 blur-[0.4px]" />
-          {/* Hot center */}
-          <div className="absolute bottom-1 left-1.5 right-1.5 h-2 rounded-t bg-gradient-to-t from-yellow-100 to-orange-300 blur-[0.5px]" />
+        {/* Mouth opening with raging fire */}
+        <div className="absolute inset-x-1 top-3 h-[4.5rem] rounded-t-md border border-amber-900 bg-gradient-to-t from-yellow-200 via-orange-500 to-red-700 shadow-[inset_0_0_12px_rgba(0,0,0,0.5),0_0_18px_rgba(251,146,60,0.8)]">
+          {/* Tall flame flickers */}
+          <div className="absolute bottom-1 left-1 h-6 w-1.5 rounded-t-full bg-yellow-200/95 blur-[0.4px]" />
+          <div className="absolute bottom-1 left-4 h-8 w-1.5 rounded-t-full bg-yellow-300 blur-[0.4px]" />
+          <div className="absolute bottom-1 right-3 h-7 w-1.5 rounded-t-full bg-orange-300/95 blur-[0.4px]" />
+          <div className="absolute bottom-1 right-1 h-5 w-1.5 rounded-t-full bg-yellow-200/90 blur-[0.4px]" />
+          {/* Hot center glow */}
+          <div className="absolute bottom-1 left-2 right-2 h-4 rounded-t bg-gradient-to-t from-yellow-100 to-orange-300 blur-[0.5px]" />
         </div>
         {/* Smoke vent */}
-        <div className="absolute -top-2 left-1/2 h-2 w-4 -translate-x-1/2 rounded-t bg-stone-700" />
-        {/* Smoke wisps from vent */}
-        <div className="absolute -top-6 left-1/2 h-4 w-px -translate-x-1/2 bg-gradient-to-t from-stone-400/60 to-transparent blur-[0.5px]" />
-        <div className="absolute -top-5 left-[55%] h-3 w-px bg-gradient-to-t from-stone-300/40 to-transparent blur-[0.5px]" />
-        {/* Glowing coal at floor of mouth */}
-        <div className="absolute bottom-1 left-1.5 right-1.5 h-1 rounded bg-gradient-to-t from-red-600 to-orange-300 shadow-[0_0_4px_rgba(251,146,60,0.9)]" />
-        {/* Vent pipe */}
-        <div className="absolute -top-1 right-2 h-1 w-1 rounded-full bg-stone-700" />
+        <div className="absolute -top-2 left-1/2 h-2 w-6 -translate-x-1/2 rounded-t bg-stone-700" />
+        {/* Smoke wisps */}
+        <div className="absolute -top-7 left-1/2 h-5 w-px -translate-x-1/2 bg-gradient-to-t from-stone-400/60 to-transparent blur-[0.5px]" />
+        <div className="absolute -top-6 left-[55%] h-4 w-px bg-gradient-to-t from-stone-300/40 to-transparent blur-[0.5px]" />
+        <div className="absolute -top-6 left-[40%] h-4 w-px bg-gradient-to-t from-stone-400/40 to-transparent blur-[0.5px]" />
+        {/* Glowing coals at floor */}
+        <div className="absolute bottom-1 left-2 right-2 h-1.5 rounded bg-gradient-to-t from-red-700 to-orange-300 shadow-[0_0_5px_rgba(251,146,60,0.95)]" />
       </div>
 
-      {/* Bellows — bottom of forge */}
-      <div className="absolute bottom-2.5 left-2 h-3 w-3">
-        <div className="absolute bottom-0 left-0 right-0 h-2 bg-amber-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]"
-          style={{ clipPath: "polygon(0 50%, 100% 0, 100% 100%, 0 100%)" }}
-        />
-        {/* Wood handles */}
-        <div className="absolute bottom-1 right-0 h-px w-1.5 bg-amber-800" />
+      {/* Sparks above furnace */}
+      <div className="absolute left-3 top-1 h-px w-px rounded-full bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.95)]" />
+      <div className="absolute left-5 top-2 h-px w-px rounded-full bg-orange-300 shadow-[0_0_4px_rgba(251,146,60,0.95)]" />
+      <div className="absolute left-7 top-3 h-px w-px rounded-full bg-yellow-200 shadow-[0_0_4px_rgba(254,240,138,0.95)]" />
+
+      {/* === HERO: Crossed-hammer iron crest sign (right back) === */}
+      <div className="absolute right-2 top-1 h-[5.5rem] w-[4.5rem] rounded border-2 border-amber-700/80 bg-gradient-to-b from-stone-800 to-stone-950 shadow-[inset_0_0_6px_rgba(0,0,0,0.6)]">
+        {/* "FORGE" iron lettering */}
+        <div
+          className="mt-2 text-center font-serif text-[14px] font-black leading-none tracking-[0.15em] text-stone-300"
+          style={{
+            textShadow:
+              "0 0 4px rgba(251,146,60,0.4), 0 1px 0 rgba(0,0,0,0.8), 1px 1px 0 rgba(0,0,0,0.6), inset 0 0 2px rgba(0,0,0,0.5)",
+          }}
+        >
+          FORGE
+        </div>
+        {/* Crossed hammers — large emoji */}
+        <div className="mt-1 flex items-center justify-center text-[26px] leading-none">
+          ⚒
+        </div>
+        {/* Bottom motto */}
+        <div className="absolute bottom-2 inset-x-0 text-center font-mono text-[5px] font-bold uppercase leading-none tracking-[0.2em] text-amber-300/80">
+          ◆ CONTENT ◆
+        </div>
       </div>
 
-      {/* Sparks above forge — animated effect via blur */}
-      <div className="absolute left-2 top-1 h-px w-px rounded-full bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.95)]" />
-      <div className="absolute left-3 top-2 h-px w-px rounded-full bg-orange-300 shadow-[0_0_4px_rgba(251,146,60,0.95)]" />
-      <div className="absolute left-4 top-3 h-px w-px rounded-full bg-yellow-200 shadow-[0_0_4px_rgba(254,240,138,0.95)]" />
-      <div className="absolute left-5 top-2 h-px w-px rounded-full bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.95)]" />
+      {/* === BOTTOM: Anvil + bellows + water trough + coal === */}
 
-      {/* Anvil — bottom center */}
+      {/* Anvil */}
       <div className="absolute bottom-2.5 left-1/2 h-4 w-9 -translate-x-1/2">
-        {/* Top (with horn) */}
         <div className="absolute top-0 left-0 right-0 h-1.5 rounded-l-full rounded-r-sm bg-gradient-to-b from-stone-500 to-stone-700 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.5)]" />
-        {/* Waist */}
         <div className="absolute top-1.5 left-2 right-2 h-1.5 bg-stone-800" />
-        {/* Base */}
-        <div className="absolute bottom-0 left-0 right-0 h-1.5 rounded-b bg-stone-700 shadow-[inset_0_-1px_2px_rgba(0,0,0,0.6)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-1.5 rounded-b bg-stone-700" />
       </div>
 
       {/* Glowing red-hot ingot on anvil */}
       <div className="absolute bottom-[2.55rem] left-1/2 h-1 w-4 -translate-x-1/2 rounded-full bg-gradient-to-r from-red-600 via-yellow-300 to-red-600 shadow-[0_0_5px_rgba(251,146,60,0.95)] blur-[0.3px]" />
 
-      {/* Hammer leaning against anvil */}
+      {/* Hammer leaning */}
       <div className="absolute bottom-2.5 left-[55%] h-5 w-px origin-bottom rotate-[15deg] bg-amber-800" />
-      <div className="absolute bottom-[2.9rem] left-[54%] h-1.5 w-2 origin-bottom rotate-[15deg] bg-stone-600 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]" />
+      <div className="absolute bottom-[2.9rem] left-[54%] h-1.5 w-2 origin-bottom rotate-[15deg] bg-stone-600" />
 
-      {/* Water trough for cooling */}
+      {/* Bellows */}
+      <div className="absolute bottom-2.5 left-[5.5rem] h-3 w-3">
+        <div className="absolute bottom-0 left-0 right-0 h-2 bg-amber-900"
+          style={{ clipPath: "polygon(0 50%, 100% 0, 100% 100%, 0 100%)" }}
+        />
+        <div className="absolute bottom-1 right-0 h-px w-1.5 bg-amber-800" />
+      </div>
+
+      {/* Water trough */}
       <div className="absolute bottom-2.5 right-7 h-2 w-5 rounded-sm border border-amber-900 bg-gradient-to-b from-blue-900/80 to-blue-950 shadow-[inset_0_0_3px_rgba(59,130,246,0.3)]">
-        {/* Water surface highlight */}
-        <div className="absolute inset-x-0.5 top-0 h-px bg-cyan-300/50" />
-        {/* Steam from water */}
+        <div className="absolute inset-x-0.5 top-0 h-px bg-cyan-300/60" />
         <div className="absolute -top-2 left-2 h-2 w-px bg-gradient-to-t from-cyan-200/40 to-transparent blur-[0.5px]" />
         <div className="absolute -top-2 right-2 h-2 w-px bg-gradient-to-t from-cyan-200/40 to-transparent blur-[0.5px]" />
       </div>
 
-      {/* Coal pile — bottom right */}
+      {/* Coal pile */}
       <div className="absolute bottom-2.5 right-2 flex items-end gap-px">
         <div className="h-1 w-1 rotate-12 bg-stone-900" />
         <div className="h-1.5 w-1.5 -rotate-6 bg-stone-950" />
         <div className="h-1 w-1 rotate-45 bg-stone-900" />
         <div className="h-1.5 w-1 -rotate-12 bg-stone-950" />
-        <div className="h-1 w-1 rotate-[30deg] bg-stone-900" />
       </div>
-      {/* Glowing ember on top */}
       <div className="absolute bottom-[1.3rem] right-3 h-px w-1 rounded-full bg-orange-400 shadow-[0_0_3px_rgba(251,146,60,0.9)]" />
 
-      {/* Leather apron hanging on hook — far right */}
-      <div className="absolute bottom-[3.3rem] right-2 h-4 w-2.5">
-        <div className="absolute top-0 left-1/2 h-px w-1 -translate-x-1/2 bg-stone-600" />
-        <div className="absolute top-px left-0 right-0 h-4 bg-amber-900/95 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.4)]">
-          <div className="absolute inset-x-px top-0 h-px bg-amber-700" />
-          <div className="absolute -top-1 left-px h-1 w-px bg-amber-800" />
-          <div className="absolute -top-1 right-px h-1 w-px bg-amber-800" />
-        </div>
-      </div>
-
-      {/* Stone floor */}
+      {/* Stone tile floor */}
       <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-stone-700/80 bg-gradient-to-b from-stone-800 to-stone-950"
         style={{
           backgroundImage:
