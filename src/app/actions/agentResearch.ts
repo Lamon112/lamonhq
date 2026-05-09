@@ -156,9 +156,11 @@ export async function getHolmesPipelineLeads(actionRowId: string) {
     .single();
   const leadIds = (action.data?.usage as { lead_ids?: string[] } | null)?.lead_ids ?? [];
   if (leadIds.length === 0) return { ok: true as const, leads: [] };
+  // Pull every column so HolmesLeadDetail (shared with classic Bureau)
+  // gets the same shape as LeadRow without us having to enumerate fields.
   const { data, error } = await supabase
     .from("leads")
-    .select("id, name, niche, website_url, notes, holmes_report, icp_score")
+    .select("*")
     .in("id", leadIds);
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const, leads: data ?? [] };

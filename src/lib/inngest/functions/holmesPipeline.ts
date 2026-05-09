@@ -120,23 +120,48 @@ export const holmesPipeline = inngest.createFunction(
         .eq("id", actionRowId);
     });
 
-    // ------- Step 3: Places search -------
+    // ------- Step 3: Places search with dedupe + auto-broaden -------
+    // Existing leads (by normalized name + domain) define the dedupe set.
+    // We pull a few extra hits per query and keep widening the search until
+    // we either reach the requested count or exhaust the fallback queries.
+    const wantedCount = cfg.count ?? 10;
     const places: PlaceResult[] = await step.run("places-search", async () => {
       const placesKey = process.env.GOOGLE_PLACES_API_KEY;
       if (!placesKey) throw new Error("GOOGLE_PLACES_API_KEY not set");
-      const res = await searchText({
-        apiKey: placesKey,
-        textQuery: `${cfg.niche} ${cfg.location}`,
-        regionCode: cfg.regionCode ?? "hr",
-        maxResultCount: cfg.count ?? 10,
-      });
-      if (!res.ok || !res.places) {
-        throw new Error(`Places: ${res.error ?? "unknown"}`);
+
+      const existing = await fetchExistingLeadKeys(supabase);
+      await setProgress(
+        `Provjeravam postojeće (${existing.names.size} u bazi)…`,
+        true,
+      );
+
+      const queries = buildSearchQueries(cfg.niche, cfg.location);
+      const seenIds = new Set<string>();
+      const out: PlaceResult[] = [];
+      for (const q of queries) {
+        if (out.length >= wantedCount) break;
+        await setProgress(`Pretražujem "${q}"…`, true);
+        const res = await searchText({
+          apiKey: placesKey,
+          textQuery: q,
+          regionCode: cfg.regionCode ?? "hr",
+          maxResultCount: 20, // pull max per query, dedupe locally
+        });
+        if (!res.ok || !res.places) continue;
+        for (const p of res.places) {
+          if (out.length >= wantedCount) break;
+          if (!p.name) continue;
+          if (seenIds.has(p.id)) continue; // dedupe within this run
+          if (existing.names.has(normalizeLeadName(p.name))) continue;
+          if (p.domain && existing.domains.has(p.domain.toLowerCase())) continue;
+          seenIds.add(p.id);
+          out.push(p);
+        }
       }
-      return res.places;
+      return out;
     });
 
-    await setProgress(`Pronašao ${places.length} klinika. Enrichaj kroz Apollo…`, true);
+    await setProgress(`Pronašao ${places.length} novih klinika. Enrichaj kroz Apollo…`, true);
 
     // ------- Step 4: Apollo enrich each (free tier) -------
     type Enriched = PlaceResult & {
@@ -382,6 +407,60 @@ async function getOwnerUserId(
   } catch {
     return null;
   }
+}
+
+function normalizeLeadName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+async function fetchExistingLeadKeys(
+  supabase: ReturnType<typeof getServiceSupabase>,
+): Promise<{ names: Set<string>; domains: Set<string> }> {
+  const names = new Set<string>();
+  const domains = new Set<string>();
+  // Single user → no scoping. Pull every lead's name + website.
+  const { data } = await supabase
+    .from("leads")
+    .select("name, website_url")
+    .limit(2000);
+  for (const r of data ?? []) {
+    if (r.name) names.add(normalizeLeadName(r.name));
+    if (r.website_url) {
+      try {
+        const u = new URL(r.website_url);
+        domains.add(u.hostname.replace(/^www\./, "").toLowerCase());
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return { names, domains };
+}
+
+/**
+ * Build the ordered search-query fallback list for Places. We start with
+ * the configured niche+location and progressively broaden so a re-click
+ * doesn't keep returning the same top-N premium clinics.
+ */
+function buildSearchQueries(niche?: string, location?: string): string[] {
+  const n = niche ?? "stomatološka klinika";
+  const loc = location ?? "Zagreb";
+  return [
+    `${n} ${loc}`,
+    `${n} centar ${loc}`,
+    `premium ${n} ${loc}`,
+    `${n} ${loc} okolica`,
+    `${n} Velika Gorica`,
+    `${n} Samobor`,
+    `${n} Zaprešić`,
+    `${n} Sesvete`,
+    `dentalna ordinacija ${loc}`,
+    `estetska ${n} ${loc}`,
+  ];
 }
 
 /**
