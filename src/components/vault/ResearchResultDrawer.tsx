@@ -8,6 +8,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Loader2,
   X,
@@ -221,13 +223,7 @@ function DrawerInner({
                   <HolmesPipelineCards actionRowId={row.id} />
                 </>
               ) : (
-                row.result_md && (
-                  <article className="prose prose-invert prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-text">
-                      {row.result_md}
-                    </pre>
-                  </article>
-                )
+                row.result_md && <ResultMarkdown source={row.result_md} />
               )}
               {row.sources && row.sources.length > 0 && (
                 <div className="mt-4 border-t border-border-strong pt-3">
@@ -305,6 +301,103 @@ function DrawerInner({
         )}
       </motion.aside>
     </>
+  );
+}
+
+function ResultMarkdown({ source }: { source: string }) {
+  // Strip noise Claude often adds: standalone `---` separator lines, doubled
+  // blank lines, and stray `[Ime]` / `[ime]` placeholder tokens that come
+  // from prompts that never received a real owner name.
+  const cleaned = source
+    .replace(/^---+$/gm, "")
+    .replace(/\[(?:Ime|ime|Name|name)\]/g, "—")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return (
+    <div className="text-[13px] leading-relaxed text-text">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: (p) => (
+            <h1 className="mt-1 mb-2 text-lg font-bold text-text" {...p} />
+          ),
+          h2: (p) => (
+            <h2
+              className="mt-4 mb-1.5 border-b border-border-strong pb-1 text-sm font-bold uppercase tracking-wider text-amber-300"
+              {...p}
+            />
+          ),
+          h3: (p) => (
+            <h3
+              className="mt-3 mb-1 text-[13px] font-semibold text-text"
+              {...p}
+            />
+          ),
+          p: (p) => <p className="mb-2 text-[13px] text-text" {...p} />,
+          strong: (p) => <strong className="font-semibold text-text" {...p} />,
+          em: (p) => <em className="italic text-text-dim" {...p} />,
+          ul: (p) => (
+            <ul className="mb-2 ml-4 list-disc space-y-0.5 text-[13px]" {...p} />
+          ),
+          ol: (p) => (
+            <ol className="mb-2 ml-4 list-decimal space-y-0.5 text-[13px]" {...p} />
+          ),
+          li: (p) => <li className="leading-snug" {...p} />,
+          code: ({ className, children, ...rest }) => {
+            const isInline = !className;
+            if (isInline) {
+              return (
+                <code
+                  className="rounded bg-bg-card px-1 py-0.5 font-mono text-[12px] text-amber-200"
+                  {...rest}
+                >
+                  {children}
+                </code>
+              );
+            }
+            return (
+              <code
+                className="block whitespace-pre-wrap rounded border border-border bg-bg-card p-2 font-mono text-[12px] text-text"
+                {...rest}
+              >
+                {children}
+              </code>
+            );
+          },
+          blockquote: (p) => (
+            <blockquote
+              className="my-2 border-l-2 border-amber-500/60 bg-amber-500/5 px-2 py-1 text-text-dim"
+              {...p}
+            />
+          ),
+          hr: () => <hr className="my-3 border-border-strong" />,
+          a: (p) => (
+            <a
+              className="text-cyan-300 underline hover:text-cyan-200"
+              target="_blank"
+              rel="noreferrer"
+              {...p}
+            />
+          ),
+          table: (p) => (
+            <div className="my-2 overflow-x-auto">
+              <table className="min-w-full text-[12px]" {...p} />
+            </div>
+          ),
+          th: (p) => (
+            <th
+              className="border-b border-border-strong px-2 py-1 text-left font-semibold text-text-dim"
+              {...p}
+            />
+          ),
+          td: (p) => (
+            <td className="border-b border-border px-2 py-1 align-top" {...p} />
+          ),
+        }}
+      >
+        {cleaned}
+      </ReactMarkdown>
+    </div>
   );
 }
 
