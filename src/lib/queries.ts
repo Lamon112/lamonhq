@@ -534,6 +534,400 @@ export async function getChannelStatsByHandles(
 }
 
 // =====================================================================
+// Revenue Engine — daily health dashboard
+// =====================================================================
+
+export interface FunnelStep {
+  key: string;
+  label: string;
+  count: number;
+  conversionFromPrev: number | null; // 0-1, vs previous step
+  conversionFromTop: number; // 0-1, vs first step
+}
+
+export interface StuckDeal {
+  id: string;
+  name: string;
+  stage: LeadRow["stage"];
+  daysStuck: number;
+  estimatedValue: number | null;
+  niche: LeadRow["niche"];
+}
+
+export interface ActionItem {
+  id: string;
+  title: string;
+  reason: string;
+  priority: number; // 0-100, higher = more urgent
+  leadId?: string;
+  href?: string;
+}
+
+export interface WeekActivity {
+  outreach: number;
+  outreachGoal: number;
+  discoveries: number;
+  discoveriesGoal: number;
+  replies: number;
+  replyRate: number; // 0-1
+  outreachStreakDays: number;
+}
+
+export interface RevenueTrajectory {
+  currentMrrCents: number;
+  goalMrrCents: number;
+  growthPaketMrrCents: number; // 1.497€/mj
+  clientsNeeded: number; // active clients to hit goal
+  daysToGoal: number;
+  weeksToGoal: number;
+  newClientsPerWeekRequired: number; // pace
+  paceRequired: { discoveries: number; outreach: number }; // per week
+  pctToGoal: number; // 0-1
+  goalDate: string; // ISO yyyy-mm-dd 6 months from start
+}
+
+export interface RevenueHealth {
+  score: number; // 0-100
+  components: Array<{ key: string; label: string; max: number; got: number }>;
+  topLeak: string | null;
+  trajectory: RevenueTrajectory;
+  funnel: FunnelStep[];
+  thisWeek: WeekActivity;
+  stuckDeals: StuckDeal[];
+  topActions: ActionItem[];
+}
+
+// Stage age threshold (days) before a deal is considered "stuck"
+const STUCK_DAYS: Record<LeadRow["stage"], number> = {
+  discovery: 14,
+  pricing: 7,
+  financing: 10,
+  booking: 5,
+  closed_won: 999,
+  closed_lost: 999,
+};
+
+// Goal anchor: 6 months from outreach campaign start (2026-05-09)
+const GOAL_ANCHOR = new Date("2026-11-09T00:00:00Z");
+const GROWTH_PAKET_MRR_CENTS = 1_497_00;
+
+export async function getRevenueHealth(): Promise<RevenueHealth> {
+  const supabase = await createClient();
+  const weekStart = startOfWeek();
+  const now = Date.now();
+
+  const [
+    leadsRes,
+    outreachWeekRes,
+    inboundWeekRes,
+    clientsMrrRes,
+    prospectsRes,
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select(
+        "id, name, stage, niche, estimated_value, probability, discovery_at, discovery_outcome, updated_at, created_at, icp_score, next_action, next_action_date",
+      ),
+    supabase
+      .from("outreach")
+      .select("status, sent_at, lead_id")
+      .gte("sent_at", weekStart),
+    supabase
+      .from("inbound_messages")
+      .select("id, lead_id, received_at, status")
+      .gte("received_at", weekStart),
+    supabase
+      .from("clients")
+      .select("monthly_revenue")
+      .eq("status", "active"),
+    supabase
+      .from("leads")
+      .select("id, icp_score")
+      .eq("stage", "discovery")
+      .is("discovery_at", null),
+  ]);
+
+  const leads = (leadsRes.data ?? []) as LeadRow[];
+  const outreach = outreachWeekRes.data ?? [];
+  const inbound = inboundWeekRes.data ?? [];
+  const clients = clientsMrrRes.data ?? [];
+  const prospects = prospectsRes.data ?? [];
+
+  // ---- Trajectory
+  const currentMrrCents = clients.reduce(
+    (s, c) => s + Math.round(Number(c.monthly_revenue ?? 0) * 100),
+    0,
+  );
+  const remainingMrr = Math.max(GOAL_MRR_CENTS - currentMrrCents, 0);
+  const clientsNeeded = Math.ceil(remainingMrr / GROWTH_PAKET_MRR_CENTS);
+  const daysToGoal = Math.max(
+    1,
+    Math.ceil((GOAL_ANCHOR.getTime() - now) / 86_400_000),
+  );
+  const weeksToGoal = Math.max(1, Math.ceil(daysToGoal / 7));
+  const newClientsPerWeekRequired = Math.ceil(clientsNeeded / weeksToGoal);
+  // Reverse-funnel pace assumptions (industry-ish for cold B2B):
+  //   discovery → close ≈ 25%   |   reply → discovery ≈ 50%   |
+  //   reply rate ≈ 8%
+  const discoveriesPerWeek = Math.ceil(newClientsPerWeekRequired / 0.25);
+  const outreachPerWeek = Math.ceil(discoveriesPerWeek / 0.5 / 0.08);
+
+  // ---- Funnel
+  const cold = prospects.length;
+  const dmSentLeadIds = new Set(
+    (outreach as Array<{ lead_id: string | null }>)
+      .map((o) => o.lead_id)
+      .filter(Boolean) as string[],
+  );
+  const dmSent = dmSentLeadIds.size;
+  const replied = leads.filter(
+    (l) =>
+      inbound.some((m) => m.lead_id === l.id) ||
+      // Also: any outreach for this lead with status replied (rough proxy)
+      (outreach as Array<{ status?: string; lead_id?: string | null }>).some(
+        (o) => o.lead_id === l.id && o.status === "replied",
+      ),
+  ).length;
+  const discoveryBooked = leads.filter((l) => l.discovery_at).length;
+  const discoveryDone = leads.filter(
+    (l) =>
+      l.discovery_at &&
+      l.discovery_outcome &&
+      l.discovery_outcome !== "no_show",
+  ).length;
+  const pricingPlus = leads.filter((l) =>
+    ["pricing", "financing", "booking"].includes(l.stage),
+  ).length;
+  const wonAll = leads.filter((l) => l.stage === "closed_won").length;
+
+  const stepCounts = [
+    { key: "cold", label: "Cold prospect", count: cold },
+    { key: "dm", label: "Outreach poslan", count: dmSent },
+    { key: "reply", label: "Reply", count: replied },
+    { key: "disc_booked", label: "Discovery booked", count: discoveryBooked },
+    { key: "disc_done", label: "Discovery done", count: discoveryDone },
+    { key: "pricing", label: "Pricing+", count: pricingPlus },
+    { key: "won", label: "Closed won", count: wonAll },
+  ];
+  const top = stepCounts[0].count || 1;
+  const funnel: FunnelStep[] = stepCounts.map((s, i) => {
+    const prev = i > 0 ? stepCounts[i - 1].count : null;
+    return {
+      ...s,
+      conversionFromPrev:
+        prev != null && prev > 0 ? s.count / prev : prev === 0 ? 0 : null,
+      conversionFromTop: top > 0 ? s.count / top : 0,
+    };
+  });
+
+  // ---- This week
+  const outreachThisWeek = (outreach as unknown[]).length;
+  const repliesThisWeek = (
+    outreach as Array<{ status?: string }>
+  ).filter((o) => o.status === "replied").length;
+  const discoveriesThisWeek = leads.filter(
+    (l) => l.discovery_at && new Date(l.discovery_at) >= new Date(weekStart),
+  ).length;
+  const replyRate = outreachThisWeek
+    ? repliesThisWeek / outreachThisWeek
+    : 0;
+
+  // Streak: how many consecutive days (looking back) had >=1 outreach sent
+  const outreachByDay = new Map<string, number>();
+  for (const o of outreach as Array<{ sent_at: string }>) {
+    const d = o.sent_at.slice(0, 10);
+    outreachByDay.set(d, (outreachByDay.get(d) ?? 0) + 1);
+  }
+  let streak = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now - i * 86_400_000).toISOString().slice(0, 10);
+    if ((outreachByDay.get(d) ?? 0) > 0) streak += 1;
+    else break;
+  }
+
+  const thisWeek: WeekActivity = {
+    outreach: outreachThisWeek,
+    outreachGoal: outreachPerWeek,
+    discoveries: discoveriesThisWeek,
+    discoveriesGoal: discoveriesPerWeek,
+    replies: repliesThisWeek,
+    replyRate,
+    outreachStreakDays: streak,
+  };
+
+  // ---- Stuck deals
+  const stuckDeals: StuckDeal[] = [];
+  for (const l of leads) {
+    if (l.stage === "closed_won" || l.stage === "closed_lost") continue;
+    const updatedAt = new Date(l.updated_at).getTime();
+    const days = Math.floor((now - updatedAt) / 86_400_000);
+    if (days >= STUCK_DAYS[l.stage]) {
+      stuckDeals.push({
+        id: l.id,
+        name: l.name,
+        stage: l.stage,
+        daysStuck: days,
+        estimatedValue: l.estimated_value,
+        niche: l.niche,
+      });
+    }
+  }
+  stuckDeals.sort((a, b) => b.daysStuck - a.daysStuck);
+
+  // ---- Top 3 actions
+  const actions: ActionItem[] = [];
+  // 1. Upcoming discoveries needing prep (priority based on time-until)
+  const upcomingDiscoveries = leads
+    .filter(
+      (l) => l.discovery_at && new Date(l.discovery_at).getTime() > now,
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.discovery_at!).getTime() -
+        new Date(b.discovery_at!).getTime(),
+    );
+  for (const l of upcomingDiscoveries.slice(0, 1)) {
+    const hoursUntil = Math.round(
+      (new Date(l.discovery_at!).getTime() - now) / 3_600_000,
+    );
+    actions.push({
+      id: `disc-${l.id}`,
+      title: `Pripremi brief: ${l.name}`,
+      reason:
+        hoursUntil <= 48
+          ? `Discovery za ${hoursUntil}h — Brief Room`
+          : `Discovery za ${Math.round(hoursUntil / 24)}d`,
+      priority: hoursUntil <= 48 ? 95 : 70,
+      leadId: l.id,
+    });
+  }
+  // 2. Outreach gap: if behind on weekly pace, surface as #1
+  if (outreachThisWeek < outreachPerWeek) {
+    const remaining = outreachPerWeek - outreachThisWeek;
+    actions.push({
+      id: "outreach-gap",
+      title: `Pošalji ${remaining} outreach poruka`,
+      reason: `Tjedan: ${outreachThisWeek}/${outreachPerWeek}. Pace za 30K€.`,
+      priority: 90,
+    });
+  }
+  // 3. Stuck deals: top stuck by value
+  for (const sd of stuckDeals.slice(0, 1)) {
+    actions.push({
+      id: `stuck-${sd.id}`,
+      title: `Pingaj: ${sd.name}`,
+      reason: `${sd.stage} ${sd.daysStuck} dana — re-engage ili close-lost`,
+      priority: 80,
+      leadId: sd.id,
+    });
+  }
+  // 4. Hot leads without next_action_date
+  const orphanHot = leads
+    .filter(
+      (l) =>
+        (l.icp_score ?? 0) >= 15 &&
+        !l.next_action_date &&
+        l.stage !== "closed_won" &&
+        l.stage !== "closed_lost",
+    )
+    .slice(0, 1);
+  for (const l of orphanHot) {
+    actions.push({
+      id: `next-${l.id}`,
+      title: `Postavi next action: ${l.name}`,
+      reason: `Hot lead (${l.icp_score}/20) bez sljedećeg poteza`,
+      priority: 60,
+      leadId: l.id,
+    });
+  }
+  actions.sort((a, b) => b.priority - a.priority);
+  const topActions = actions.slice(0, 3);
+
+  // ---- Health Score (0-100)
+  const components = [
+    {
+      key: "outreach_pace",
+      label: "Outreach pace",
+      max: 30,
+      got: Math.min(
+        30,
+        Math.round((outreachThisWeek / Math.max(1, outreachPerWeek)) * 30),
+      ),
+    },
+    {
+      key: "discovery_pace",
+      label: "Discovery pace",
+      max: 25,
+      got: Math.min(
+        25,
+        Math.round(
+          (discoveriesThisWeek / Math.max(1, discoveriesPerWeek)) * 25,
+        ),
+      ),
+    },
+    {
+      key: "pipeline_depth",
+      label: "Pipeline depth",
+      max: 20,
+      got: Math.min(20, pricingPlus * 5), // 4 deals in pricing+ = full
+    },
+    {
+      key: "no_rot",
+      label: "No-rot (stuck deals)",
+      max: 15,
+      got: Math.max(0, 15 - stuckDeals.length * 5),
+    },
+    {
+      key: "reply_rate",
+      label: "Reply rate health",
+      max: 10,
+      got:
+        outreachThisWeek === 0
+          ? 0
+          : Math.min(10, Math.round((replyRate / 0.08) * 10)),
+    },
+  ];
+  const score = components.reduce((s, c) => s + c.got, 0);
+
+  const weakest = [...components].sort(
+    (a, b) => a.got / a.max - b.got / b.max,
+  )[0];
+  const topLeak =
+    weakest && weakest.got / weakest.max < 0.5
+      ? `Najveći leak: ${weakest.label} (${weakest.got}/${weakest.max})`
+      : null;
+
+  const trajectory: RevenueTrajectory = {
+    currentMrrCents,
+    goalMrrCents: GOAL_MRR_CENTS,
+    growthPaketMrrCents: GROWTH_PAKET_MRR_CENTS,
+    clientsNeeded,
+    daysToGoal,
+    weeksToGoal,
+    newClientsPerWeekRequired,
+    paceRequired: {
+      discoveries: discoveriesPerWeek,
+      outreach: outreachPerWeek,
+    },
+    pctToGoal: GOAL_MRR_CENTS
+      ? Math.min(1, currentMrrCents / GOAL_MRR_CENTS)
+      : 0,
+    goalDate: GOAL_ANCHOR.toISOString().slice(0, 10),
+  };
+
+  return {
+    score,
+    components,
+    topLeak,
+    trajectory,
+    funnel,
+    thisWeek,
+    stuckDeals: stuckDeals.slice(0, 5),
+    topActions,
+  };
+}
+
+// =====================================================================
 // Competitor Watch
 // =====================================================================
 

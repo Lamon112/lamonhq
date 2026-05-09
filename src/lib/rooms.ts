@@ -4,7 +4,7 @@ import {
   Handshake,
   Briefcase,
   Brain,
-  ChartBar,
+  Activity,
   Eye,
   Users,
   Calendar,
@@ -81,10 +81,10 @@ const leadScorer: Room = {
 
 const analytics: Room = {
   id: "analytics",
-  name: "Performance Analytics",
-  tagline: "TT · IG · YT · LinkedIn metrics",
-  icon: ChartBar,
-  emoji: "📊",
+  name: "Revenue Engine",
+  tagline: "Daily health · pace · funnel · stuck deals",
+  icon: Activity,
+  emoji: "💚",
   floor: "intelligence",
 };
 

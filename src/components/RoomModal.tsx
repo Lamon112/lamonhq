@@ -13,8 +13,8 @@ import type {
   DiscoveryStats,
   DealsStats,
   ContentPostRow,
-  ContentStats,
   ChannelStatsView,
+  RevenueHealth,
   CompetitorRow,
   CompetitorUpdateRow,
   CompetitorStats,
@@ -28,7 +28,7 @@ import { ClientsPanel } from "./rooms/ClientsPanel";
 import { LeadScorerPanel } from "./rooms/LeadScorerPanel";
 import { DiscoveryPanel } from "./rooms/DiscoveryPanel";
 import { ClosingPanel } from "./rooms/ClosingPanel";
-import { AnalyticsPanel } from "./rooms/AnalyticsPanel";
+import { RevenueEnginePanel } from "./rooms/RevenueEnginePanel";
 import { CompetitorPanel } from "./rooms/CompetitorPanel";
 import { CalendarPanel } from "./rooms/CalendarPanel";
 import { ReportsPanel } from "./rooms/ReportsPanel";
@@ -40,9 +40,9 @@ export interface RoomData {
   leads: { list: LeadRow[]; stats: LeadsStats };
   discovery: { stats: DiscoveryStats };
   deals: { stats: DealsStats };
-  content: {
-    list: ContentPostRow[];
-    stats: ContentStats;
+  content: { list: ContentPostRow[] };
+  revenue: {
+    health: RevenueHealth;
     youtube: ChannelStatsView;
     tiktok: Array<{ handle: string; view: ChannelStatsView }>;
   };
@@ -179,11 +179,10 @@ function RoomBody({
       );
     case "analytics":
       return (
-        <AnalyticsPanel
-          initialList={data.content.list}
-          initialStats={data.content.stats}
-          initialYoutube={data.content.youtube}
-          initialTiktok={data.content.tiktok}
+        <RevenueEnginePanel
+          initialHealth={data.revenue.health}
+          initialYoutube={data.revenue.youtube}
+          initialTiktok={data.revenue.tiktok}
         />
       );
     case "competitor":
