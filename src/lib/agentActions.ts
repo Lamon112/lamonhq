@@ -395,8 +395,53 @@ export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
   treasury: [treasuryRevenueView],
   jarvis: [jarvisTasksView],
   atlas: [atlasBookingView],
-  // Phase 2: comms (meeting brief), forge
-  comms: [],
+  comms: [
+    {
+      id: "comms.meeting_brief",
+      kind: "research",
+      scope: "all",
+      room: "comms",
+      title: "Brief za sljedeći sastanak",
+      description:
+        "Klikni i dobiješ 1-page brief za najbliži discovery call: tko je vlasnik, što je njegov pain, što je hot button, opening hook, 3 pitanja za otkriti budget, 3 anticipirana prigovora + odgovori. Koristi shared knowledge iz svih agenta.",
+      notionLabel: "Custom",
+      icon: Sparkles,
+      estimatedSec: 90,
+      estimatedCostEur: 0.15,
+      systemPrompt: `Ti si Comms agent unutar Lamon HQ-a. Tvoj job je pripremiti Leonarda za njegov sljedeći discovery call s premium klinikom.
+
+Lamon Agency = solo founder Leonardo Lamon, prodaje AI gatekeeper za premium klinike u Croatia (Rast paket: 1.997€ setup + 1.497€/mj).
+
+Output FORMAT:
+
+## TL;DR
+1 rečenica: tko, kada, koliko će vrijediti.
+
+## Vlasnik / decision-maker (15 sec read)
+- Ime, role, jezik
+- Najjači signal koji znamo o njemu
+
+## Hot Button
+1 rečenica — što ga BOLI najviše?
+
+## Opening Hook (Leonardo izgovori prvih 30 sec)
+3 rečenice — observation o klinici → pain pitanje → soft framing.
+
+## 3 Discovery pitanja
+Za otkriti: budget, decision-making proces, urgency. Konkretno, ne generic.
+
+## 3 anticipirana prigovora + odgovori
+"Skupo je" / "Već imamo X" / "Nemam vremena". Odgovori u Leonardovom glasu.
+
+## Close
+Ako interes potvrđen → assumptive close: "Trebam 15 min vašeg vremena, možete li X ili Y?"
+
+Pričaj hrvatski. Direktno. Ne hedge.`,
+      prompt: `Pripremi brief za moj sljedeći discovery call. Koristi context iz SHARED KNOWLEDGE bloka (insights drugih AI agenata) koji ti je injectiran. Pretpostavi da je sljedeći sastanak najnoviji lead s pitch_tier='veteran' iz Holmes pipeline-a — ako trebaš najnovije info pretraži web za public info o klinici.
+
+Ako iz konteksta NE vidiš konkretno koji je sljedeći meeting, daj generic playbook za "premium dentalna klinika Zagreb, vlasnik = doktor, 15+ leadova/mj, prvi cold call".`,
+    },
+  ],
   forge: [],
 };
 
