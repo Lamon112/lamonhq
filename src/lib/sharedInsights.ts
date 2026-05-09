@@ -58,6 +58,11 @@ export async function getRecentInsights(
  * Render insights as a compact markdown block ready to paste into a
  * system prompt. Skips entirely (returns "") when there are none, so
  * agents that ran before any research happened don't get junk context.
+ *
+ * Council/strategic insights (Mentat war room, anything action_type
+ * containing "council" or tagged "strategy") get a dedicated section
+ * up top — those are first-class drivers for daily planning, not
+ * background. Other insights stay as "context awareness".
  */
 export async function renderInsightsForPrompt(
   limit = 10,
@@ -65,11 +70,33 @@ export async function renderInsightsForPrompt(
   const insights = await getRecentInsights(limit);
   if (insights.length === 0) return "";
 
-  const lines = insights.map((i) => {
+  const isCouncil = (i: SharedInsight) =>
+    i.room === "mentat" ||
+    i.action_type.toLowerCase().includes("council") ||
+    (i.tags ?? []).some((t) => /strateg|council/i.test(t));
+
+  const council = insights.filter(isCouncil);
+  const others = insights.filter((i) => !isCouncil(i));
+
+  const fmt = (i: SharedInsight) => {
     const date = new Date(i.completed_at).toISOString().slice(0, 10);
     const tags = (i.tags ?? []).slice(0, 3).join(", ");
     return `- [${date}] **${i.title}** (${i.room}${tags ? ` · ${tags}` : ""}): ${i.summary}`;
-  });
+  };
 
-  return `\n\n## SHARED KNOWLEDGE — what your sibling agents recently discovered\n\nThe following insights came from other vault rooms' AI research (visible in Notion → 🧠 Knowledge Insights). Use them as context when relevant. Do NOT cite them unprompted — they're background awareness.\n\n${lines.join("\n")}\n`;
+  const sections: string[] = [];
+
+  if (council.length > 0) {
+    sections.push(
+      `## 🎯 STRATEGIC DECISIONS — AI Council recommendations Leonardo has already heard\n\nThese are Council/strategic outputs Leonardo paid for. They MUST shape today's plan — when you propose actions, prefer ones that execute on these recommendations over generic best-practice. Reference the recommendation directly in the "why" field when relevant.\n\n${council.map(fmt).join("\n")}`,
+    );
+  }
+
+  if (others.length > 0) {
+    sections.push(
+      `## SHARED KNOWLEDGE — sibling-agent research context\n\nFrom other vault rooms (visible in Notion → 🧠 Knowledge Insights). Use as context. Don't cite unprompted unless directly relevant.\n\n${others.map(fmt).join("\n")}`,
+    );
+  }
+
+  return `\n\n${sections.join("\n\n")}\n`;
 }

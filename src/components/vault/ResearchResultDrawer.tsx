@@ -304,11 +304,27 @@ function DrawerInner({
   );
 }
 
+/**
+ * Drop the first TL;DR / Sažetak / Summary heading and its body. The green
+ * Summary box above the markdown already shows this — keeping it here is
+ * pure repetition for Leonardo. Conservative: only matches an H1/H2/H3
+ * heading at the very start, then everything up to the next heading or end.
+ */
+function stripLeadingTldr(md: string): string {
+  return md.replace(
+    /^\s*#{1,3}\s*(?:TL;?DR|Sa[zž]etak|Summary|Sa[zž]etak)\b[^\n]*\n[\s\S]*?(?=\n#{1,3}\s|$)/i,
+    "",
+  );
+}
+
 function ResultMarkdown({ source }: { source: string }) {
-  // Strip noise Claude often adds: standalone `---` separator lines, doubled
-  // blank lines, and stray `[Ime]` / `[ime]` placeholder tokens that come
-  // from prompts that never received a real owner name.
-  const cleaned = source
+  // Strip noise Claude often adds:
+  //   - standalone `---` separator lines
+  //   - doubled blank lines
+  //   - stray `[Ime]` / `[ime]` placeholder tokens
+  //   - leading TL;DR / Sažetak / Summary block (already shown in the
+  //     green Summary box above this body, so it's pure duplication)
+  const cleaned = stripLeadingTldr(source)
     .replace(/^---+$/gm, "")
     .replace(/\[(?:Ime|ime|Name|name)\]/g, "—")
     .replace(/\n{3,}/g, "\n\n")
