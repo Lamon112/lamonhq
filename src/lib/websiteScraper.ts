@@ -188,14 +188,49 @@ function mergeChannels(a: ScrapedChannels, b: ScrapedChannels): ScrapedChannels 
   return merged;
 }
 
+/**
+ * Common HR clinic paths that almost always exist as server-rendered
+ * pages even when the homepage is a JS-heavy SPA. Used as a forced
+ * fallback when the homepage scrape comes back light on socials.
+ */
+const FORCED_PATHS = [
+  "/kontakt",
+  "/kontakt/",
+  "/contact",
+  "/contact/",
+  "/o-nama",
+  "/o-nama/",
+  "/about",
+  "/about/",
+  "/tim",
+  "/tim/",
+  "/team",
+  "/doktori",
+  "/lijecnici",
+];
+
+function countSocialUrls(s: ScrapedChannels): number {
+  return (
+    (s.instagram?.length ?? 0) +
+    (s.facebook?.length ?? 0) +
+    (s.linkedin_company?.length ?? 0) +
+    (s.linkedin_personal?.length ?? 0) +
+    (s.tiktok?.length ?? 0) +
+    (s.youtube?.length ?? 0)
+  );
+}
+
 export async function scrapeCompanyWebsite(
   url: string,
 ): Promise<ScrapedChannels | null> {
   // Normalise URL
   let baseUrl = url.trim();
   if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
+  // Strip trailing path segments like "/hr" that snuck in from bad finder
+  // outputs — we want the bare origin.
   try {
-    new URL(baseUrl);
+    const u = new URL(baseUrl);
+    baseUrl = `${u.protocol}//${u.host}`;
   } catch {
     return null;
   }
@@ -205,12 +240,31 @@ export async function scrapeCompanyWebsite(
 
   let scraped = extractSocialsFromHtml(homeHtml, baseUrl);
 
-  // Follow up to 2 team/about/contact pages for deeper personal links
+  // Follow up to 2 team/about/contact pages discovered via in-HTML anchors
   const follows = pickFollowUps(homeHtml, baseUrl);
   for (const followUrl of follows) {
     const html = await fetchHtml(followUrl);
     if (!html) continue;
     scraped = mergeChannels(scraped, extractSocialsFromHtml(html, followUrl));
+  }
+
+  // FORCED FALLBACK: if homepage + discovered follow-ups landed us with
+  // ≤1 social URL, the site is probably JS-rendered (React/Vue SPA) and
+  // the icons we want are loaded after hydration. Try common HR paths
+  // directly — they're almost always server-rendered with the full
+  // social block in the footer.
+  if (countSocialUrls(scraped) <= 1) {
+    const tried = new Set(scraped.pages_visited);
+    for (const path of FORCED_PATHS) {
+      const candidate = `${baseUrl}${path}`;
+      if (tried.has(candidate)) continue;
+      tried.add(candidate);
+      const html = await fetchHtml(candidate);
+      if (!html) continue;
+      const more = extractSocialsFromHtml(html, candidate);
+      scraped = mergeChannels(scraped, more);
+      if (countSocialUrls(scraped) >= 3) break; // good enough
+    }
   }
   return scraped;
 }
