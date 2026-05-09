@@ -28,7 +28,7 @@ export function ActionBar() {
   }
 
   return (
-    <footer className="sticky bottom-0 z-30 border-t border-border-strong bg-bg-elevated/90 backdrop-blur-md">
+    <footer className="hq-classic-only sticky bottom-0 z-30 border-t border-border-strong bg-bg-elevated/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-3 lg:px-8">
         {ACTIONS.map((a, i) => {
           const Icon = a.icon;

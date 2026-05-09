@@ -82,7 +82,7 @@ export function DailyBriefing({
       <motion.section
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto mb-4 max-w-7xl px-4 lg:px-8"
+        className="hq-classic-only mx-auto mb-4 max-w-7xl px-4 lg:px-8"
       >
         <div className="flex items-center justify-between rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/5 via-bg-elevated to-cyan-500/5 px-4 py-3">
           <div className="flex items-center gap-3">
@@ -127,7 +127,7 @@ export function DailyBriefing({
     <motion.section
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto mb-4 max-w-7xl px-4 lg:px-8"
+      className="hq-classic-only mx-auto mb-4 max-w-7xl px-4 lg:px-8"
     >
       <div className="overflow-hidden rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/5 via-bg-elevated/80 to-cyan-500/5 backdrop-blur">
         <button

@@ -133,3 +133,13 @@ select.input {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: var(--color-gold-dim);
 }
+
+/* Vault view: hide classic-only HQ chrome (floating panels, action bar,
+   resource bar, ambient backgrounds) so the cross-section can breathe.
+   The view-mode attribute is set by HQViewport on mount. */
+body[data-view-mode="vault"] .hq-classic-only {
+  display: none !important;
+}
+body[data-view-mode="vault"] {
+  background-image: none;
+}

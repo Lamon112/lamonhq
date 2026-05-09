@@ -25,6 +25,16 @@ export function HQViewport({ data }: { data: RoomData }) {
     setHydrated(true);
   }, []);
 
+  // Mirror view mode onto <body> so siblings (floating panels) can hide
+  // themselves via CSS without needing to know about the viewport state.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.dataset.viewMode = view;
+    return () => {
+      delete document.body.dataset.viewMode;
+    };
+  }, [view]);
+
   // Keyboard shortcut: Alt+V toggles
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -87,22 +97,23 @@ function ViewSwitcher({
       onClick={onToggle}
       title={`Switch to ${isVault ? "Classic" : "Vault"} view (Alt+V)`}
       className={
-        "fixed left-1/2 top-3 z-40 -translate-x-1/2 " +
-        "flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
+        // Bottom-right floating chip — out of the way of stats / header
+        "fixed bottom-4 right-4 z-40 " +
+        "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium shadow-lg backdrop-blur-md transition-colors " +
         (isVault
-          ? "border-amber-500/60 bg-black/60 text-amber-200 hover:border-amber-500"
-          : "border-border bg-bg/60 text-text-muted hover:border-gold/40 hover:text-gold")
+          ? "border-amber-500/60 bg-black/70 text-amber-200 hover:border-amber-400 hover:bg-black/90"
+          : "border-border bg-bg-elevated/80 text-text-muted hover:border-gold/50 hover:text-gold")
       }
     >
       {isVault ? (
         <>
-          <BoxSelect size={13} />
-          <span>☢️ Vault — Alt+V → Classic</span>
+          <ClassicBuilding size={13} />
+          <span>Exit Vault → Classic</span>
         </>
       ) : (
         <>
-          <ClassicBuilding size={13} />
-          <span>🏢 Classic — Alt+V → ☢️ Vault</span>
+          <BoxSelect size={13} />
+          <span>☢ Enter Vault</span>
         </>
       )}
     </button>

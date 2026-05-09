@@ -58,7 +58,7 @@ export function ResourceBar({ stats, xp, user }: ResourceBarProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-strong bg-bg-elevated/85 backdrop-blur-md">
+    <header className="hq-classic-only sticky top-0 z-40 border-b border-border-strong bg-bg-elevated/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:gap-6 lg:px-8">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-md border border-gold/40 bg-gold/10 text-gold">

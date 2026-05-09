@@ -218,7 +218,7 @@ export function InboxTriage({
     <motion.section
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto mb-4 max-w-7xl px-4 lg:px-8"
+      className="hq-classic-only mx-auto mb-4 max-w-7xl px-4 lg:px-8"
     >
       <div className="overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-bg-elevated/80 to-purple-500/5 backdrop-blur">
         <button
