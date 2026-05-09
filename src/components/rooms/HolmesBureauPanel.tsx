@@ -103,19 +103,48 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
 
   const selected = filtered.find((l) => l.id === selectedId) ?? null;
 
+  const [bulkProgress, setBulkProgress] = useState<{
+    done: number;
+    total: number;
+    current?: string;
+  } | null>(null);
+
   function bulkInvestigate(force = false) {
     setError(null);
     setInfo(null);
+    setBulkProgress({ done: 0, total: hotLeads.length });
     startBulkTransition(async () => {
-      const res = await bulkRunHolmesHot({ force });
-      if (!res.ok) {
-        setError("Bulk Holmes greška");
-        return;
+      // Client-side iteration: each runHolmesForLead is one Vercel function
+      // invocation (~30s each) — keeps us under the 60s Hobby limit while
+      // still surfacing live progress in the UI.
+      const targets = force
+        ? hotLeads
+        : hotLeads.filter((l) => !l.holmes_report);
+      let done = 0;
+      let errs = 0;
+      for (const l of targets) {
+        setBulkProgress({ done, total: targets.length, current: l.name });
+        try {
+          const res = await runHolmesForLead(l.id);
+          if (res.ok && res.report) {
+            setLeads((prev) =>
+              prev.map((row) =>
+                row.id === l.id ? { ...row, holmes_report: res.report } : row,
+              ),
+            );
+          } else {
+            errs++;
+          }
+        } catch {
+          errs++;
+        }
+        done++;
+        setBulkProgress({ done, total: targets.length, current: l.name });
       }
+      setBulkProgress(null);
       setInfo(
-        `🕵️ ${res.investigated} leadova istraženo · ${res.skipped} preskočeno${res.errors.length ? ` · ${res.errors.length} grešaka` : ""}. Refresh za update.`,
+        `🕵️ ${done - errs} / ${targets.length} istraženo${errs ? ` · ${errs} grešaka` : ""}.`,
       );
-      setTimeout(() => window.location.reload(), 2200);
     });
   }
 
@@ -187,10 +216,14 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
           onClick={() => bulkInvestigate(false)}
           disabled={bulkPending}
         >
-          {bulkPending ? (
+          {bulkPending && bulkProgress ? (
             <>
-              <Loader2 size={14} className="animate-spin" /> Holmes istražuje
-              sve…
+              <Loader2 size={14} className="animate-spin" />
+              {bulkProgress.done} / {bulkProgress.total} · {bulkProgress.current?.slice(0, 22) ?? "…"}
+            </>
+          ) : bulkPending ? (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Pripremam…
             </>
           ) : (
             <>🕵️ Investigate Hot (samo novi)</>

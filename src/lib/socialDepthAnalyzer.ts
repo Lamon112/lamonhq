@@ -164,7 +164,9 @@ function classifyTier(d: Omit<SocialDepth, "tier" | "tier_reason" | "score">): {
       reason: "Nismo pronašli social kanale u scrape-u — vjerojatno content beginner ili JS-rendered footer",
     };
 
-  // Veteran: any single viral hit OR any 10K+ followers
+  // Veteran: any single viral hit OR 10K+ followers OR a serious
+  // posting cadence (100+ posts on TikTok / YouTube means a real
+  // content engine, even if follower count is still moderate)
   for (const c of channels) {
     if ((c.topViewCount ?? 0) >= 1_000_000) {
       return {
@@ -176,6 +178,26 @@ function classifyTier(d: Omit<SocialDepth, "tier" | "tier_reason" | "score">): {
       return {
         tier: "veteran",
         reason: `${formatBig(c.followers!)} followers na ${labelFor(c)} — established creator`,
+      };
+    }
+    // High total likes / views accumulated across the back catalogue
+    if ((c.totalViews ?? 0) >= 1_000_000) {
+      return {
+        tier: "veteran",
+        reason: `${formatBig(c.totalViews!)} total ${labelFor(c) === "TikTok" ? "likes" : "views"} — content veteran`,
+      };
+    }
+    // 100+ posts on TT / YT with alive status = real content engine
+    const isVideoChannel =
+      c.url?.includes("tiktok") || c.url?.includes("youtube");
+    if (
+      isVideoChannel &&
+      (c.postsCount ?? 0) >= 100 &&
+      c.status === "alive"
+    ) {
+      return {
+        tier: "veteran",
+        reason: `${c.postsCount} ${labelFor(c)} videa s aktivnim profilom — serious content engine`,
       };
     }
   }
