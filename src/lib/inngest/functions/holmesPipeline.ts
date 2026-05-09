@@ -26,6 +26,7 @@ import { enrichOrganization } from "@/lib/apollo";
 import { runAgentHolmes } from "@/lib/agentHolmes";
 import { pushInsightToNotion } from "@/lib/notion";
 import { computeCost, type UsageInputs } from "@/lib/cost";
+import { debitAiActionCost } from "@/lib/cashLedger";
 
 interface PipelineEventData {
   actionRowId: string;
@@ -305,7 +306,7 @@ export const holmesPipeline = inngest.createFunction(
       });
     });
 
-    // ------- Step 9: Mark completed -------
+    // ------- Step 9: Mark completed + record lead IDs in usage -------
     await step.run("mark-completed", async () => {
       await supabase
         .from("agent_actions")
@@ -317,10 +318,25 @@ export const holmesPipeline = inngest.createFunction(
           tags: ["sales", "opportunity", "competitor"],
           sources: brief.sources,
           notion_page_id: notionResult.ok ? notionResult.pageId : null,
-          usage: cost,
+          usage: { ...cost, lead_ids: leadIds.map((l) => l.id) },
           completed_at: new Date().toISOString(),
         })
         .eq("id", actionRowId);
+    });
+
+    // ------- Step 10: debit cash ledger -------
+    await step.run("debit-cash-ledger", async () => {
+      return debitAiActionCost({
+        actionRowId,
+        room: row.room,
+        title: `${row.title} (${reconCount} leadova)`,
+        costEur: cost.cost_eur,
+        meta: {
+          places_calls: 1,
+          apollo_calls: cost.apollo_calls ?? 0,
+          recon_count: reconCount,
+        },
+      });
     });
 
     return {

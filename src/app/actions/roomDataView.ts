@@ -79,6 +79,26 @@ export interface RevenueViewData {
   topAiCostsThisMonth: Array<{ room: string; title: string; costEur: number; date: string }>;
   // Net = revenue (€) − AI spend (€)
   netThisMonthEur: number;
+  // Cash ledger (migration 0015) — running bank balance + recent txns
+  bank: {
+    balanceCents: number;
+    lifetimeInCents: number;
+    lifetimeOutCents: number;
+    thisMonthInCents: number;
+    thisMonthOutCents: number;
+    upcomingMonthlyExpenses: Array<{
+      day: number;
+      label: string;
+      amountCents: number;
+    }>;
+    recentTxns: Array<{
+      id: string;
+      occurredAt: string;
+      amountCents: number;
+      category: string;
+      label: string;
+    }>;
+  };
 }
 
 export interface TasksViewData {
@@ -330,6 +350,27 @@ async function loadRevenue(): Promise<RevenueViewData> {
   }
   topCosts.sort((a, b) => b.costEur - a.costEur);
 
+  // Cash ledger reads (migration 0015 — view + table)
+  const balanceQ = await supabase
+    .from("cash_balance")
+    .select(
+      "balance_cents, lifetime_in_cents, lifetime_out_cents, this_month_in_cents, this_month_out_cents",
+    )
+    .limit(1)
+    .maybeSingle();
+  const balance = balanceQ.data ?? {
+    balance_cents: 0,
+    lifetime_in_cents: 0,
+    lifetime_out_cents: 0,
+    this_month_in_cents: 0,
+    this_month_out_cents: 0,
+  };
+  const txnsQ = await supabase
+    .from("cash_ledger")
+    .select("id, occurred_at, amount_cents, category, label")
+    .order("occurred_at", { ascending: false })
+    .limit(15);
+
   return {
     mrrCents: stats.mrrCents,
     goalCents: stats.goalTargetCents,
@@ -340,6 +381,31 @@ async function loadRevenue(): Promise<RevenueViewData> {
     topAiCostsThisMonth: topCosts.slice(0, 10),
     netThisMonthEur:
       (stats.mrrCents + stats.monthlyDeltaCents) / 100 - estimatedMonthlyAiCostEur,
+    bank: {
+      balanceCents: Number(balance.balance_cents ?? 0),
+      lifetimeInCents: Number(balance.lifetime_in_cents ?? 0),
+      lifetimeOutCents: Number(balance.lifetime_out_cents ?? 0),
+      thisMonthInCents: Number(balance.this_month_in_cents ?? 0),
+      thisMonthOutCents: Number(balance.this_month_out_cents ?? 0),
+      upcomingMonthlyExpenses: [
+        { day: 1, label: "Održavanje firme", amountCents: 38000 },
+        { day: 15, label: "Režije", amountCents: 97000 },
+        { day: 30, label: "Hrana", amountCents: 60000 },
+      ],
+      recentTxns: ((txnsQ.data ?? []) as Array<{
+        id: string;
+        occurred_at: string;
+        amount_cents: number;
+        category: string;
+        label: string;
+      }>).map((t) => ({
+        id: t.id,
+        occurredAt: t.occurred_at,
+        amountCents: Number(t.amount_cents),
+        category: t.category,
+        label: t.label,
+      })),
+    },
   };
 }
 

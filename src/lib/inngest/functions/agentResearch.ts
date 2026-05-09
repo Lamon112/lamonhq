@@ -22,6 +22,7 @@ import { inngest } from "../client";
 import { getActionById } from "@/lib/agentActions";
 import { pushInsightToNotion } from "@/lib/notion";
 import { computeCost, extractAnthropicUsage } from "@/lib/cost";
+import { debitAiActionCost } from "@/lib/cashLedger";
 
 interface ResearchEventData {
   actionRowId: string; // uuid in agent_actions table
@@ -240,6 +241,17 @@ export const agentResearch = inngest.createFunction(
           completed_at: new Date().toISOString(),
         })
         .eq("id", actionRowId);
+    });
+
+    // ---------------- Step 7: debit cash ledger ----------------
+    await step.run("debit-cash-ledger", async () => {
+      return debitAiActionCost({
+        actionRowId,
+        room: row.room,
+        title: row.title,
+        costEur: cost.cost_eur,
+        meta: { search_calls: cost.web_search_calls ?? 0, duration_sec: durationSec },
+      });
     });
 
     return {

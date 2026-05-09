@@ -141,3 +141,25 @@ export async function getAction(actionRowId: string) {
   }
   return { ok: true as const, row: data };
 }
+
+/**
+ * For Holmes 10-leads pipeline result — fetch the leads created by
+ * this run so the drawer can render Sherlock-style structured cards
+ * instead of raw markdown.
+ */
+export async function getHolmesPipelineLeads(actionRowId: string) {
+  const supabase = getServiceSupabase();
+  const action = await supabase
+    .from("agent_actions")
+    .select("usage")
+    .eq("id", actionRowId)
+    .single();
+  const leadIds = (action.data?.usage as { lead_ids?: string[] } | null)?.lead_ids ?? [];
+  if (leadIds.length === 0) return { ok: true as const, leads: [] };
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id, name, niche, website_url, notes, holmes_report, icp_score")
+    .in("id", leadIds);
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const, leads: data ?? [] };
+}

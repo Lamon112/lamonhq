@@ -308,8 +308,107 @@ function RevenueBody({
     100,
     Math.round((data.mrrCents / Math.max(1, data.goalCents)) * 100),
   );
+  const bank = data.bank;
+  const balanceEur = bank.balanceCents / 100;
+  const balanceColor =
+    bank.balanceCents > 500_000
+      ? "text-emerald-300"
+      : bank.balanceCents > 0
+      ? "text-amber-300"
+      : "text-rose-400";
   return (
     <div className="space-y-5">
+      {/* Bank balance — most important number, top of page */}
+      <div className="rounded-md border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-emerald-500/5 to-yellow-500/5 p-4">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-amber-300">
+          🏦 Bankovni balans · live
+        </div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <div className={`text-3xl font-bold ${balanceColor}`}>
+            €{balanceEur.toFixed(2)}
+          </div>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-text-muted sm:grid-cols-4">
+          <div>
+            <div className="text-text-muted">Lifetime in</div>
+            <div className="font-mono text-emerald-300">
+              €{(bank.lifetimeInCents / 100).toFixed(0)}
+            </div>
+          </div>
+          <div>
+            <div className="text-text-muted">Lifetime out</div>
+            <div className="font-mono text-rose-300">
+              €{(bank.lifetimeOutCents / 100).toFixed(0)}
+            </div>
+          </div>
+          <div>
+            <div className="text-text-muted">In ovaj mj</div>
+            <div className="font-mono text-emerald-300">
+              €{(bank.thisMonthInCents / 100).toFixed(0)}
+            </div>
+          </div>
+          <div>
+            <div className="text-text-muted">Out ovaj mj</div>
+            <div className="font-mono text-rose-300">
+              €{(bank.thisMonthOutCents / 100).toFixed(0)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Upcoming fixed monthly expenses */}
+      <Section title="Fiksni mjesečni troškovi">
+        <ul className="space-y-1">
+          {bank.upcomingMonthlyExpenses.map((e) => (
+            <li
+              key={e.day}
+              className="flex items-center justify-between rounded border border-border bg-bg-card px-2 py-1.5 text-xs"
+            >
+              <span className="text-text">
+                <span className="font-mono text-text-muted">
+                  {e.day}.
+                </span>{" "}
+                {e.label}
+              </span>
+              <span className="font-mono text-rose-300">
+                −€{(e.amountCents / 100).toFixed(0)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      {/* Recent ledger transactions */}
+      {bank.recentTxns.length > 0 && (
+        <Section title={`Zadnje transakcije (${bank.recentTxns.length})`}>
+          <ul className="space-y-1">
+            {bank.recentTxns.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center justify-between gap-2 rounded border border-border bg-bg-card px-2 py-1.5 text-xs"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-text">{t.label}</div>
+                  <div className="text-[10px] text-text-muted">
+                    {fmtDate(t.occurredAt)} · {t.category}
+                  </div>
+                </div>
+                <span
+                  className={
+                    t.amountCents >= 0
+                      ? "font-mono text-emerald-300"
+                      : "font-mono text-rose-300"
+                  }
+                >
+                  {t.amountCents >= 0 ? "+" : "−"}€
+                  {(Math.abs(t.amountCents) / 100).toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
       <div className="rounded-md border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-yellow-500/5 p-4">
         <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-300">
           MRR · cilj 30K€/mj

@@ -14,8 +14,13 @@ import {
   ExternalLink,
   CheckCircle2,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import { getAction } from "@/app/actions/agentResearch";
+import { HolmesPipelineCards } from "./HolmesPipelineCards";
+
+const HOLMES_PIPELINE_ACTION = "holmes.b2b_10_leads_pipeline";
+const HOLMES_PIPELINE_EXPECTED = 10;
 
 interface ResearchResultDrawerProps {
   actionRowId: string | null;
@@ -43,6 +48,7 @@ interface FullActionRow {
     web_search_calls?: number;
     apollo_calls?: number;
     places_calls?: number;
+    lead_ids?: string[];
   } | null;
 }
 
@@ -206,12 +212,22 @@ function DrawerInner({
                   ))}
                 </div>
               )}
-              {row.result_md && (
-                <article className="prose prose-invert prose-sm max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-text">
-                    {row.result_md}
-                  </pre>
-                </article>
+              {row.action_type === HOLMES_PIPELINE_ACTION ? (
+                <>
+                  <HolmesPartialNote
+                    actualCount={row.usage?.lead_ids?.length ?? 0}
+                    costEur={row.usage?.cost_eur}
+                  />
+                  <HolmesPipelineCards actionRowId={row.id} />
+                </>
+              ) : (
+                row.result_md && (
+                  <article className="prose prose-invert prose-sm max-w-none">
+                    <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-text">
+                      {row.result_md}
+                    </pre>
+                  </article>
+                )
               )}
               {row.sources && row.sources.length > 0 && (
                 <div className="mt-4 border-t border-border-strong pt-3">
@@ -289,6 +305,35 @@ function DrawerInner({
         )}
       </motion.aside>
     </>
+  );
+}
+
+function HolmesPartialNote({
+  actualCount,
+  costEur,
+}: {
+  actualCount: number;
+  costEur?: number;
+}) {
+  if (actualCount >= HOLMES_PIPELINE_EXPECTED) return null;
+  const cost = typeof costEur === "number" ? `€${costEur.toFixed(2)}` : "fiksni trošak";
+  return (
+    <div className="mb-4 flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+      <Info size={14} className="mt-0.5 shrink-0 text-amber-300" />
+      <div className="text-[11px] leading-relaxed text-amber-100/90">
+        <strong className="text-amber-200">
+          {actualCount}/{HOLMES_PIPELINE_EXPECTED} leadova spremljeno.
+        </strong>{" "}
+        Cijena ({cost}) je za pokrenuti pipeline (Google Places + Apollo enrich
+        + 10× Claude+web_search recon) — ne po lead-u. Kada Places vrati manje od
+        traženih {HOLMES_PIPELINE_EXPECTED} klinika, Holmes obradi sve koje je
+        dobio. Razlog: query &ldquo;stomatološka klinika Zagreb&rdquo; je vratio
+        samo {actualCount} jedinstvenih objekata koje je Apollo uspio enrichati
+        i Holmes recon dovršiti. Probaj proširiti niche (npr. dodati
+        &ldquo;estetska&rdquo;) ili lokaciju (npr. &ldquo;Zagreb, Velika
+        Gorica&rdquo;) da bi sljedeći run vratio puniju desetku.
+      </div>
+    </div>
   );
 }
 
