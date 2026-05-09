@@ -29,6 +29,7 @@ import {
   type SearchResult,
 } from "@/lib/duckduckgo";
 import { findWebsiteForLead } from "@/lib/websiteFinder";
+import { renderInsightsForPrompt } from "@/lib/sharedInsights";
 import { scrapeCompanyWebsite, type ScrapedChannels } from "@/lib/websiteScraper";
 import {
   checkInstagramProfile,
@@ -500,13 +501,14 @@ export async function runAgentHolmes(
 
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const sharedKnowledge = await renderInsightsForPrompt(10);
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 8000, // channel_drafts × 5 + team analysis + recommended_contact
       system: [
         {
           type: "text",
-          text: HOLMES_SYSTEM_PROMPT,
+          text: HOLMES_SYSTEM_PROMPT + sharedKnowledge,
           cache_control: { type: "ephemeral" },
         },
       ],

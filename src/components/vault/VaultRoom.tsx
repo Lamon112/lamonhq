@@ -157,10 +157,19 @@ const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
   ],
 };
 
-export function VaultRoom({ agent }: { agent: Agent }) {
+interface VaultRoomProps {
+  agent: Agent;
+  /** When set, renders the room in "RESEARCHING…" mode (pulsing border,
+   *  faster dwellers, progress text overlay). Driven by Supabase Realtime. */
+  researchProgress?: string | null;
+  onClick?: (agent: Agent) => void;
+}
+
+export function VaultRoom({ agent, researchProgress, onClick }: VaultRoomProps) {
   const Icon = agent.icon;
   const isLocked = agent.status === "locked";
   const isSoon = agent.status === "soon";
+  const isResearching = !!researchProgress;
   const accentText = ACCENT_TEXT[agent.accent];
   const accentFrame = ACCENT_FRAME[agent.accent];
   const accentFloor = ACCENT_FLOOR[agent.accent];
@@ -175,11 +184,13 @@ export function VaultRoom({ agent }: { agent: Agent }) {
     <motion.div
       whileHover={isLocked ? undefined : { y: -1 }}
       transition={{ duration: 0.15 }}
+      onClick={isLocked || !onClick ? undefined : () => onClick(agent)}
       className={
         "group relative overflow-hidden rounded-md border-2 " +
         (isLocked
           ? "border-stone-700/50 bg-stone-950 opacity-50"
-          : `${accentFrame} ${accentGlow}`)
+          : `${accentFrame} ${accentGlow} cursor-pointer`) +
+        (isResearching ? " vault-room-researching" : "")
       }
       style={{ height: 260 }}
     >
@@ -424,6 +435,41 @@ export function VaultRoom({ agent }: { agent: Agent }) {
               "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
           }}
         />
+      )}
+
+      {/* === RESEARCHING overlay — animated banner with live progress text === */}
+      {isResearching && (
+        <>
+          {/* Faster CRT data sweep when researching */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-50 vault-research-sweep"
+            style={{
+              background:
+                "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
+              backgroundSize: "100% 30%",
+            }}
+          />
+          {/* Progress banner — top edge inside the room */}
+          <div className="absolute left-1/2 top-7 z-30 -translate-x-1/2 max-w-[90%]">
+            <div
+              className={
+                "flex items-center gap-2 rounded-md border bg-black/80 px-2 py-1 backdrop-blur-md shadow-lg vault-research-banner " +
+                (accentFrame.replace("/70", "/80"))
+              }
+            >
+              <span className="relative flex h-2 w-2">
+                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${accentText.replace("text-", "bg-")}`} />
+                <span className={`relative inline-flex h-2 w-2 rounded-full ${accentText.replace("text-", "bg-")}`} />
+              </span>
+              <span className={`font-mono text-[9px] uppercase tracking-wider ${accentText}`}>
+                researching
+              </span>
+              <span className="font-mono text-[9px] text-text-dim truncate max-w-[180px]">
+                {researchProgress}
+              </span>
+            </div>
+          </div>
+        </>
       )}
     </motion.div>
   );

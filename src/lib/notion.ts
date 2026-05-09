@@ -390,6 +390,115 @@ export async function appendActivityRow(
   }
 }
 
+// =====================================================================
+// Knowledge Insights — auto-mirror of agent_actions completed runs
+// DB created 2026-05-09 under "🎯 Lamon Command Center"
+// =====================================================================
+
+export const KNOWLEDGE_INSIGHTS_DB_ID =
+  "4e05e5c9-524b-49e6-b217-957d570ce31f";
+
+const ROOM_LABEL_FOR_NOTION: Record<string, string> = {
+  nova: "Nova",
+  holmes: "Holmes",
+  jarvis: "Jarvis",
+  comms: "Comms",
+  treasury: "Treasury",
+  steward: "Steward",
+  atlas: "Atlas",
+  mentat: "Mentat",
+  forge: "Forge",
+};
+
+export interface PushInsightInput {
+  room: string; // AgentId
+  actionType: string; // matches "Action Type" select options
+  title: string;
+  summary: string;
+  resultMd: string;
+  tags: string[];
+  sources: Array<{ title: string; url: string }>;
+}
+
+/**
+ * Push a completed agent_actions row to the Knowledge Insights Notion DB.
+ * Returns the Notion page ID so we can store it back on the Postgres row.
+ */
+export async function pushInsightToNotion(
+  token: string,
+  input: PushInsightInput,
+): Promise<{ ok: boolean; pageId?: string; error?: string }> {
+  const sourceLines = input.sources
+    .map((s) => `${s.title} — ${s.url}`)
+    .join("\n");
+
+  const properties: Record<string, unknown> = {
+    Title: {
+      title: [{ type: "text", text: { content: input.title.slice(0, 200) } }],
+    },
+    Room: {
+      select: { name: ROOM_LABEL_FOR_NOTION[input.room] ?? input.room },
+    },
+    "Action Type": {
+      select: { name: input.actionType.slice(0, 100) },
+    },
+    Status: {
+      status: { name: "Done" },
+    },
+    Summary: {
+      rich_text: [
+        { type: "text", text: { content: input.summary.slice(0, 1900) } },
+      ],
+    },
+    Tags: {
+      multi_select: input.tags
+        .slice(0, 10)
+        .map((t) => ({ name: t.slice(0, 100) })),
+    },
+    "Source URLs": {
+      rich_text: [
+        { type: "text", text: { content: sourceLines.slice(0, 1900) } },
+      ],
+    },
+  };
+
+  // Split markdown body into ≤2000-char paragraph blocks (Notion limit)
+  const paragraphs = input.resultMd.split(/\n\n+/).filter(Boolean);
+  const children: Array<Record<string, unknown>> = [];
+  for (const p of paragraphs) {
+    let remaining = p;
+    while (remaining.length > 0 && children.length < 100) {
+      const chunk = remaining.slice(0, 1900);
+      remaining = remaining.slice(1900);
+      children.push({
+        object: "block",
+        type: "paragraph",
+        paragraph: {
+          rich_text: [{ type: "text", text: { content: chunk } }],
+        },
+      });
+    }
+    if (children.length >= 100) break;
+  }
+
+  try {
+    const r = await notionFetch<{ id: string }>(token, "/pages", {
+      method: "POST",
+      body: JSON.stringify({
+        parent: { database_id: KNOWLEDGE_INSIGHTS_DB_ID },
+        properties,
+        children,
+      }),
+    });
+    return { ok: true, pageId: r.id };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Notion insight push failed",
+    };
+  }
+}
+
 export async function fetchAllRows(
   token: string,
   dbId: string,

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { pushTelegramNotification } from "./telegram";
+import { renderInsightsForPrompt } from "@/lib/sharedInsights";
 
 export interface BriefingAction {
   title: string;
@@ -322,13 +323,14 @@ async function generateBriefingForUser(
 
     const userMessage = `# Današnji datum: ${ctx.today} (${ctx.weekday})\n\n# HQ kontekst (JSON):\n\n${JSON.stringify(ctx, null, 2)}\n\nNapiši mi briefing za danas po pravilima. STRIKT JSON output.`;
 
+    const sharedKnowledge = await renderInsightsForPrompt(10);
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 2000,
       system: [
         {
           type: "text",
-          text: SYSTEM_PROMPT,
+          text: SYSTEM_PROMPT + sharedKnowledge,
           cache_control: { type: "ephemeral" },
         },
       ],

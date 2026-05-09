@@ -1,12 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import type { RoomData } from "../RoomModal";
-import { vaultFloors, FLOOR_LABEL, type Agent } from "@/lib/vault";
+import { vaultFloors, FLOOR_LABEL, type Agent, type AgentId } from "@/lib/vault";
 import { VaultRoom } from "./VaultRoom";
+import { RoomActionConsole } from "./RoomActionConsole";
+import { ResearchResultDrawer } from "./ResearchResultDrawer";
+import { createClient } from "@/lib/supabase/client";
 
 interface VaultProps {
   data: RoomData;
+}
+
+interface ActiveJob {
+  actionRowId: string;
+  room: AgentId;
+  progress: string | null;
+  status: "queued" | "running" | "completed" | "failed";
 }
 
 /**
@@ -14,9 +25,89 @@ interface VaultProps {
  * agent rooms. Inspired by Fallout Shelter mobile, but rendered with
  * an Iron-Man steel-and-amber aesthetic so it sits comfortably on top
  * of our existing dark theme.
+ *
+ * Owns the click-to-research workflow:
+ *   - Click a room  → open <RoomActionConsole>
+ *   - Pick action   → triggerAgentResearch → ActiveJob added to state
+ *   - Realtime sub  → live progress updates the room's animation banner
+ *   - On complete   → drawer shows the result
  */
 export function Vault({}: VaultProps) {
   const floors = vaultFloors();
+  const [openRoom, setOpenRoom] = useState<Agent | null>(null);
+  const [drawerActionId, setDrawerActionId] = useState<string | null>(null);
+  // active jobs keyed by room id → progress text (allows multiple rooms
+  // to research in parallel, even though typically only 1 at a time)
+  const [active, setActive] = useState<Record<AgentId, ActiveJob>>(
+    {} as Record<AgentId, ActiveJob>,
+  );
+
+  // === Subscribe to ALL agent_actions updates via Supabase Realtime ===
+  // We subscribe once at mount; the channel pushes any UPDATE/INSERT
+  // happening in agent_actions to all connected clients (single user
+  // anyway, so no auth filtering needed).
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("vault-agent-actions")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "agent_actions" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as
+            | {
+                id: string;
+                room: AgentId;
+                progress_text: string | null;
+                status: "queued" | "running" | "completed" | "failed";
+              }
+            | undefined;
+          if (!row) return;
+
+          setActive((prev) => {
+            const next = { ...prev };
+            if (row.status === "completed" || row.status === "failed") {
+              delete next[row.room];
+              // If user left the drawer open on this row, the drawer's own
+              // re-poll will pick up the result. Also auto-open drawer on
+              // first completion if they haven't dismissed it.
+              if (
+                row.status === "completed" &&
+                prev[row.room]?.actionRowId === row.id
+              ) {
+                setDrawerActionId(row.id);
+              }
+              return next;
+            }
+            next[row.room] = {
+              actionRowId: row.id,
+              room: row.room,
+              progress: row.progress_text,
+              status: row.status,
+            };
+            return next;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  function handleActionStarted(actionRowId: string, agentId: AgentId) {
+    // Optimistic — the Realtime UPDATE will overwrite shortly
+    setActive((prev) => ({
+      ...prev,
+      [agentId]: {
+        actionRowId,
+        room: agentId,
+        progress: "Pokrećem AI istraživača…",
+        status: "queued",
+      },
+    }));
+  }
 
   return (
     <main className="vault-bg relative flex-1 overflow-hidden">
@@ -62,15 +153,34 @@ export function Vault({}: VaultProps) {
                 rooms={floor.rooms}
                 isLast={fi === floors.length - 1}
                 index={fi}
+                active={active}
+                onRoomClick={(agent) => setOpenRoom(agent)}
               />
             ))}
           </div>
         </div>
 
         <p className="mt-4 text-center font-mono text-[9px] uppercase tracking-[0.3em] text-amber-500/30">
-          ▸ Lamon Vault · Alt+V → Classic
+          ▸ Lamon Vault · Alt+V → Classic · klik na sobu = AI akcije
         </p>
       </div>
+
+      {/* Action picker modal */}
+      <RoomActionConsole
+        agent={openRoom}
+        onClose={() => setOpenRoom(null)}
+        onActionStarted={handleActionStarted}
+        onViewResult={(id) => {
+          setOpenRoom(null);
+          setDrawerActionId(id);
+        }}
+      />
+
+      {/* Result side drawer */}
+      <ResearchResultDrawer
+        actionRowId={drawerActionId}
+        onClose={() => setDrawerActionId(null)}
+      />
 
       {/* Inline styles for vault textures (kept here so the global stylesheet
           stays clean — these only render in vault view) */}
@@ -101,11 +211,15 @@ function FloorRow({
   rooms,
   isLast,
   index,
+  active,
+  onRoomClick,
 }: {
   floorNumber: number;
   rooms: Agent[];
   isLast: boolean;
   index: number;
+  active: Record<AgentId, ActiveJob>;
+  onRoomClick: (agent: Agent) => void;
 }) {
   const label = FLOOR_LABEL[floorNumber] ?? `Floor ${floorNumber}`;
   return (
@@ -130,7 +244,12 @@ function FloorRow({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room) => (
-          <VaultRoom key={room.id} agent={room} />
+          <VaultRoom
+            key={room.id}
+            agent={room}
+            researchProgress={active[room.id]?.progress ?? null}
+            onClick={onRoomClick}
+          />
         ))}
       </div>
     </motion.div>
