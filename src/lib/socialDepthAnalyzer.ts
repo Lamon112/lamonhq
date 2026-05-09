@@ -241,21 +241,21 @@ function classifyTier(d: Omit<SocialDepth, "tier" | "tier_reason" | "score">): {
     };
   }
 
-  // Dead: every inspectable channel is dead/dormant with <50 followers
-  const allWeak = inspectable.every(
-    (c) =>
-      c.status === "dead" ||
-      (c.status === "dormant" && (c.followers ?? 0) < 50),
-  );
-  if (allWeak)
+  // Dead means literally NO content engine — every probed channel
+  // returned "dead" status (truly empty profile, 0 posts). A dormant
+  // profile (small follower count but with some posts/activity) is
+  // still better than dead — those clinics exist and have something
+  // to work with → starter, not dead.
+  const allDead = inspectable.every((c) => c.status === "dead");
+  if (allDead)
     return {
       tier: "dead",
-      reason: "Svi inspectable profili mrtvi ili <50 followers",
+      reason: "Svi probani profili su literally dead (0 postova / banana)",
     };
 
   return {
     tier: "starter",
-    reason: "Profili postoje ali content game je rani",
+    reason: "Profili postoje (pa makar dormant) — content game je rani",
   };
 }
 
