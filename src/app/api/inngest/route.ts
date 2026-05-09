@@ -13,10 +13,11 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/client";
 import { agentResearch } from "@/lib/inngest/functions/agentResearch";
+import { holmesPipeline } from "@/lib/inngest/functions/holmesPipeline";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [agentResearch],
+  functions: [agentResearch, holmesPipeline],
   // Allow long-running steps without Vercel cutting them off — Inngest
   // takes over execution; this route only sends/receives step signals.
 });

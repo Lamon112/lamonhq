@@ -69,11 +69,17 @@ export async function triggerAgentResearch(
     };
   }
 
-  // Dispatch background job. Inngest cloud will pick this up via the
-  // /api/inngest webhook; locally it's the inngest-cli dev server.
+  // Dispatch background job. Event name depends on action kind:
+  //   "research" → agent/research.requested (single Claude+web_search)
+  //   "pipeline" → agent/{id}.requested (multi-step orchestration)
+  // Data-view actions never reach this code path — UI handles them.
+  const eventName =
+    def.kind === "pipeline"
+      ? `agent/${def.id.split(".")[0]}-pipeline.requested` // e.g. "agent/holmes-pipeline.requested"
+      : "agent/research.requested";
   try {
     await inngest.send({
-      name: "agent/research.requested",
+      name: eventName,
       data: { actionRowId: data.id },
     });
   } catch (e) {

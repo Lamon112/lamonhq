@@ -18,10 +18,27 @@
 
 import type { AgentId } from "@/lib/vault";
 import type { LucideIcon } from "lucide-react";
-import { Lightbulb, Sparkles, Search, Target } from "lucide-react";
+import { Lightbulb, Sparkles, Search, Target, Users, Crosshair } from "lucide-react";
+
+/**
+ * Three "kinds" of action drive different runtime backends:
+ *   - "research"       Single Claude + web_search call. Lightweight.
+ *                      Inngest event: agent/research.requested
+ *   - "pipeline"       Multi-step orchestration (e.g. find leads → score
+ *                      → recon each → compile). Long runs.
+ *                      Inngest event: agent/{kind-id}.requested
+ *   - "data-view"      Instant render — no Inngest. Just shows data
+ *                      pulled from Postgres. Click opens a side drawer.
+ */
+export type ActionKind = "research" | "pipeline" | "data-view";
+
+/** Business lane — used for B2B/B2C separation per Leonardo's rule. */
+export type ActionScope = "b2b" | "b2c" | "all";
 
 export interface AgentActionDef {
   id: string;
+  kind: ActionKind;
+  scope: ActionScope;
   room: AgentId;
   title: string;
   description: string;
@@ -33,8 +50,13 @@ export interface AgentActionDef {
     | "Custom";
   icon: LucideIcon;
   estimatedSec: number;
-  systemPrompt: string;
-  prompt: string;
+  /** Only for kind="research" — Claude system + user prompt. */
+  systemPrompt?: string;
+  prompt?: string;
+  /** For kind="pipeline" — config that the Inngest function reads. */
+  pipelineConfig?: Record<string, unknown>;
+  /** For kind="data-view" — which dashboard component to render. */
+  viewKey?: string;
 }
 
 // =====================================================================
@@ -87,6 +109,8 @@ RULES:
 // =====================================================================
 const novaDeepBizImprovement: AgentActionDef = {
   id: "nova.deep_biz_improvement",
+  kind: "research",
+  scope: "all",
   room: "nova",
   title: "Pronađi poboljšanja biznisa",
   description:
@@ -110,6 +134,8 @@ Za svaku ideju navedi: što je, koliko košta uvesti, koliko brzo može donijeti
 
 const novaAiAutomatableBiz: AgentActionDef = {
   id: "nova.ai_automatable_biz",
+  kind: "research",
+  scope: "all",
   room: "nova",
   title: "Pronađi AI-automatizirane biznise",
   description:
@@ -134,12 +160,34 @@ PRIORITET: modeli gdje AI radi 80%+ posla. Izbjegavaj "open dropshipping store" 
 };
 
 // =====================================================================
+// Holmes — 1-click 10 leads end-to-end pipeline (B2B clinics)
+// =====================================================================
+const holmes10LeadsPipeline: AgentActionDef = {
+  id: "holmes.b2b_10_leads_pipeline",
+  kind: "pipeline",
+  scope: "b2b",
+  room: "holmes",
+  title: "10 novih leadova — full pipeline",
+  description:
+    "Klikni i čekaj. Holmes pronalazi 10 novih premium klinika u Zagrebu (Places + Apollo), score-a ih, radi dubinski recon vlasnika + tima, i sastavlja brief s 5 channel-specific outreach poruka po klinici. Sve spremljeno u pipeline + Notion.",
+  notionLabel: "Lead Recon",
+  icon: Crosshair,
+  estimatedSec: 600,
+  pipelineConfig: {
+    niche: "premium dentalna klinika",
+    location: "Zagreb",
+    count: 10,
+    regionCode: "hr",
+  },
+};
+
+// =====================================================================
 // Action catalog — keyed by room
 // =====================================================================
 export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
   nova: [novaDeepBizImprovement, novaAiAutomatableBiz],
+  holmes: [holmes10LeadsPipeline],
   // Phase 2: other rooms get their own actions. For now show a "soon" state.
-  holmes: [],
   jarvis: [],
   comms: [],
   treasury: [],
@@ -162,4 +210,4 @@ export function getActionById(id: string): AgentActionDef | undefined {
 }
 
 // Generic icons for hint UI (rooms without actions yet)
-export const PLACEHOLDER_ICONS = { Search, Target };
+export const PLACEHOLDER_ICONS = { Search, Target, Users };

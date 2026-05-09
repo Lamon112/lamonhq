@@ -70,10 +70,18 @@ export const agentResearch = inngest.createFunction(
     });
 
     const def = getActionById(row.action_type);
-    if (!def) {
-      await markFailed(supabase, actionRowId, `Unknown action_type: ${row.action_type}`);
-      return { ok: false, reason: "unknown-action" };
+    if (!def || def.kind !== "research" || !def.systemPrompt || !def.prompt) {
+      await markFailed(
+        supabase,
+        actionRowId,
+        `Bad research action def: ${row.action_type}`,
+      );
+      return { ok: false, reason: "bad-def" };
     }
+    // Capture into locals so TS narrowing survives across step.run boundaries
+    const systemPrompt: string = def.systemPrompt;
+    const userPrompt: string = def.prompt;
+    const notionLabel = def.notionLabel;
 
     // ---------------- Step 2: mark running ----------------
     await step.run("mark-running", async () => {
@@ -119,8 +127,8 @@ export const agentResearch = inngest.createFunction(
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5-20250929",
         max_tokens: 8000,
-        system: def.systemPrompt,
-        messages: [{ role: "user", content: def.prompt }],
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
         tools: [
           {
             type: "web_search_20250305",
@@ -197,7 +205,7 @@ export const agentResearch = inngest.createFunction(
       }
       return pushInsightToNotion(token, {
         room: row.room,
-        actionType: def.notionLabel,
+        actionType: notionLabel,
         title: row.title,
         summary: parsed.summary,
         resultMd: result.text,
