@@ -35,14 +35,17 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
   const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Show any lead Holmes has investigated OR any manually-scored hot lead
+  // (≥15). Closed-won/lost are excluded — they're done, not workable.
+  // This catches pipeline-imported leads even if their numeric icp_score
+  // hasn't been backfilled yet.
   const hotLeads = useMemo(
     () =>
       leads
-        .filter(
-          (l) =>
-            (l.icp_score ?? 0) >= 15 &&
-            !["closed_won", "closed_lost"].includes(l.stage),
-        )
+        .filter((l) => {
+          if (["closed_won", "closed_lost"].includes(l.stage)) return false;
+          return Boolean(l.holmes_report) || (l.icp_score ?? 0) >= 15;
+        })
         .sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0)),
     [leads],
   );

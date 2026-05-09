@@ -268,9 +268,14 @@ export const holmesPipeline = inngest.createFunction(
             websiteUrl: lead.website_url,
           });
           if (r.ok && r.report) {
+            // Auto-score from pitch_tier so the lead immediately shows up
+            // in Holmes Bureau "Hot leads" (icp_score >= 15) without
+            // needing a separate manual scoring pass.
+            const tier = (r.report as { pitch_tier?: string } | null)?.pitch_tier;
+            const icp = scoreFromTier(tier);
             await supabase
               .from("leads")
-              .update({ holmes_report: r.report })
+              .update({ holmes_report: r.report, icp_score: icp })
               .eq("id", lead.id);
           }
           return {
@@ -406,6 +411,26 @@ async function getOwnerUserId(
     return (data?.user_id as string | null) ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Translate Holmes pitch_tier into a numeric ICP score so freshly-investigated
+ * pipeline leads land in Holmes Bureau's "Hot" view (threshold ≥15) by default.
+ * Veteran/intermediate/starter all clear the bar — only "dead" stays cold.
+ */
+function scoreFromTier(tier?: string): number {
+  switch (tier) {
+    case "veteran":
+      return 20;
+    case "intermediate":
+      return 17;
+    case "starter":
+      return 15;
+    case "dead":
+      return 5;
+    default:
+      return 12; // Holmes ran but didn't classify — stash mid-low
   }
 }
 
