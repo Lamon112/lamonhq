@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "./activityLog";
 import { draftOutreach, shortenForChannel } from "./ai";
+import {
+  checkAllChannels,
+  type ChannelHealthMap,
+} from "@/lib/channelHealth";
 import { sendViaGmail } from "./gmail";
 import { pushTelegramNotification } from "./telegram";
 
@@ -446,6 +450,7 @@ export interface PendingColdDraft {
     platform?: string;
     email?: string | null;
     channels?: LeadChannels;
+    channelHealth?: ChannelHealthMap;
   } | null;
 }
 
@@ -499,6 +504,25 @@ export async function getPendingColdDrafts(): Promise<PendingColdDraft[]> {
       lead.email ?? d.context_payload.email ?? null,
     );
   }
+
+  // Run channel health checks in parallel for drafts that don't yet have
+  // a channelHealth result. Each lead's checks run concurrently across
+  // platforms; drafts without any URL-based channel are skipped.
+  const healthTasks = drafts.map(async (d) => {
+    if (!d.context_payload) return;
+    if (d.context_payload.channelHealth) return;
+    const ch = d.context_payload.channels;
+    if (!ch) return;
+    const hasUrl =
+      ch.instagram || ch.linkedin || ch.facebook || ch.tiktok || ch.website;
+    if (!hasUrl) return;
+    try {
+      d.context_payload.channelHealth = await checkAllChannels(ch);
+    } catch {
+      /* never throw for health check */
+    }
+  });
+  await Promise.all(healthTasks);
 
   return drafts;
 }

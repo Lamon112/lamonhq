@@ -220,6 +220,10 @@ export function ApprovalQueue() {
                         channels={
                           (ctx as { channels?: Record<string, string> }).channels
                         }
+                        channelHealth={
+                          (ctx as { channelHealth?: ChannelHealthLite })
+                            .channelHealth
+                        }
                         email={ctx.email ?? null}
                         message={text}
                         onCopy={copyToClipboard}
@@ -304,6 +308,10 @@ export function ApprovalQueue() {
                   channels={
                     (ctx as { channels?: Record<string, string> }).channels
                   }
+                  channelHealth={
+                    (ctx as { channelHealth?: ChannelHealthLite })
+                      .channelHealth
+                  }
                   email={ctx.email ?? null}
                   message={text}
                   onCopy={copyToClipboard}
@@ -364,6 +372,34 @@ const CHANNEL_HARD_LIMITS: Record<string, number> = {
   instagram: 1000,
 };
 
+interface HealthEntry {
+  status: "alive" | "recently_active" | "dormant" | "dead" | "blocked" | "unknown";
+  followers?: number;
+  postCount?: number;
+  reason?: string;
+}
+type ChannelHealthLite = Partial<Record<string, HealthEntry>>;
+
+function healthEmoji(s: HealthEntry["status"]): string {
+  switch (s) {
+    case "alive":
+    case "recently_active":
+      return "✅";
+    case "dormant":
+      return "⚠️";
+    case "dead":
+      return "❌";
+    case "blocked":
+      return "🚫";
+    default:
+      return "❓";
+  }
+}
+
+function isDead(h?: HealthEntry): boolean {
+  return h?.status === "dead";
+}
+
 function CharCounter({ text, platform }: { text: string; platform: string }) {
   const limit = CHANNEL_HARD_LIMITS[platform];
   const len = text.length;
@@ -395,6 +431,7 @@ function CharCounter({ text, platform }: { text: string; platform: string }) {
 interface PlatformPillProps {
   platform: string;
   channels?: Record<string, string>;
+  channelHealth?: ChannelHealthLite;
   email: string | null;
   message: string;
   onCopy: (t: string) => void;
@@ -403,6 +440,7 @@ interface PlatformPillProps {
 function PlatformPill({
   platform,
   channels,
+  channelHealth,
   email,
   message,
   onCopy,
@@ -416,6 +454,8 @@ function PlatformPill({
   };
   const target = lookup[platform];
   const label = PLATFORM_LABELS[platform] ?? platform;
+  const health = channelHealth?.[platform];
+  const dead = isDead(health);
   const baseClass =
     "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition-colors";
 
@@ -429,17 +469,41 @@ function PlatformPill({
     );
   }
 
+  // Dead profile → still link, but red + warning
+  if (dead) {
+    return (
+      <a
+        href={platform === "email" ? `mailto:${target}` : target}
+        target={platform === "email" ? undefined : "_blank"}
+        rel={platform === "email" ? undefined : "noreferrer"}
+        title={`MRTAV: ${health?.reason ?? "neaktivan profil"} — koristi drugi kanal`}
+        onClick={() => {
+          if (platform !== "email") void onCopy(message);
+        }}
+        className={`${baseClass} border-danger/40 bg-danger/10 text-danger hover:border-danger`}
+      >
+        ❌ {label}
+        <ExternalLink size={10} />
+      </a>
+    );
+  }
+
   return (
     <a
       href={platform === "email" ? `mailto:${target}` : target}
       target={platform === "email" ? undefined : "_blank"}
       rel={platform === "email" ? undefined : "noreferrer"}
-      title={`Otvori ${label}`}
+      title={
+        health
+          ? `${health.status}${health.followers != null ? ` · ${health.followers} followers` : ""}${health.reason ? ` · ${health.reason}` : ""}`
+          : `Otvori ${label}`
+      }
       onClick={() => {
         if (platform !== "email") void onCopy(message);
       }}
       className={`${baseClass} border-gold/40 bg-gold/10 text-gold hover:border-gold hover:bg-gold/20`}
     >
+      {health ? `${healthEmoji(health.status)} ` : ""}
       {label}
       <ExternalLink size={10} />
     </a>
@@ -448,14 +512,22 @@ function PlatformPill({
 
 interface ChannelRowProps {
   channels?: Record<string, string>;
+  channelHealth?: ChannelHealthLite;
   email: string | null;
   message: string;
   onCopy: (t: string) => void;
 }
 
-function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
+function ChannelRow({
+  channels,
+  channelHealth,
+  email,
+  message,
+  onCopy,
+}: ChannelRowProps) {
   const list: Array<{
     key: string;
+    healthKey: string | null;
     label: string;
     href: string;
     title: string;
@@ -464,6 +536,7 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
   if (finalEmail)
     list.push({
       key: "email",
+      healthKey: null,
       label: "📧 Email",
       href: `mailto:${finalEmail}`,
       title: finalEmail,
@@ -471,6 +544,7 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
   if (channels?.instagram)
     list.push({
       key: "ig",
+      healthKey: "instagram",
       label: "📷 Instagram",
       href: channels.instagram,
       title: channels.instagram,
@@ -478,6 +552,7 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
   if (channels?.linkedin)
     list.push({
       key: "li",
+      healthKey: "linkedin",
       label: "💼 LinkedIn",
       href: channels.linkedin,
       title: channels.linkedin,
@@ -485,6 +560,7 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
   if (channels?.facebook)
     list.push({
       key: "fb",
+      healthKey: "facebook",
       label: "👥 Facebook",
       href: channels.facebook,
       title: channels.facebook,
@@ -492,6 +568,7 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
   if (channels?.tiktok)
     list.push({
       key: "tt",
+      healthKey: "tiktok",
       label: "🎵 TikTok",
       href: channels.tiktok,
       title: channels.tiktok,
@@ -499,6 +576,7 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
   if (channels?.website)
     list.push({
       key: "web",
+      healthKey: "website",
       label: "🌐 Web",
       href: channels.website,
       title: channels.website,
@@ -511,24 +589,36 @@ function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
       <span className="text-[10px] uppercase tracking-wider text-text-muted">
         Pošalji preko:
       </span>
-      {list.map((c) => (
-        <a
-          key={c.key}
-          href={c.href}
-          target={c.key === "email" ? undefined : "_blank"}
-          rel={c.key === "email" ? undefined : "noreferrer"}
-          title={c.title}
-          onClick={() => {
-            // for non-email channels, also copy message to clipboard so
-            // Leonardo can paste in DM right after the link opens
-            if (c.key !== "email") void onCopy(message);
-          }}
-          className="flex items-center gap-1 rounded border border-border bg-bg/60 px-2 py-1 text-[11px] text-text-muted transition-colors hover:border-gold/40 hover:text-gold"
-        >
-          {c.label}
-          <ExternalLink size={10} />
-        </a>
-      ))}
+      {list.map((c) => {
+        const h = c.healthKey ? channelHealth?.[c.healthKey] : undefined;
+        const dead = isDead(h);
+        const dormant = h?.status === "dormant";
+        const tooltip = h
+          ? `${h.status}${h.followers != null ? ` · ${h.followers} followers` : ""}${h.reason ? ` · ${h.reason}` : ""} · ${c.title}`
+          : c.title;
+        const colorClass = dead
+          ? "border-danger/40 bg-danger/5 text-danger/70 hover:border-danger"
+          : dormant
+            ? "border-warning/40 bg-warning/5 text-warning hover:border-warning"
+            : "border-border bg-bg/60 text-text-muted hover:border-gold/40 hover:text-gold";
+        return (
+          <a
+            key={c.key}
+            href={c.href}
+            target={c.key === "email" ? undefined : "_blank"}
+            rel={c.key === "email" ? undefined : "noreferrer"}
+            title={tooltip}
+            onClick={() => {
+              if (c.key !== "email") void onCopy(message);
+            }}
+            className={`flex items-center gap-1 rounded border px-2 py-1 text-[11px] transition-colors ${colorClass}`}
+          >
+            {h && healthEmoji(h.status) + " "}
+            {c.label}
+            <ExternalLink size={10} />
+          </a>
+        );
+      })}
     </div>
   );
 }
