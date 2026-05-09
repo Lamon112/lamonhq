@@ -31,6 +31,7 @@
  */
 
 import type { AgentId } from "@/lib/vault";
+import { LaptopStation, PhoneStation } from "./Humans";
 
 export function RoomFurniture({ agentId }: { agentId: AgentId }) {
   switch (agentId) {
@@ -59,98 +60,160 @@ export function RoomFurniture({ agentId }: { agentId: AgentId }) {
 
 /* =================================================================== */
 /* HOLMES — film-noir detective bureau                                  */
-/* HERO: huge arched window with venetian blinds + streetlight beam     */
+/* HERO 1: floor-to-ceiling bookshelf in CENTER (10 shelves of books    */
+/*         + skull on top + globe + rolling ladder)                     */
+/* HERO 2: arched noir window on LEFT with city silhouette + moon       */
 /* =================================================================== */
 function HolmesFurniture() {
   return (
     <>
-      {/* === HERO: Massive arched noir window === */}
-      <div className="absolute left-1/2 top-0 h-24 w-32 -translate-x-1/2 rounded-t-[40%] border-2 border-amber-900/90 bg-gradient-to-b from-stone-900 via-stone-950 to-blue-950 shadow-[inset_0_0_8px_rgba(0,0,0,0.7),0_2px_4px_rgba(0,0,0,0.5)]">
-        {/* Sky gradient (night with moon glow) */}
+      {/* === HERO 1 (CENTER): MASSIVE floor-to-ceiling bookshelf === */}
+      <div className="absolute left-1/2 top-0 h-[7.5rem] w-20 -translate-x-1/2 border-2 border-amber-950 bg-gradient-to-b from-amber-950 via-stone-900 to-stone-950 shadow-[inset_0_0_8px_rgba(0,0,0,0.8),0_2px_4px_rgba(0,0,0,0.6)]">
+        {/* Wood grain wallpaper */}
+        <div
+          className="absolute inset-0 opacity-50"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, rgba(120,53,15,0.4) 0 1px, transparent 1px 6px)",
+          }}
+        />
+        {/* 10 packed shelves */}
+        {[...Array(10)].map((_, shelf) => {
+          // book color palette per shelf — varied for organic feel
+          const palettes = [
+            ["bg-red-800", "bg-stone-700", "bg-emerald-900", "bg-amber-700", "bg-stone-800"],
+            ["bg-amber-800", "bg-red-900", "bg-stone-600", "bg-emerald-800", "bg-amber-900"],
+            ["bg-stone-700", "bg-emerald-800", "bg-red-700", "bg-amber-800", "bg-stone-800"],
+            ["bg-red-900", "bg-amber-700", "bg-stone-700", "bg-emerald-900"],
+            ["bg-amber-900", "bg-stone-800", "bg-red-800", "bg-amber-700", "bg-emerald-800"],
+          ];
+          const books = palettes[shelf % palettes.length];
+          return (
+            <div
+              key={shelf}
+              className="relative h-3 border-b border-amber-950 px-px"
+              style={{
+                background:
+                  "linear-gradient(to bottom, rgba(0,0,0,0.4) 0, transparent 8%)",
+              }}
+            >
+              {/* Books standing up */}
+              <div className="absolute bottom-px left-px right-px flex items-end gap-px">
+                {books.concat(books).slice(0, 13).map((color, i) => (
+                  <div
+                    key={i}
+                    className={`${color} shadow-[inset_-1px_0_0_rgba(0,0,0,0.4)]`}
+                    style={{
+                      width: i % 4 === 0 ? "2px" : "1px",
+                      height: `${7 + ((i * 3) % 4)}px`,
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Occasional sideways book */}
+              {shelf === 3 && (
+                <div className="absolute bottom-px right-2 h-1 w-2 bg-amber-800 shadow-[inset_-1px_0_0_rgba(0,0,0,0.4)]" />
+              )}
+              {shelf === 6 && (
+                <div className="absolute bottom-px left-2 h-1 w-2 bg-emerald-800 shadow-[inset_-1px_0_0_rgba(0,0,0,0.4)]" />
+              )}
+              {/* Shelf wood plank front edge */}
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-amber-950 shadow-[0_1px_0_rgba(0,0,0,0.5)]" />
+            </div>
+          );
+        })}
+
+        {/* Skull on top shelf */}
+        <div className="absolute left-2 -top-3 text-[12px] leading-none">💀</div>
+
+        {/* Globe on top shelf */}
+        <div className="absolute right-2 -top-3 h-3 w-3">
+          <div className="absolute top-0 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full border border-amber-700/80 bg-gradient-to-br from-cyan-800 via-blue-900 to-stone-950 shadow-[0_0_2px_rgba(6,182,212,0.4)]">
+            <div className="absolute left-0.5 top-0.5 h-px w-px bg-emerald-300" />
+            <div className="absolute right-0.5 top-1 h-px w-px bg-emerald-300" />
+          </div>
+          <div className="absolute bottom-0 left-1/2 h-1 w-px -translate-x-1/2 bg-amber-700" />
+        </div>
+
+        {/* Rolling brass ladder leaning on shelf */}
+        <div className="absolute -right-2 bottom-0 h-[7rem] w-px origin-bottom rotate-[8deg] bg-amber-700/80" />
+        <div className="absolute -right-3 bottom-0 h-[7rem] w-px origin-bottom rotate-[8deg] bg-amber-700/80" />
+        {/* Ladder rungs */}
+        {[10, 25, 40, 55, 70, 85].map((y, i) => (
+          <div
+            key={i}
+            className="absolute -right-3 h-px w-2 origin-right rotate-[8deg] bg-amber-700/80"
+            style={{ bottom: `${y}%` }}
+          />
+        ))}
+
+        {/* Brass picture light (shelf-top lamp) */}
+        <div className="absolute left-1/2 -top-1 h-1 w-4 -translate-x-1/2 rounded-t bg-amber-600 shadow-[0_0_4px_rgba(252,211,77,0.6)]" />
+      </div>
+
+      {/* === HERO 2 (LEFT): smaller noir window === */}
+      <div className="absolute left-2 top-1 h-20 w-16 rounded-t-[40%] border-2 border-amber-900/90 bg-gradient-to-b from-stone-900 via-stone-950 to-blue-950 shadow-[inset_0_0_6px_rgba(0,0,0,0.7),0_2px_4px_rgba(0,0,0,0.5)]">
+        {/* Sky gradient (night) */}
         <div className="absolute inset-0 rounded-t-[40%] bg-gradient-to-b from-amber-100/8 via-blue-900/20 to-stone-950" />
 
-        {/* MOON behind blinds */}
-        <div className="absolute right-3 top-2 h-5 w-5 rounded-full bg-gradient-to-br from-amber-100 to-amber-300 shadow-[0_0_12px_rgba(254,240,138,0.7),inset_-2px_-2px_4px_rgba(180,120,60,0.4)]" />
+        {/* MOON */}
+        <div className="absolute right-1.5 top-2 h-3 w-3 rounded-full bg-gradient-to-br from-amber-100 to-amber-300 shadow-[0_0_8px_rgba(254,240,138,0.7),inset_-1px_-1px_2px_rgba(180,120,60,0.4)]" />
 
-        {/* City building silhouettes outside */}
-        <div className="absolute bottom-0 left-0 right-0 h-8">
-          <div className="absolute bottom-0 left-1 h-5 w-3 bg-stone-950">
-            {/* windows */}
-            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
-            <div className="absolute right-0.5 top-1 h-px w-px bg-amber-300/80" />
-            <div className="absolute left-0.5 top-3 h-px w-px bg-amber-300/80" />
+        {/* City silhouettes (compact) */}
+        <div className="absolute bottom-0 left-0 right-0 h-6">
+          <div className="absolute bottom-0 left-0.5 h-3 w-2 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300" />
           </div>
-          <div className="absolute bottom-0 left-5 h-7 w-4 bg-stone-950">
-            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
-            <div className="absolute right-0.5 top-2 h-px w-px bg-amber-300/80" />
-            <div className="absolute left-0.5 top-4 h-px w-px bg-amber-300/80" />
-            <div className="absolute right-0.5 top-5 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-0 left-3 h-5 w-3 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300" />
+            <div className="absolute right-0.5 top-3 h-px w-px bg-amber-300" />
           </div>
-          <div className="absolute bottom-0 left-10 h-4 w-3 bg-stone-950" />
-          <div className="absolute bottom-0 left-14 h-6 w-3 bg-stone-950">
-            <div className="absolute left-1 top-1 h-px w-px bg-amber-300/80" />
-            <div className="absolute left-1 top-3 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-0 left-7 h-4 w-2 bg-stone-950" />
+          <div className="absolute bottom-0 left-10 h-5 w-3 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300" />
+            <div className="absolute right-0.5 top-3 h-px w-px bg-amber-300" />
           </div>
-          <div className="absolute bottom-0 left-[4.5rem] h-5 w-4 bg-stone-950">
-            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
-            <div className="absolute right-0.5 top-2 h-px w-px bg-amber-300/80" />
+          <div className="absolute bottom-0 right-0.5 h-3 w-2 bg-stone-950">
+            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300" />
           </div>
-          <div className="absolute bottom-0 right-1 h-7 w-3 bg-stone-950">
-            <div className="absolute left-0.5 top-1 h-px w-px bg-amber-300/80" />
-            <div className="absolute left-0.5 top-3 h-px w-px bg-amber-300/80" />
-            <div className="absolute left-0.5 top-5 h-px w-px bg-amber-300/80" />
-          </div>
-          {/* Glowing red "PRIVATE EYE" sign on building */}
-          <div className="absolute bottom-3 right-5 rounded-sm bg-red-700/90 px-px font-mono text-[5px] font-bold leading-none tracking-wider text-red-100 shadow-[0_0_4px_rgba(239,68,68,0.9)]">
+          {/* Red BAR sign on roof */}
+          <div className="absolute bottom-3 left-3 rounded-sm bg-red-700/90 px-px font-mono text-[4px] font-bold leading-none text-red-100 shadow-[0_0_3px_rgba(239,68,68,0.9)]">
             BAR
           </div>
         </div>
 
         {/* Rain streaks */}
-        <div className="absolute inset-0 rounded-t-[40%] opacity-50"
+        <div className="absolute inset-0 rounded-t-[40%] opacity-40"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(15deg, rgba(165,243,252,0.3) 0 1px, transparent 1px 6px)",
+              "repeating-linear-gradient(15deg, rgba(165,243,252,0.3) 0 1px, transparent 1px 5px)",
           }}
         />
 
-        {/* Venetian blinds — horizontal slats covering window */}
+        {/* Venetian blinds */}
         <div className="absolute inset-0 rounded-t-[40%] overflow-hidden">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(7)].map((_, i) => (
             <div
               key={i}
               className="absolute inset-x-0 h-px bg-stone-700/90 shadow-[0_1px_0_rgba(0,0,0,0.5)]"
-              style={{ top: `${10 + i * 11}%` }}
+              style={{ top: `${12 + i * 12}%` }}
             />
           ))}
-          {/* Blind cord */}
           <div className="absolute right-1 top-1 h-full w-px bg-stone-600" />
         </div>
 
         {/* Window frame cross */}
-        <div className="absolute left-1/2 top-0 h-full w-0.5 -translate-x-1/2 bg-amber-950/80" />
+        <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-amber-950/80" />
       </div>
 
-      {/* Streetlight beam slicing into room (yellow noir light) */}
+      {/* Streetlight beam from window into room (yellow noir light) */}
       <div
-        className="pointer-events-none absolute left-1/2 top-24 h-16 w-32 -translate-x-1/2 bg-gradient-to-b from-amber-200/15 via-amber-100/8 to-transparent"
+        className="pointer-events-none absolute left-2 top-20 h-12 w-16 bg-gradient-to-br from-amber-200/20 via-amber-100/8 to-transparent"
         style={{
-          clipPath: "polygon(20% 0, 80% 0, 100% 100%, 0 100%)",
+          clipPath: "polygon(0 0, 100% 0, 100% 100%, 30% 100%)",
           filter: "blur(1.5px)",
         }}
       />
-
-      {/* === SIDE: "PRIVATE EYE" frosted door === */}
-      <div className="absolute left-1 top-1 h-16 w-8 rounded-sm border border-amber-900/80 bg-gradient-to-b from-amber-100/20 to-amber-200/5 shadow-[inset_0_0_4px_rgba(0,0,0,0.5)]">
-        <div className="absolute inset-x-0 top-3 text-center font-mono text-[6px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200/80">
-          PRIVATE
-        </div>
-        <div className="absolute inset-x-0 top-6 text-center font-mono text-[6px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200/80">
-          EYE
-        </div>
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] leading-none">★</div>
-        <div className="absolute right-1 top-9 h-1 w-0.5 rounded-full bg-amber-700" />
-      </div>
 
       {/* === SIDE: Coat rack with fedora + trench coat === */}
       <div className="absolute right-1 top-1 flex flex-col items-center">
@@ -574,157 +637,142 @@ function NovaFurniture() {
 }
 
 /* =================================================================== */
-/* COMMS — global operator hub                                          */
-/* HERO: huge world map with connection arcs                            */
+/* COMMS — global operator hub · SPLIT SCREEN                           */
+/* LEFT half: PHONE BULLPEN — Wall Street chaos (amber/red, 4 callers)  */
+/* RIGHT half: STRATEGY DESK — laptop strategists (cool cyan, 4 typers) */
 /* =================================================================== */
 function CommsFurniture() {
   return (
     <>
-      {/* === HERO: Giant world map with connection arcs === */}
-      <div className="absolute left-1/2 top-1 h-20 w-36 -translate-x-1/2 rounded-sm border border-sky-700/80 bg-gradient-to-br from-sky-950 via-stone-950 to-sky-950 shadow-[inset_0_0_6px_rgba(14,165,233,0.4),0_0_8px_rgba(14,165,233,0.2)]">
-        {/* Header bar */}
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-sky-800/80 bg-sky-950/80 px-1 py-px">
-          <div className="flex items-center gap-1">
-            <div className="h-1 w-1 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_3px_rgba(16,185,129,0.9)]" />
-            <span className="font-mono text-[5px] font-bold uppercase leading-none tracking-wider text-sky-200">
-              GLOBAL COMMS · LIVE
-            </span>
-          </div>
-          <span className="font-mono text-[5px] leading-none text-sky-300/70">
-            24/7
+      {/* === Glass partition (center divider) === */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-gradient-to-b from-stone-500/60 via-stone-400/40 to-stone-500/60 shadow-[0_0_4px_rgba(255,255,255,0.2)]" />
+      {/* Glass panel highlight */}
+      <div className="absolute left-1/2 top-2 bottom-9 w-1 -translate-x-1/2 rounded bg-gradient-to-b from-white/15 via-white/5 to-white/15" />
+
+      {/* Center divider sign */}
+      <div className="absolute left-1/2 top-1 -translate-x-1/2 z-30 rounded-sm border border-stone-500 bg-stone-950 px-1 font-mono text-[5px] font-bold uppercase leading-none tracking-[0.2em] text-stone-300 shadow-md">
+        ◆ COMMS HUB ◆
+      </div>
+
+      {/* ╔══════════════════════════════════════════════════════════ */}
+      {/* ║ LEFT HALF: PHONE BULLPEN — chaos energy                    */}
+      {/* ╚══════════════════════════════════════════════════════════ */}
+      <div className="absolute left-0 top-0 bottom-0 w-1/2">
+        {/* Warm amber tint background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/25 via-amber-950/10 to-stone-950" />
+
+        {/* Section label — top left */}
+        <div className="absolute left-1 top-3 flex items-center gap-1 rounded-sm border border-amber-500/60 bg-amber-950/80 px-1 py-px shadow-[0_0_4px_rgba(245,158,11,0.4)]">
+          <div className="h-1 w-1 animate-pulse rounded-full bg-amber-300 shadow-[0_0_3px_rgba(252,211,77,1)]" />
+          <span className="font-mono text-[5px] font-bold uppercase leading-none tracking-[0.15em] text-amber-200">
+            BULLPEN · CALLS
           </span>
         </div>
 
-        {/* World map (continents, simplified) */}
-        <svg viewBox="0 0 144 64" className="absolute inset-0 mt-2 h-full w-full">
-          {/* Latitude/longitude grid */}
-          <g opacity="0.2">
-            {[0, 16, 32, 48].map((y) => (
-              <line key={y} x1={0} x2={144} y1={y} y2={y} stroke="rgb(14 165 233)" strokeWidth="0.3" />
-            ))}
-            {[0, 24, 48, 72, 96, 120].map((x) => (
-              <line key={x} x1={x} x2={x} y1={0} y2={64} stroke="rgb(14 165 233)" strokeWidth="0.3" />
-            ))}
-          </g>
-          {/* Continents (rough silhouettes) */}
-          {/* North America */}
-          <path d="M 12 18 Q 18 14 28 16 Q 32 22 30 30 Q 24 36 16 32 Q 10 26 12 18 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
-          {/* South America */}
-          <path d="M 26 38 Q 30 36 32 42 Q 30 50 26 52 Q 24 46 26 38 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
-          {/* Europe */}
-          <path d="M 60 18 Q 70 16 78 20 Q 76 26 70 28 Q 62 26 60 18 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
-          {/* Africa */}
-          <path d="M 64 30 Q 72 28 76 36 Q 74 46 68 48 Q 62 42 64 30 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
-          {/* Asia */}
-          <path d="M 80 18 Q 100 14 120 22 Q 118 30 110 32 Q 90 30 80 18 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
-          {/* Australia */}
-          <path d="M 110 42 Q 120 40 124 46 Q 120 50 112 48 Q 108 44 110 42 Z" fill="rgba(34,211,238,0.4)" stroke="rgb(125 211 252)" strokeWidth="0.3" />
+        {/* Stock ticker scroll — top */}
+        <div className="absolute left-0 right-0 top-7 h-2 overflow-hidden border-y border-amber-700/40 bg-stone-950/80">
+          <div className="font-mono text-[5px] leading-none text-amber-300 whitespace-nowrap pl-1">
+            ▲ APX +3.2 · SPHR -1.8 · ORTO +5.4 · DENT +0.9 · IMPL ▲ · CALL HOLD-3 ◂
+          </div>
+        </div>
 
-          {/* Connection arcs from Croatia (Zagreb ~ 70,22) */}
-          <g opacity="0.8">
-            <path d="M 70 22 Q 50 8 20 22" stroke="rgb(244 114 182)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
-            <path d="M 70 22 Q 90 10 115 26" stroke="rgb(34 197 94)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
-            <path d="M 70 22 Q 75 36 70 44" stroke="rgb(250 204 21)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
-            <path d="M 70 22 Q 95 35 118 45" stroke="rgb(6 182 212)" strokeWidth="0.5" fill="none" strokeDasharray="2 1" />
-          </g>
-
-          {/* Connection endpoints (pulsing) */}
-          <circle cx="70" cy="22" r="1.5" fill="rgb(254 240 138)" stroke="rgb(250 204 21)" strokeWidth="0.4">
-            {/* Croatia HQ marker */}
-          </circle>
-          <circle cx="20" cy="22" r="1" fill="rgb(244 114 182)" />
-          <circle cx="115" cy="26" r="1" fill="rgb(34 197 94)" />
-          <circle cx="70" cy="44" r="1" fill="rgb(250 204 21)" />
-          <circle cx="118" cy="45" r="1" fill="rgb(6 182 212)" />
+        {/* Phone-cord wall hub (where all cords go up to) */}
+        <div className="absolute left-1/2 top-9 h-2 w-3 -translate-x-1/2 rounded border border-stone-600 bg-stone-800 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.5)]">
+          <div className="absolute left-0.5 top-0.5 h-px w-px rounded-full bg-red-400" />
+          <div className="absolute right-0.5 top-0.5 h-px w-px rounded-full bg-amber-400" />
+        </div>
+        {/* Cords radiating out */}
+        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-0 top-9 h-12 w-full opacity-60">
+          <path d="M 50 4 Q 35 20 18 36" stroke="rgb(28 25 23)" strokeWidth="0.6" fill="none" strokeDasharray="0.7 0.5" />
+          <path d="M 50 4 Q 60 22 75 38" stroke="rgb(28 25 23)" strokeWidth="0.6" fill="none" strokeDasharray="0.7 0.5" />
+          <path d="M 50 4 Q 30 28 8 42" stroke="rgb(28 25 23)" strokeWidth="0.6" fill="none" strokeDasharray="0.7 0.5" />
+          <path d="M 50 4 Q 70 26 92 40" stroke="rgb(28 25 23)" strokeWidth="0.6" fill="none" strokeDasharray="0.7 0.5" />
         </svg>
 
-        {/* "ZAG" label next to Croatia */}
-        <div className="absolute left-[50%] top-[35%] font-mono text-[4px] font-bold leading-none tracking-wider text-yellow-200/90 shadow-[0_0_2px_rgba(250,204,21,0.7)]">
-          ◆ZAG
+        {/* === 4 PHONE CALLERS in 2 rows === */}
+        {/* Back row */}
+        <PhoneStation left={4} bottom={48} suit="fill-amber-500" arm="right" />
+        <PhoneStation left={50} bottom={48} suit="fill-red-500" arm="left" />
+        {/* Front row */}
+        <PhoneStation left={20} bottom={12} suit="fill-amber-400" arm="right" />
+        <PhoneStation left={68} bottom={12} suit="fill-red-400" arm="left" />
+
+        {/* Scattered ambient: coffee cup */}
+        <div className="absolute bottom-3 left-1 h-1.5 w-1 rounded-b border border-stone-400 bg-amber-100" />
+        <div className="absolute bottom-4.5 left-[0.35rem] h-1 w-px bg-gradient-to-t from-stone-300/50 to-transparent blur-[0.5px]" />
+        {/* Scattered loose papers */}
+        <div className="absolute bottom-3 right-2 h-1 w-1.5 -rotate-12 bg-amber-100/80" />
+        <div className="absolute bottom-3.5 right-3 h-1 w-1.5 rotate-6 bg-stone-200/70" />
+      </div>
+
+      {/* ╔══════════════════════════════════════════════════════════ */}
+      {/* ║ RIGHT HALF: STRATEGY DESK — focused calm                   */}
+      {/* ╚══════════════════════════════════════════════════════════ */}
+      <div className="absolute right-0 top-0 bottom-0 w-1/2">
+        {/* Cool cyan/violet tint background */}
+        <div className="absolute inset-0 bg-gradient-to-bl from-cyan-900/25 via-violet-950/10 to-stone-950" />
+
+        {/* Section label — top right */}
+        <div className="absolute right-1 top-3 flex items-center gap-1 rounded-sm border border-cyan-500/60 bg-cyan-950/80 px-1 py-px shadow-[0_0_4px_rgba(6,182,212,0.4)]">
+          <div className="h-1 w-1 animate-pulse rounded-full bg-cyan-300 shadow-[0_0_3px_rgba(125,211,252,1)]" />
+          <span className="font-mono text-[5px] font-bold uppercase leading-none tracking-[0.15em] text-cyan-200">
+            STRATEGY · DATA
+          </span>
         </div>
-      </div>
 
-      {/* === BIG SIGN: ON AIR === */}
-      <div className="absolute right-2 top-1 flex items-center gap-1 rounded-sm border-2 border-red-500/90 bg-red-950 px-1.5 py-0.5 shadow-[0_0_8px_rgba(239,68,68,0.8),inset_0_0_3px_rgba(248,113,113,0.5)]">
-        <div className="h-1 w-1 animate-pulse rounded-full bg-red-300 shadow-[0_0_3px_rgba(252,165,165,1)]" />
-        <span className="font-mono text-[6px] font-bold uppercase leading-none tracking-[0.3em] text-red-100">
-          ON AIR
-        </span>
-      </div>
-
-      {/* === World clocks under map (smaller) === */}
-      <div className="absolute left-1/2 top-[5.4rem] -translate-x-1/2 flex gap-2">
-        {[
-          { label: "ZAG", time: "14:32" },
-          { label: "NYC", time: "08:32" },
-          { label: "LON", time: "13:32" },
-          { label: "TYO", time: "22:32" },
-        ].map((c) => (
-          <div key={c.label} className="flex flex-col items-center">
-            <div className="font-mono text-[4px] font-bold uppercase leading-none tracking-wider text-sky-300/80">
-              {c.label}
+        {/* Wall-mounted dashboard with charts — top */}
+        <div className="absolute left-2 top-9 right-2 h-7 border border-cyan-700/70 bg-cyan-950/60 shadow-[inset_0_0_3px_rgba(6,182,212,0.4)]">
+          {/* Header strip */}
+          <div className="border-b border-cyan-800/80 bg-cyan-900/60 px-px py-px font-mono text-[4px] font-bold leading-none tracking-wider text-cyan-300">
+            ▼ ANALYTICS
+          </div>
+          {/* Mini charts row */}
+          <div className="flex h-5 items-end gap-1 px-1 py-px">
+            {/* Bar chart */}
+            <div className="flex h-full items-end gap-px">
+              <div className="h-2 w-px bg-cyan-400" />
+              <div className="h-3 w-px bg-cyan-400" />
+              <div className="h-1.5 w-px bg-cyan-400" />
+              <div className="h-4 w-px bg-cyan-400" />
+              <div className="h-2.5 w-px bg-emerald-400" />
             </div>
-            <div className="mt-px h-2 w-2 rounded-full border border-sky-600/70 bg-stone-950">
-              <div className="absolute left-1/2 top-1/2 h-px w-1 -translate-x-px -translate-y-px origin-left rotate-45 bg-sky-300" />
-              <div className="absolute left-1/2 top-1/2 h-px w-px -translate-x-px -translate-y-px origin-left rotate-90 bg-sky-200" />
+            {/* Line chart */}
+            <svg viewBox="0 0 24 12" className="h-full w-6">
+              <polyline
+                points="0,8 4,6 8,9 12,4 16,6 20,2 24,4"
+                fill="none"
+                stroke="rgb(110 231 183)"
+                strokeWidth="0.8"
+              />
+            </svg>
+            {/* Pie chart */}
+            <div className="h-3 w-3 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(rgb(34 211 238) 0deg 130deg, rgb(167 139 250) 130deg 230deg, rgb(110 231 183) 230deg 360deg)",
+              }}
+            />
+            {/* Number readout */}
+            <div className="ml-auto font-mono text-[5px] font-bold leading-none text-emerald-300">
+              +24%
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* === BOTTOM: Counter with switchboard + radio + telegraph === */}
-      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-sky-900/70 bg-gradient-to-b from-sky-950/80 to-stone-950" />
-
-      {/* Switchboard */}
-      <div className="absolute bottom-2.5 left-2 h-7 w-12 border border-sky-700/80 bg-sky-950/80 shadow-[inset_0_0_4px_rgba(0,0,0,0.5)]">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute h-1 w-1 rounded-full bg-stone-950 ring-1 ring-stone-700"
-            style={{
-              left: `${10 + (i % 5) * 18}%`,
-              top: `${20 + Math.floor(i / 5) * 25}%`,
-            }}
-          />
-        ))}
-        <div className="absolute left-[8%] top-[22%] h-px w-px rounded-full bg-sky-300 shadow-[0_0_2px_rgba(125,211,252,0.9)]" />
-        <div className="absolute left-[44%] top-[48%] h-px w-px rounded-full bg-emerald-300 shadow-[0_0_2px_rgba(110,231,183,0.9)]" />
-        <div className="absolute left-[26%] top-[72%] h-px w-px rounded-full bg-yellow-300 shadow-[0_0_2px_rgba(253,224,71,0.9)]" />
-        <svg viewBox="0 0 48 28" className="absolute inset-0 h-full w-full">
-          <path d="M 6 8 Q 14 18, 24 12" fill="none" stroke="rgb(14 165 233)" strokeWidth="0.6" />
-          <path d="M 26 12 Q 34 22, 42 12" fill="none" stroke="rgb(244 114 182)" strokeWidth="0.6" />
-        </svg>
-      </div>
-
-      {/* Radio transceiver */}
-      <div className="absolute bottom-2.5 left-1/2 h-4 w-10 -translate-x-1/2 border border-sky-700 bg-stone-900">
-        <div className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full border border-sky-500/70 bg-stone-950">
-          <div className="absolute left-1/2 top-1/2 h-1 w-px -translate-x-1/2 -translate-y-1/2 origin-bottom rotate-45 bg-sky-300" />
         </div>
-        <div className="absolute left-4 top-0.5 h-1.5 w-2.5 border border-sky-700 bg-emerald-950">
-          <div className="m-px h-px w-1.5 bg-emerald-400/80" />
-        </div>
-        <div className="absolute right-0.5 top-0.5 flex flex-col gap-px">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-px w-1.5 bg-sky-700/70" />
-          ))}
-        </div>
+
+        {/* === 4 LAPTOP STRATEGISTS in 2 rows === */}
+        {/* Back row (slightly smaller / further) */}
+        <LaptopStation left={4} bottom={48} suit="fill-cyan-400" screenColor="cyan" />
+        <LaptopStation left={50} bottom={48} suit="fill-violet-400" screenColor="violet" />
+        {/* Front row */}
+        <LaptopStation left={18} bottom={12} suit="fill-cyan-500" screenColor="emerald" withMug />
+        <LaptopStation left={64} bottom={12} suit="fill-violet-500" screenColor="cyan" withMug />
+
+        {/* Floor accent — cool */}
+        <div className="absolute inset-x-2 bottom-2 h-px bg-cyan-400/30" />
       </div>
 
-      {/* Telegraph */}
-      <div className="absolute bottom-2.5 right-8 h-3 w-4">
-        <div className="absolute bottom-0 left-0 right-0 h-1 rounded-sm bg-amber-900" />
-        <div className="absolute bottom-1 left-1 h-px w-2 bg-amber-500" />
-        <div className="absolute bottom-1 left-1.5 h-1 w-1 rounded-full bg-amber-700" />
-      </div>
-
-      {/* Headset */}
-      <div className="absolute bottom-2.5 right-2 h-4 w-3">
-        <div className="absolute right-0 top-0 h-1 w-1 border-l border-t border-stone-600" />
-        <div className="absolute top-1 left-0 h-2 w-3 rounded-full border-2 border-stone-700 border-b-transparent" />
-        <div className="absolute bottom-0 left-0 h-1.5 w-1.5 rounded-full bg-stone-800" />
-        <div className="absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full bg-stone-800" />
-      </div>
+      {/* === Floor strip across whole room === */}
+      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-stone-700/70 bg-gradient-to-b from-stone-800 to-stone-950" />
     </>
   );
 }
