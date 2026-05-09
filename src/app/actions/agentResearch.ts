@@ -48,6 +48,15 @@ export async function triggerAgentResearch(
 
   const supabase = getServiceSupabase();
 
+  // For pipeline actions there's no Claude prompt — record the
+  // pipelineConfig (or title fallback) so the column's NOT NULL
+  // constraint is satisfied without polluting the schema.
+  const promptValue =
+    def.prompt ??
+    (def.pipelineConfig
+      ? `[pipeline] ${def.title}\n${JSON.stringify(def.pipelineConfig, null, 2)}`
+      : `[pipeline] ${def.title}`);
+
   // Insert queued row
   const { data, error } = await supabase
     .from("agent_actions")
@@ -55,7 +64,7 @@ export async function triggerAgentResearch(
       room: def.room,
       action_type: def.id,
       title: def.title,
-      prompt: def.prompt,
+      prompt: promptValue,
       status: "queued",
       progress_text: "U redu čekanja…",
     })
