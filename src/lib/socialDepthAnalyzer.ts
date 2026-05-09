@@ -56,16 +56,21 @@ async function analyzeTikTok(url: string): Promise<ChannelDepth> {
   try {
     const handle = extractHandle(url);
     const stats = await fetchTikTokProfileStats(handle);
-    // The profile JSON we get from /lib/tiktok contains the itemList for
-    // the most-recent posts. Pull the highest playCount we can see.
+    // tiktok.ts now sweeps the whole rehydration JSON for playCount
+    // values and exposes the max as raw.topPlayCount. Catches pinned /
+    // featured viral hits that aren't in userInfo.stats.
     const raw = stats.raw as
-      | { user?: Record<string, unknown>; stats?: Record<string, unknown>; itemList?: Array<{ stats?: { playCount?: number } }> }
+      | {
+          topPlayCount?: number;
+          itemList?: Array<{ stats?: { playCount?: number } }>;
+        }
       | undefined;
-    const items = (raw?.itemList ?? []) as Array<{ stats?: { playCount?: number } }>;
-    const topView = items.reduce(
-      (max, it) => Math.max(max, Number(it.stats?.playCount ?? 0)),
-      0,
-    );
+    const fromList =
+      raw?.itemList?.reduce(
+        (max, it) => Math.max(max, Number(it.stats?.playCount ?? 0)),
+        0,
+      ) ?? 0;
+    const topView = Math.max(raw?.topPlayCount ?? 0, fromList);
     const status: ChannelDepth["status"] =
       stats.videoCount === 0
         ? "dead"

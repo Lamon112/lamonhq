@@ -89,6 +89,13 @@ export async function fetchTikTokProfileStats(
     );
   }
 
+  // Sweep the entire parsed JSON for playCount values — catches pinned
+  // / featured video view counts that aren't surfaced in the canonical
+  // userInfo.stats block (e.g. Štimac's 5.8M-view pinned video isn't
+  // in stats.heart but lives in the rehydration scope under itemList).
+  const allPlayCounts = collectPlayCounts(parsed);
+  const topPlayCount = allPlayCounts.length > 0 ? Math.max(...allPlayCounts) : 0;
+
   return {
     handle: `@${uniqueId}`,
     uniqueId: String(user.uniqueId ?? uniqueId),
@@ -97,8 +104,29 @@ export async function fetchTikTokProfileStats(
     following: Number(stats.followingCount ?? 0),
     hearts: Number(stats.heart ?? stats.heartCount ?? 0),
     videoCount: Number(stats.videoCount ?? 0),
-    raw: { user, stats },
+    raw: { user, stats, topPlayCount, allPlayCountsCount: allPlayCounts.length },
   };
+}
+
+function collectPlayCounts(obj: unknown, out: number[] = []): number[] {
+  if (out.length > 200) return out; // safety cap
+  if (typeof obj !== "object" || obj === null) return out;
+  if (Array.isArray(obj)) {
+    for (const item of obj) collectPlayCounts(item, out);
+    return out;
+  }
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (
+      (key === "playCount" || key === "play_count") &&
+      typeof value === "number" &&
+      value > 0
+    ) {
+      out.push(value);
+    } else if (typeof value === "object" && value !== null) {
+      collectPlayCounts(value, out);
+    }
+  }
+  return out;
 }
 
 export function defaultTikTokHandles(): string[] {
