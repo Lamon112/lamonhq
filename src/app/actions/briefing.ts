@@ -343,6 +343,20 @@ async function generateBriefingForUser(
       .single();
 
     if (error) return { ok: false, error: error.message };
+
+    // Push Jarvis briefing summary to Telegram (idempotent per briefing).
+    // pushTelegramNotification is no-op if Telegram not configured / disabled.
+    try {
+      const top = parsed.top_actions
+        .slice(0, 5)
+        .map((a, i) => `${i + 1}. ${a.title}`)
+        .join("\n");
+      const tgText = `🤵 *Dobro jutro, Leonardo.*\n☀️ Briefing za ${ctx.weekday} je spreman.\n\n${parsed.greeting}\n\n*Plan dana:*\n${top}\n\n💪 _${parsed.motivational_hook}_\n\nNa raspolaganju sam. _— Jarvis_\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
+      void pushTelegramNotification("briefing", tgText, userId);
+    } catch {
+      /* never throw on push */
+    }
+
     revalidatePath("/");
     return { ok: true, briefing: upserted as DailyBriefing };
   } catch (e) {
