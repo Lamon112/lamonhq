@@ -169,9 +169,20 @@ export const holmesPipeline = inngest.createFunction(
     await setProgress("Spremam u pipeline…", true);
 
     // ------- Step 5: Insert all into leads table -------
+    // leads schema (migration 0001 + later): id, user_id (NOT NULL FK to
+    // auth.users), name, niche (CHECK in stomatologija/estetska/fizio/
+    // ortopedija/coach/other), stage (CHECK in discovery/pricing/
+    // financing/booking/closed_won/closed_lost), icp_score (0-20), notes,
+    // website_url (added in 0013).
     const leadIds = await step.run("insert-leads", async () => {
-      const owner = await getOwnerUserId(supabase);
+      const ownerUserId = await getOwnerUserId(supabase);
+      if (!ownerUserId) {
+        throw new Error(
+          "No owner user found in leads table — cannot insert (FK requires valid user_id)",
+        );
+      }
       const ids: Array<{ id: string; name: string; website_url: string | null }> = [];
+      const nicheEnum = mapNicheToEnum(cfg.niche);
       for (const e of enriched) {
         const notes = [
           e.formattedAddress,
@@ -182,16 +193,17 @@ export const holmesPipeline = inngest.createFunction(
             ? `~${e.apolloOrg.estimated_num_employees} employees`
             : null,
           e.rating ? `⭐${e.rating} (${e.userRatingCount} reviews)` : null,
+          `Pipeline source: Holmes 1-click (${cfg.niche} ${cfg.location})`,
         ]
           .filter(Boolean)
           .join("\n");
         const { data, error } = await supabase
           .from("leads")
           .insert({
-            owner_user_id: owner,
+            user_id: ownerUserId,
             name: e.name,
-            niche: cfg.niche ?? null,
-            stage: "prospecting",
+            niche: nicheEnum,
+            stage: "discovery",
             icp_score: 0,
             notes,
             website_url: e.websiteUri ?? null,
@@ -318,19 +330,34 @@ async function markFailed(
 async function getOwnerUserId(
   supabase: ReturnType<typeof getServiceSupabase>,
 ): Promise<string | null> {
-  // Lamon HQ is single-user — Leonardo. Pick the first auth.users row as owner.
-  // Falls back to null if RLS blocks (then leads insert with null owner).
+  // Lamon HQ is single-user — Leonardo. Steal user_id from any existing
+  // lead row (we know there are 33+ leads from prior outreach work).
   try {
     const { data } = await supabase
       .from("leads")
-      .select("owner_user_id")
-      .not("owner_user_id", "is", null)
+      .select("user_id")
+      .not("user_id", "is", null)
       .limit(1)
       .maybeSingle();
-    return (data?.owner_user_id as string | null) ?? null;
+    return (data?.user_id as string | null) ?? null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Map a free-text niche from the action config to one of the leads.niche
+ * CHECK-constraint values: stomatologija/estetska/fizio/ortopedija/coach/other.
+ */
+function mapNicheToEnum(niche?: string): string {
+  const n = (niche ?? "").toLowerCase();
+  if (n.includes("stoma") || n.includes("dent")) return "stomatologija";
+  if (n.includes("eseta") || n.includes("plastic") || n.includes("derma"))
+    return "estetska";
+  if (n.includes("fizio") || n.includes("physio")) return "fizio";
+  if (n.includes("ortop") || n.includes("ortho")) return "ortopedija";
+  if (n.includes("coach")) return "coach";
+  return "other";
 }
 
 function todayStamp() {
