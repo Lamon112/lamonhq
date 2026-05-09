@@ -64,7 +64,14 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 5. **opening_hook** — PRVA rečenica V8 outreach-a. MORA biti tier-prilagođena. Za veteran: spomeni njihov konkretan viralni hit ili brojku. Za starter: industry stat.
 6. **avoid** — 1-3 stvari koje NE treba spomenuti (npr. za veteran: NE pričaj o "kako pomoći s contentom" — uvrijedit ćeš ih).
 7. **reachability** — RANGIRAJ kanale po šansi za reply. Neaktivan profil = nizak score.
-8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis "Leonardo, Lamon"). Tier-prilagođen.
+8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis "Leonardo Lamon" — BEZ zareza). Tier-prilagođen.
+
+   **OBAVEZNO**: U solution-u ili pivot-u SUPTILNO embed-aj da je Leonardov posao **razvoj privatnih ordinacija** — to je signal autoriteta koji svaka ordinacija želi imati za sebe. Ne mora biti cijela rečenica — može biti dio konteksta dok pričaš o nečem drugom. Primjeri:
+   - "Bavim se razvojem privatnih ordinacija kroz 6 stupova — ovo (AI gatekeeper / chatbot / itd.) je glavni stup za vašu situaciju."
+   - "Iz prakse razvoja privatnih ordinacija — vidio sam X kod sličnih tier-a."
+   - "Specijalizirao sam se za razvoj privatnih ordinacija; baš zato me Y kod vas zanima."
+
+   Cilj: doktor odmah razumije da Leonardo nije "još jedan agencija pitch", nego netko tko se isključivo bavi privatnim ordinacijama → autoritetska poluga.
 9. **pitch_tier** field je OBAVEZAN — kopiraj iz evidence.social_depth.tier.
 10. **recommended_package** — preporuči paket: "Growth (1.497€/mj)" | "Distribution+ (2.5-3.5K€/mj)" | "Premium AI Gatekeeper (5-10K€/mj)" | "Foundation only" | "skip".
 11. Bez ALL CAPS. Govor s "vi/vam".

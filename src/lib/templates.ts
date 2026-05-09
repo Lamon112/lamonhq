@@ -20,7 +20,7 @@ Vidio sam {{specifičnost}} kod {{klinika}}. Uskočimo s AI receptionist-om i bo
 
 Kratak razgovor 15 min ovaj tjedan?
 
-— Leonardo, Lamon Agency`,
+— Leonardo Lamon`,
   },
   {
     id: "instagram_clinic_dm",
