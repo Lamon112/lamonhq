@@ -31,7 +31,15 @@
  */
 
 import type { AgentId } from "@/lib/vault";
-import { LaptopStation, PhoneStation } from "./Humans";
+import {
+  BankerWindow,
+  CameraOperator,
+  HumanFigure,
+  LaptopStation,
+  PhoneStation,
+  PointingFigure,
+  SmithAtAnvil,
+} from "./Humans";
 
 export function RoomFurniture({ agentId }: { agentId: AgentId }) {
   switch (agentId) {
@@ -461,6 +469,19 @@ function JarvisFurniture() {
       {/* Cooling pipes (sides of console) */}
       <div className="absolute bottom-2.5 left-3 h-3 w-px bg-cyan-500/60 shadow-[0_0_2px_rgba(6,182,212,0.5)]" />
       <div className="absolute bottom-2.5 right-3 h-3 w-px bg-cyan-500/60 shadow-[0_0_2px_rgba(6,182,212,0.5)]" />
+
+      {/* === 3 TECHS at console + holo === */}
+      {/* Tech operating console (left side, gesturing right at hologram) */}
+      <PointingFigure left={36} bottom={4} suit="fill-yellow-500" arm="right" scale={0.85} />
+      {/* Tech right side, gesturing left at hologram */}
+      <PointingFigure left={92} bottom={4} suit="fill-yellow-400" arm="left" scale={0.85} />
+      {/* Standing supervisor in back center */}
+      <div
+        className="absolute z-10"
+        style={{ left: "50%", bottom: 64, transform: "translateX(-50%)", filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-yellow-300" skin="fill-orange-200" scale={0.7} />
+      </div>
     </>
   );
 }
@@ -631,6 +652,24 @@ function NovaFurniture() {
             <div className="absolute left-1/2 top-1/2 h-px w-3 origin-left -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-stone-500" />
           </div>
         </div>
+      </div>
+
+      {/* === SCIENTISTS at lab stations === */}
+      {/* Scientist mixing chemicals (between bunsen burner + flask) */}
+      <div
+        className="absolute bottom-3 z-10"
+        style={{ left: 30, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-stone-200" skin="fill-orange-200" scale={0.85} />
+      </div>
+      {/* Scientist hunched at microscope (right side, head down) */}
+      <PointingFigure left={92} bottom={4} suit="fill-stone-100" arm="right" scale={0.8} />
+      {/* Scientist at whiteboard (back wall right) writing equations */}
+      <div
+        className="absolute z-10"
+        style={{ right: 16, bottom: 64, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-stone-200" skin="fill-orange-200" scale={0.7} />
       </div>
     </>
   );
@@ -903,18 +942,17 @@ function TreasuryFurniture() {
         <div className="absolute top-2 right-3 h-px w-px bg-yellow-100 shadow-[0_0_4px_rgba(254,240,138,1)]" />
       </div>
 
-      {/* Cash brick stack */}
-      <div className="absolute bottom-2.5 right-3 flex items-end gap-px">
-        <div className="flex flex-col gap-px">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-1 w-3 border border-emerald-700/80 bg-emerald-800" />
-          ))}
-        </div>
-        <div className="ml-1 flex flex-col gap-px">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-1 w-3 border border-yellow-700 bg-gradient-to-r from-yellow-500 via-yellow-300 to-yellow-500 shadow-[0_0_2px_rgba(250,204,21,0.7)]" />
-          ))}
-        </div>
+      {/* === 3 BANK TELLERS counting cash behind brass-grille windows === */}
+      <BankerWindow left={4} bottom={6} suit="fill-emerald-400" label="T-1" />
+      <BankerWindow left={28} bottom={6} suit="fill-emerald-500" label="T-2" />
+      <BankerWindow left={52} bottom={6} suit="fill-emerald-300" label="T-3" />
+
+      {/* Customer waiting at counter (HQ icon = represents Leonardo's deposit) */}
+      <div
+        className="absolute bottom-3 z-10"
+        style={{ right: 6, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-stone-700" skin="fill-orange-200" scale={0.85} />
       </div>
 
       {/* Counter strip */}
@@ -1063,6 +1101,29 @@ function StewardFurniture() {
           <div className="absolute left-2 top-0 h-3 w-1 origin-bottom rotate-12 rounded-t-full bg-green-700" />
         </div>
         <div className="h-2 w-3 rounded-b border-t border-amber-700 bg-gradient-to-b from-amber-800 to-amber-950" />
+      </div>
+
+      {/* === RECEPTIONIST behind desk + clients waiting === */}
+      {/* Receptionist at desk */}
+      <div
+        className="absolute bottom-3 z-10"
+        style={{ left: 28, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-emerald-300" skin="fill-orange-200" scale={0.85} />
+      </div>
+      {/* Client 1 sitting on chesterfield */}
+      <div
+        className="absolute z-10"
+        style={{ right: 28, bottom: 22, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-blue-400" skin="fill-orange-200" scale={0.7} />
+      </div>
+      {/* Client 2 sitting on chesterfield */}
+      <div
+        className="absolute z-10"
+        style={{ right: 12, bottom: 22, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-cyan-500" skin="fill-orange-200" scale={0.7} />
       </div>
 
       {/* Marble floor */}
@@ -1233,17 +1294,27 @@ function AtlasFurniture() {
         <div className="absolute bottom-0 left-1/2 h-5 w-px -translate-x-1/2 bg-stone-700" />
       </div>
 
-      {/* Camera tripod */}
-      <div className="absolute bottom-2.5 right-2 h-9 w-6">
-        <div className="absolute top-0 left-1/2 h-3 w-5 -translate-x-1/2 rounded border border-rose-700/80 bg-gradient-to-b from-stone-700 to-stone-900">
-          <div className="absolute -right-1 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border border-rose-500 bg-stone-950 shadow-[inset_0_0_2px_rgba(244,63,94,0.5)]">
-            <div className="absolute inset-0.5 rounded-full border border-stone-600" />
-          </div>
-          <div className="absolute left-1 top-1 h-px w-px rounded-full bg-rose-400 shadow-[0_0_3px_rgba(251,113,133,0.9)]" />
-        </div>
-        <div className="absolute bottom-0 left-1/2 h-6 w-px -translate-x-1/2 bg-stone-700" />
-        <div className="absolute bottom-0 left-1/2 h-6 w-px -translate-x-1/2 origin-top -rotate-12 bg-stone-700" />
-        <div className="absolute bottom-0 left-1/2 h-6 w-px -translate-x-1/2 origin-top rotate-12 bg-stone-700" />
+      {/* Camera operator with tripod camera */}
+      <div className="absolute bottom-2.5 right-2 z-10">
+        <CameraOperator left={0} bottom={0} suit="fill-rose-500" />
+      </div>
+
+      {/* Makeup artist at vanity (left of director chair) */}
+      <div
+        className="absolute bottom-3 z-10"
+        style={{ left: 44, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-rose-300" skin="fill-orange-200" scale={0.8} />
+      </div>
+
+      {/* Talent / model standing on red carpet center stage */}
+      <div
+        className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2"
+        style={{
+          filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5)) drop-shadow(0 0 6px rgba(254,240,138,0.4))",
+        }}
+      >
+        <HumanFigure suit="fill-yellow-400" skin="fill-orange-200" scale={0.95} />
       </div>
 
       {/* Red carpet */}
@@ -1427,6 +1498,26 @@ function MentatFurniture() {
           }}
         />
       </div>
+
+      {/* === 4 STRATEGISTS clustered around the war table === */}
+      {/* Front-left general pointing right at table */}
+      <PointingFigure left={28} bottom={4} suit="fill-violet-500" arm="right" scale={0.85} />
+      {/* Front-right general pointing left */}
+      <PointingFigure left={108} bottom={4} suit="fill-violet-400" arm="left" scale={0.85} />
+      {/* Back-left general just standing */}
+      <div
+        className="absolute bottom-12 z-10"
+        style={{ left: 56, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-violet-300" scale={0.75} />
+      </div>
+      {/* Back-right general */}
+      <div
+        className="absolute bottom-12 z-10"
+        style={{ right: 56, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.5))" }}
+      >
+        <HumanFigure suit="fill-violet-600" scale={0.75} />
+      </div>
     </>
   );
 }
@@ -1534,6 +1625,12 @@ function ForgeFurniture() {
         <div className="h-1.5 w-1 -rotate-12 bg-stone-950" />
       </div>
       <div className="absolute bottom-[1.3rem] right-3 h-px w-1 rounded-full bg-orange-400 shadow-[0_0_3px_rgba(251,146,60,0.9)]" />
+
+      {/* === SMITHS at work === */}
+      {/* Master smith mid-swing at anvil (center) */}
+      <SmithAtAnvil left={56} bottom={6} suit="fill-amber-700" />
+      {/* Apprentice pumping bellows (left of forge) */}
+      <PointingFigure left={68} bottom={4} suit="fill-amber-600" arm="left" scale={0.8} />
 
       {/* Stone tile floor */}
       <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-stone-700/80 bg-gradient-to-b from-stone-800 to-stone-950"
