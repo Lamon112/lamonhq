@@ -430,6 +430,7 @@ export interface PendingColdDraft {
     niche?: string | null;
     platform?: string;
     email?: string | null;
+    channels?: LeadChannels;
   } | null;
 }
 
@@ -447,5 +448,42 @@ export async function getPendingColdDrafts(): Promise<PendingColdDraft[]> {
     .in("status", ["pending", "edited"])
     .order("generated_at", { ascending: false })
     .limit(30);
-  return (data as PendingColdDraft[]) ?? [];
+
+  const drafts = (data as PendingColdDraft[]) ?? [];
+  if (drafts.length === 0) return drafts;
+
+  // Backfill channels for legacy drafts that were generated before
+  // extractChannels existed: look up notes/email per lead and merge in.
+  const leadIds = Array.from(
+    new Set(drafts.map((d) => d.lead_id).filter(Boolean) as string[]),
+  );
+  if (leadIds.length === 0) return drafts;
+  const { data: leadRows } = await supabase
+    .from("leads")
+    .select("id, notes, email")
+    .in("id", leadIds);
+  const byId = new Map<string, { notes: string | null; email: string | null }>();
+  for (const r of leadRows ?? []) {
+    byId.set(r.id as string, {
+      notes: (r.notes as string | null) ?? null,
+      email: (r.email as string | null) ?? null,
+    });
+  }
+
+  for (const d of drafts) {
+    if (!d.context_payload) d.context_payload = {};
+    const existing = d.context_payload.channels;
+    const hasAny =
+      existing &&
+      Object.values(existing).some((v) => typeof v === "string" && v.length);
+    if (hasAny) continue;
+    const lead = d.lead_id ? byId.get(d.lead_id) : null;
+    if (!lead) continue;
+    d.context_payload.channels = extractChannels(
+      lead.notes,
+      lead.email ?? d.context_payload.email ?? null,
+    );
+  }
+
+  return drafts;
 }

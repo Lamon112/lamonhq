@@ -193,9 +193,15 @@ export function ApprovalQueue() {
                           {score}/20 ICP
                         </Badge>
                       )}
-                      <span className="rounded border border-border bg-bg/60 px-1.5 py-0.5 text-[10px] text-text-muted">
-                        {PLATFORM_LABELS[platform] ?? platform}
-                      </span>
+                      <PlatformPill
+                        platform={platform}
+                        channels={
+                          (ctx as { channels?: Record<string, string> }).channels
+                        }
+                        email={ctx.email ?? null}
+                        message={text}
+                        onCopy={copyToClipboard}
+                      />
                       {isEmail && (
                         <span className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-300">
                           ⚡ auto-send ready
@@ -301,6 +307,60 @@ export function ApprovalQueue() {
         </div>
       )}
     </div>
+  );
+}
+
+interface PlatformPillProps {
+  platform: string;
+  channels?: Record<string, string>;
+  email: string | null;
+  message: string;
+  onCopy: (t: string) => void;
+}
+
+function PlatformPill({
+  platform,
+  channels,
+  email,
+  message,
+  onCopy,
+}: PlatformPillProps) {
+  const lookup: Record<string, string | undefined> = {
+    email: channels?.email ?? email ?? undefined,
+    linkedin: channels?.linkedin,
+    instagram: channels?.instagram,
+    facebook: channels?.facebook,
+    tiktok: channels?.tiktok,
+  };
+  const target = lookup[platform];
+  const label = PLATFORM_LABELS[platform] ?? platform;
+  const baseClass =
+    "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition-colors";
+
+  if (!target) {
+    return (
+      <span
+        className={`${baseClass} border-border bg-bg/60 text-text-muted`}
+      >
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={platform === "email" ? `mailto:${target}` : target}
+      target={platform === "email" ? undefined : "_blank"}
+      rel={platform === "email" ? undefined : "noreferrer"}
+      title={`Otvori ${label}`}
+      onClick={() => {
+        if (platform !== "email") void onCopy(message);
+      }}
+      className={`${baseClass} border-gold/40 bg-gold/10 text-gold hover:border-gold hover:bg-gold/20`}
+    >
+      {label}
+      <ExternalLink size={10} />
+    </a>
   );
 }
 
