@@ -164,6 +164,111 @@ PRIORITET: modeli gdje AI radi 80%+ posla. Izbjegavaj "open dropshipping store" 
 };
 
 // =====================================================================
+// Mentat — AI Council strategic plan (multi-agent role-play, single call)
+// =====================================================================
+const MENTAT_COUNCIL_SYSTEM_PROMPT = `You are Mentat, the war-room strategist agent inside Lamon Agency's HQ.
+
+Your job: convene a council of the 8 other AI agents (Holmes, Jarvis,
+Nova, Comms, Treasury, Steward, Atlas, Forge), let each speak from
+their lens on Lamon Agency's current direction, then synthesize a
+30-day strategic plan with the highest-leverage moves.
+
+CONTEXT: Lamon Agency = solo founder Leonardo Lamon (Croatia, EU).
+- B2B core: AI gatekeeper / receptionist for premium private clinics
+  in Croatia (dental, plastic surgery, orthopedics). Current ICP =
+  owner-led clinics ≥15 leads/month wanting patient FILTERING.
+- B2C: personal brand "@lamon.leonardo" + "@sidehustlebalkan" coaching
+  side-hustle audiences in HR/EX-YU region.
+- Goal: 30K€/MRR within 6 months. Currently pre-revenue (€0 MRR).
+- Current state: 12 hot Holmes-investigated leads queued, 0 closed
+  clients, lamon-hq.vercel.app gamified ops dashboard live, outreach
+  campaign launches imminently.
+
+# THE 8 PERSPECTIVES (each speaks for ~3 sentences)
+
+1. **Holmes (Sales recon)** — what does the lead pipeline tell us?
+   Are the leads we have ready to close? What's missing?
+2. **Jarvis (Ops)** — what bottlenecks slow Leonardo down? Where can
+   automation save the most hours/week?
+3. **Nova (Research)** — what new market signal / tactic from web
+   research changes the game?
+4. **Comms (Inbox + outreach)** — what's the current message gap?
+   What's NOT being said that should be?
+5. **Treasury (Financial reality)** — runway math, cost vs revenue,
+   what's the bare-min path to first €1.5K MRR?
+6. **Steward (Client retention)** — even pre-revenue, what's the
+   client-experience gap that will bite once paying clients arrive?
+7. **Atlas (Brand)** — visibility gaps, sponsorship moves, content
+   bets that compound.
+8. **Forge (Production)** — what should Leonardo BUILD this month
+   (product, content, system) for biggest delta?
+
+# OUTPUT FORMAT (always exactly this shape)
+
+## TL;DR
+2-3 sentence executive summary of the council's verdict.
+
+## Council Round-Table
+For each of the 8 agents, output 2-4 sentences in their voice:
+
+### 🕵 Holmes
+...
+
+### 🤵 Jarvis
+...
+
+(etc. for all 8)
+
+## Top 3 Moves (next 30 days)
+Numbered. Each: 1 sentence move + 1 sentence why + 1 sentence first step.
+
+## Risks & Watch-outs
+3 bullets max — what could blow up the plan.
+
+## Sources
+URLs Claude cited via web_search.
+
+At the very end, on its own line:
+TAGS: tag1, tag2, tag3
+(Pick 1-4 from: strategy, product, marketing, sales, ops, tech,
+opportunity, risk, competitor, pricing.)
+
+RULES:
+- Croatian or English in body OK; default Croatian.
+- Each agent should disagree where appropriate — councils that
+  always agree are useless. Surface tension.
+- Cite at least 2 web sources for the Nova / Atlas perspectives.
+- Never hedge. If unsure, say so explicitly.`;
+
+const mentatCouncil: AgentActionDef = {
+  id: "mentat.ai_council_strategy",
+  kind: "research",
+  scope: "all",
+  room: "mentat",
+  title: "AI Council — strateški plan 30 dana",
+  description:
+    "Svih 8 AI agenata (Holmes, Jarvis, Nova, Comms, Treasury, Steward, Atlas, Forge) raspravljaju o smjeru Lamon Agency-ja iz svoje perspektive. Mentat sintezira: top 3 poteza za sljedećih 30 dana + rizici. Web search uključen.",
+  notionLabel: "Custom",
+  icon: Users,
+  estimatedSec: 200,
+  estimatedCostEur: 0.35,
+  systemPrompt: MENTAT_COUNCIL_SYSTEM_PROMPT,
+  prompt: `Sazovi council. Sastav: Holmes, Jarvis, Nova, Comms, Treasury, Steward, Atlas, Forge.
+
+PITANJE: Trenutno smo na danu 0 outreach kampanje za premium klinike u Zagrebu. 12 hot Holmes-istraženih leadova spremno. €0 MRR. Cilj 30K€/MRR za 6 mjeseci. Što je optimalna strategija ZA SLJEDEĆIH 30 DANA?
+
+Posebno fokus:
+- Trebamo li outreach prvo ili content prvo?
+- Treba li B2C grow paralelno ili pauzirati dok B2B ne donese prvi klijent?
+- Koji je najveći rizik koji NE vidimo?
+- Što bismo trebali OTKAZATI iz trenutnih aktivnosti (sunk cost koji nas usporava)?
+
+Pretraži web za: trenutne biznis trends za solo AI agencije 2026, najbolji acquisition channel za B2B medical clinics u CRO/EU, nove growth taktike koje nismo isprobali. Cite sources.
+
+Daj iskren multi-perspective verdict. Zatraži tenziju među agentima — ne consensus.`,
+};
+
+// =====================================================================
 // Holmes — 1-click 10 leads end-to-end pipeline (B2B clinics)
 // =====================================================================
 const holmes10LeadsPipeline: AgentActionDef = {
@@ -179,7 +284,9 @@ const holmes10LeadsPipeline: AgentActionDef = {
   estimatedSec: 600,
   estimatedCostEur: 2.5,
   pipelineConfig: {
-    niche: "premium dentalna klinika",
+    // Broader query — "premium dentalna" returns only 2-3 hits on Places.
+    // Holmes will score for "premium" downstream via the synthesis prompt.
+    niche: "stomatološka klinika",
     location: "Zagreb",
     count: 10,
     regionCode: "hr",
@@ -193,12 +300,12 @@ export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
   nova: [novaDeepBizImprovement, novaAiAutomatableBiz],
   holmes: [holmes10LeadsPipeline],
   // Phase 2: other rooms get their own actions. For now show a "soon" state.
+  mentat: [mentatCouncil],
   jarvis: [],
   comms: [],
   treasury: [],
   steward: [],
   atlas: [],
-  mentat: [],
   forge: [],
 };
 
