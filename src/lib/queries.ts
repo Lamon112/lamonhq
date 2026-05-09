@@ -337,6 +337,43 @@ export interface LeadRow {
     }>;
     publicity: Array<{ title: string; url: string; snippet: string }>;
     outreach_draft: string;
+    pitch_tier?: "starter" | "intermediate" | "veteran" | "dead";
+    recommended_package?: string;
+    social_depth?: {
+      tiktok?: {
+        url?: string;
+        followers?: number;
+        postsCount?: number;
+        totalViews?: number;
+        topViewCount?: number;
+        status: string;
+        reason?: string;
+      };
+      instagram?: {
+        url?: string;
+        followers?: number;
+        postsCount?: number;
+        status: string;
+        reason?: string;
+      };
+      youtube?: {
+        url?: string;
+        followers?: number;
+        postsCount?: number;
+        totalViews?: number;
+        status: string;
+        reason?: string;
+      };
+      linkedin?: {
+        url?: string;
+        followers?: number;
+        status: string;
+        reason?: string;
+      };
+      tier: "starter" | "intermediate" | "veteran" | "dead";
+      tier_reason: string;
+      score: number;
+    };
     generated_at: string;
   } | null;
   email?: string | null;

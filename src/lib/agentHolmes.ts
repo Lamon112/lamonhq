@@ -33,23 +33,39 @@ import {
   type ChannelHealth,
 } from "@/lib/channelHealth";
 import { parseOwnerCandidates } from "@/lib/personSearch";
+import {
+  analyzeSocialDepth,
+  type SocialDepth,
+} from "@/lib/socialDepthAnalyzer";
 
 const HOLMES_SYSTEM_PROMPT = `Ti si Sherlock Holmes ali za sales prospecting. Dobiješ raw evidence o KLINICI + njenom VLASNIKU + njihovim social profilima i tvoj zadatak je sintetizirati Holmes Report u striktnom JSON formatu.
 
 # Mission
 Leonardo se bavi razvojem privatnih ordinacija kroz 6 stupova (chatbot, automatizacija, content, social, PR, web). Cilj report-a: dati mu max šansu da dobije reply na cold outreach pisanje VLASNIKU OSOBNO.
 
+# Pitch tiering (KRITIČNO za personalizaciju)
+
+Evidence sadrži \`social_depth.tier\`: starter | intermediate | veteran | dead.
+Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
+
+- **starter** (mrtvi profili, 0 posts) — pitch CONTENT STRATEGIJU + foundation. Hook: "Industry studije pokazuju 35% poziva propušteno…". Cijena: 1.497€/mj Growth.
+- **intermediate** (1-10K followers, redoviti posts) — pitch DISTRIBUCIJU + automation backend. Hook: čestitaj na traction-u, pitaj o backend-u (chatbot, nurture, retargeting). Cijena: 2.500-3.500€/mj.
+- **veteran** (10K+ followers ili viral hit >1M views) — NIKAD generic content pitch. Pitch AI GATEKEEPER + premium filter + conversion optimization. Hook: spomeni KONKRETAN viralni post / nagradu / brojku, pitaj kako filtriraju kvalitetu high-volume traffica. Cijena: 5K-10K/mj premium.
+- **dead** — fokus samo na foundational web/automation, ili oznaci "skip" u best_angle.
+
 # Pravila
 
 1. **Striktni JSON** — bez markdown fence-a, bez dodatnog teksta, samo JSON objekt.
 2. **Bez halucinacija** — ako neki podatak nije u evidence-u, vraćaj null ili prazan string. NEMOJ izmišljati ime, godine, fakultet itd.
 3. **personal_angles** — minimalno 2 stvari u svakom polju. Izvuci iz BIO-a, IG bio-a, LinkedIn headline-a, recent posts-a, publicity rezultata.
-4. **best_angle** — 1 rečenica zašto OVAJ vlasnik OVOG dana, najveća šansa replyja. Treba biti TAKTIČKI iskoristiv (ne "izgleda zanimljiv").
-5. **opening_hook** — uzmi PRVU rečenicu V8 outreach-a koji bi koristio. Mora biti specifičan na vlasnika osobno (ne na kliniku).
-6. **avoid** — 1-3 stvari/topica koje NE treba spomenuti (krivi klub, tema kontroverzi, prijašnji posao kojim ne želi pričati).
-7. **reachability** — RANGIRAJ kanale po šansi za reply. Neaktivan profil = nizak score, čak i ako postoji. Koristi channelHealth podatke.
-8. **outreach_draft** — pun V8 draft (~6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka · pivot · solution kratko · CTA dva termina · potpis). Uključi BAR JEDAN konkretan personal angle.
-9. Bez ALL CAPS. Govor s "vi/vam".
+4. **best_angle.summary** — 1 rečenica taktički iskoristiv "zašto OVAJ vlasnik baš OVAJ angle". MORA referencirati pitch tier (npr. "Viralni TT (5.8M views) — pitchaj AI gatekeeper, ne content strategy").
+5. **opening_hook** — PRVA rečenica V8 outreach-a. MORA biti tier-prilagođena. Za veteran: spomeni njihov konkretan viralni hit ili brojku. Za starter: industry stat.
+6. **avoid** — 1-3 stvari koje NE treba spomenuti (npr. za veteran: NE pričaj o "kako pomoći s contentom" — uvrijedit ćeš ih).
+7. **reachability** — RANGIRAJ kanale po šansi za reply. Neaktivan profil = nizak score.
+8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis "Leonardo, Lamon"). Tier-prilagođen.
+9. **pitch_tier** field je OBAVEZAN — kopiraj iz evidence.social_depth.tier.
+10. **recommended_package** — preporuči paket: "Growth (1.497€/mj)" | "Distribution+ (2.5-3.5K€/mj)" | "Premium AI Gatekeeper (5-10K€/mj)" | "Foundation only" | "skip".
+11. Bez ALL CAPS. Govor s "vi/vam".
 
 # Evidence keys ti dostavljam
 
@@ -99,7 +115,9 @@ Leonardo se bavi razvojem privatnih ordinacija kroz 6 stupova (chatbot, automati
       "reasoning": "string" }
   ],
   "publicity": [{ "title": "string", "url": "string", "snippet": "string" }],
-  "outreach_draft": "string"
+  "outreach_draft": "string",
+  "pitch_tier": "starter|intermediate|veteran|dead",
+  "recommended_package": "string"
 }
 
 Vrati SAMO JSON.`;
@@ -142,6 +160,9 @@ export interface HolmesReport {
   }>;
   publicity: Array<{ title: string; url: string; snippet: string }>;
   outreach_draft: string;
+  pitch_tier?: "starter" | "intermediate" | "veteran" | "dead";
+  recommended_package?: string;
+  social_depth?: SocialDepth;
   evidence?: HolmesEvidence;
   model: string;
   generated_at: string;
@@ -158,6 +179,7 @@ export interface HolmesEvidence {
   publicity_hits: SearchResult[];
   linkedin_profile: ChannelHealth | null;
   instagram_profile: ChannelHealth | null;
+  social_depth: SocialDepth | null;
 }
 
 export interface RunHolmesInput {
@@ -224,6 +246,17 @@ export async function runAgentHolmes(
       : Promise.resolve(null),
   ]);
 
+  // Step 4b: Social depth analysis — measures HOW VIRAL the company's
+  // public content engine is. Drives pitch_tier in synthesis.
+  const socialDepth = await analyzeSocialDepth({
+    instagram:
+      websiteScrape?.instagram?.[0] ?? igUrl ?? undefined,
+    tiktok: websiteScrape?.tiktok?.[0] ?? undefined,
+    youtube: websiteScrape?.youtube?.[0] ?? undefined,
+    linkedin:
+      websiteScrape?.linkedin_company?.[0] ?? liUrl ?? undefined,
+  }).catch(() => null);
+
   // Step 5: Synthesize
   const evidence: HolmesEvidence = {
     clinic_name: input.leadName,
@@ -236,6 +269,7 @@ export async function runAgentHolmes(
     publicity_hits: publicityHits.slice(0, 5),
     linkedin_profile: liProfile,
     instagram_profile: igProfile,
+    social_depth: socialDepth ?? null,
   };
 
   try {
@@ -283,6 +317,7 @@ Sad vrati Holmes Report kao striktni JSON.`,
 
     const report: HolmesReport = {
       ...parsed,
+      social_depth: socialDepth ?? undefined,
       evidence,
       model: "claude-sonnet-4-6",
       generated_at: new Date().toISOString(),

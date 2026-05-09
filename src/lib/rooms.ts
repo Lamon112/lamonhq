@@ -10,6 +10,7 @@ import {
   Calendar,
   FileText,
   Sparkles,
+  Search,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -19,6 +20,7 @@ export type RoomId =
   | "discovery"
   | "closing"
   | "lead_scorer"
+  | "holmes"
   | "analytics"
   | "competitor"
   | "clients"
@@ -40,7 +42,7 @@ export interface Floor {
   number: number;
   name: string;
   subtitle: string;
-  rooms: [Room, Room, Room];
+  rooms: Room[];
 }
 
 const outreach: Room = {
@@ -85,6 +87,15 @@ const analytics: Room = {
   tagline: "Daily health · pace · funnel · stuck deals",
   icon: Activity,
   emoji: "💚",
+  floor: "intelligence",
+};
+
+const holmes: Room = {
+  id: "holmes",
+  name: "Holmes Bureau",
+  tagline: "AI detektiv: vlasnik · social depth · best angle",
+  icon: Search,
+  emoji: "🕵️",
   floor: "intelligence",
 };
 
@@ -145,8 +156,8 @@ export const FLOORS: Floor[] = [
     id: "intelligence",
     number: 2,
     name: "Intelligence Bay",
-    subtitle: "Score · analytics · competitor watch",
-    rooms: [leadScorer, analytics, competitor],
+    subtitle: "Score · Holmes · analytics · competitor watch",
+    rooms: [leadScorer, holmes, analytics, competitor],
   },
   {
     id: "revenue",

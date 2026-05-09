@@ -29,6 +29,7 @@ import { LeadScorerPanel } from "./rooms/LeadScorerPanel";
 import { DiscoveryPanel } from "./rooms/DiscoveryPanel";
 import { ClosingPanel } from "./rooms/ClosingPanel";
 import { RevenueEnginePanel } from "./rooms/RevenueEnginePanel";
+import { HolmesBureauPanel } from "./rooms/HolmesBureauPanel";
 import { CompetitorPanel } from "./rooms/CompetitorPanel";
 import { CalendarPanel } from "./rooms/CalendarPanel";
 import { ReportsPanel } from "./rooms/ReportsPanel";
@@ -177,6 +178,8 @@ function RoomBody({
           onWonAnimation={onWonAnimation}
         />
       );
+    case "holmes":
+      return <HolmesBureauPanel initialLeads={data.leads.list} />;
     case "analytics":
       return (
         <RevenueEnginePanel

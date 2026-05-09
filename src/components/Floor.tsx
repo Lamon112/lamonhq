@@ -48,7 +48,8 @@ export function Floor({ floor, floorIndex, isLast, onRoomClick }: FloorProps) {
 
       <div
         className={
-          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 " +
+          "grid grid-cols-1 sm:grid-cols-2 " +
+          (floor.rooms.length === 4 ? "lg:grid-cols-4 " : "lg:grid-cols-3 ") +
           (isLast ? "" : "border-b border-border-strong")
         }
       >

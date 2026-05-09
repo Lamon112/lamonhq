@@ -57,3 +57,63 @@ export async function runHolmesForLead(
   revalidatePath("/");
   return { ok: true, report: result.report };
 }
+
+export interface BulkHolmesResult {
+  ok: boolean;
+  investigated: number;
+  skipped: number;
+  errors: string[];
+}
+
+/**
+ * Bulk version: runs Holmes for every Hot lead (≥15 ICP, active stage)
+ * that doesn't yet have a holmes_report. Sequential with a 500ms gap
+ * between leads to be polite to DDG / scrape targets.
+ */
+export async function bulkRunHolmesHot(
+  opts: { force?: boolean } = {},
+): Promise<BulkHolmesResult> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user)
+    return {
+      ok: false,
+      investigated: 0,
+      skipped: 0,
+      errors: ["Niste prijavljeni"],
+    };
+
+  const { data: hotLeads } = await supabase
+    .from("leads")
+    .select("id, holmes_report")
+    .gte("icp_score", 15)
+    .in("stage", ["discovery", "pricing", "financing", "booking"]);
+
+  const all = (hotLeads ?? []) as Array<{
+    id: string;
+    holmes_report: unknown;
+  }>;
+  const todo = opts.force ? all : all.filter((l) => !l.holmes_report);
+  if (todo.length === 0)
+    return {
+      ok: true,
+      investigated: 0,
+      skipped: all.length,
+      errors: [],
+    };
+
+  let investigated = 0;
+  const errors: string[] = [];
+  for (const l of todo) {
+    const res = await runHolmesForLead(l.id);
+    if (!res.ok) errors.push(`${l.id}: ${res.error ?? "unknown"}`);
+    else investigated++;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return {
+    ok: true,
+    investigated,
+    skipped: all.length - todo.length,
+    errors,
+  };
+}
