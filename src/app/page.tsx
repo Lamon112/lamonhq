@@ -1,6 +1,5 @@
 import { ResourceBar } from "@/components/ResourceBar";
 import { HQViewport } from "@/components/HQViewport";
-import { ActionBar } from "@/components/ActionBar";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { DailyBriefing } from "@/components/DailyBriefing";
 import { FollowUpsPanel } from "@/components/FollowUpsPanel";
@@ -144,7 +143,6 @@ export default async function HQPage() {
           },
         }}
       />
-      <ActionBar />
       <ActivityFeed initialRows={activityRows} />
     </>
   );

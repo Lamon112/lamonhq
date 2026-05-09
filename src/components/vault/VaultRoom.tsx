@@ -1,43 +1,51 @@
 "use client";
 
 /**
- * Live game-style vault room — back wall + floor + per-agent furniture
- * + walking pixel dwellers. No card aesthetic. Inspired by Fallout
- * Shelter side-view rooms.
+ * Live game-style vault room — back wall + ceiling beam + conduits +
+ * floor gloss + per-agent furniture + walking pixel dwellers.
+ *
+ * The room is built in layers (back-to-front) to create depth:
+ *   1. Back wall gradient + tile pattern + side-wall vanishing shadows
+ *   2. Ceiling beam with girder + conduit pipes + accent strip light
+ *   3. Wall-mounted decor (vents, signs, posters)
+ *   4. Furniture vignette (per agent)
+ *   5. Floor with sheen + drop shadows
+ *   6. Dwellers (walking + sitting)
+ *   7. ID plate + status badges + hover tooltip
  */
 
 import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 import type { Agent } from "@/lib/vault";
-import { Dweller } from "./Dweller";
+import { Dweller, SitterDweller } from "./Dweller";
 import { RoomFurniture } from "./RoomFurniture";
 
 const ACCENT_FRAME: Record<Agent["accent"], string> = {
-  amber: "border-amber-600/60",
-  cyan: "border-cyan-600/60",
-  emerald: "border-emerald-600/60",
-  violet: "border-violet-600/60",
-  rose: "border-rose-600/60",
-  gold: "border-yellow-500/60",
-  sky: "border-sky-600/60",
+  amber: "border-amber-600/70",
+  cyan: "border-cyan-600/70",
+  emerald: "border-emerald-600/70",
+  violet: "border-violet-600/70",
+  rose: "border-rose-600/70",
+  gold: "border-yellow-500/70",
+  sky: "border-sky-600/70",
 };
 const ACCENT_FLOOR: Record<Agent["accent"], string> = {
-  amber: "from-amber-950/60 to-stone-900",
-  cyan: "from-cyan-950/60 to-stone-900",
-  emerald: "from-emerald-950/60 to-stone-900",
-  violet: "from-violet-950/60 to-stone-900",
-  rose: "from-rose-950/60 to-stone-900",
-  gold: "from-yellow-900/60 to-stone-900",
-  sky: "from-sky-950/60 to-stone-900",
+  amber: "from-amber-950/80 via-stone-900 to-stone-950",
+  cyan: "from-cyan-950/80 via-stone-900 to-stone-950",
+  emerald: "from-emerald-950/80 via-stone-900 to-stone-950",
+  violet: "from-violet-950/80 via-stone-900 to-stone-950",
+  rose: "from-rose-950/80 via-stone-900 to-stone-950",
+  gold: "from-yellow-900/80 via-stone-900 to-stone-950",
+  sky: "from-sky-950/80 via-stone-900 to-stone-950",
 };
 const ACCENT_WALL: Record<Agent["accent"], string> = {
-  amber: "from-stone-900 via-amber-950/30 to-stone-900",
-  cyan: "from-stone-900 via-cyan-950/30 to-stone-900",
-  emerald: "from-stone-900 via-emerald-950/30 to-stone-900",
-  violet: "from-stone-900 via-violet-950/30 to-stone-900",
-  rose: "from-stone-900 via-rose-950/30 to-stone-900",
-  gold: "from-stone-900 via-yellow-900/30 to-stone-900",
-  sky: "from-stone-900 via-sky-950/30 to-stone-900",
+  amber: "from-amber-900/30 via-stone-900 to-stone-950",
+  cyan: "from-cyan-900/30 via-stone-900 to-stone-950",
+  emerald: "from-emerald-900/30 via-stone-900 to-stone-950",
+  violet: "from-violet-900/30 via-stone-900 to-stone-950",
+  rose: "from-rose-900/30 via-stone-900 to-stone-950",
+  gold: "from-yellow-900/40 via-stone-900 to-stone-950",
+  sky: "from-sky-900/30 via-stone-900 to-stone-950",
 };
 const ACCENT_TEXT: Record<Agent["accent"], string> = {
   amber: "text-amber-300",
@@ -49,13 +57,22 @@ const ACCENT_TEXT: Record<Agent["accent"], string> = {
   sky: "text-sky-300",
 };
 const ACCENT_GLOW: Record<Agent["accent"], string> = {
-  amber: "shadow-[inset_0_0_30px_rgba(245,158,11,0.15)]",
-  cyan: "shadow-[inset_0_0_30px_rgba(6,182,212,0.15)]",
-  emerald: "shadow-[inset_0_0_30px_rgba(16,185,129,0.15)]",
-  violet: "shadow-[inset_0_0_30px_rgba(139,92,246,0.15)]",
-  rose: "shadow-[inset_0_0_30px_rgba(244,63,94,0.15)]",
-  gold: "shadow-[inset_0_0_30px_rgba(250,204,21,0.18)]",
-  sky: "shadow-[inset_0_0_30px_rgba(14,165,233,0.15)]",
+  amber: "shadow-[inset_0_0_40px_rgba(245,158,11,0.18),0_0_20px_rgba(245,158,11,0.08)]",
+  cyan: "shadow-[inset_0_0_40px_rgba(6,182,212,0.18),0_0_20px_rgba(6,182,212,0.08)]",
+  emerald: "shadow-[inset_0_0_40px_rgba(16,185,129,0.18),0_0_20px_rgba(16,185,129,0.08)]",
+  violet: "shadow-[inset_0_0_40px_rgba(139,92,246,0.18),0_0_20px_rgba(139,92,246,0.08)]",
+  rose: "shadow-[inset_0_0_40px_rgba(244,63,94,0.18),0_0_20px_rgba(244,63,94,0.08)]",
+  gold: "shadow-[inset_0_0_40px_rgba(250,204,21,0.20),0_0_22px_rgba(250,204,21,0.10)]",
+  sky: "shadow-[inset_0_0_40px_rgba(14,165,233,0.18),0_0_20px_rgba(14,165,233,0.08)]",
+};
+const ACCENT_LIGHT: Record<Agent["accent"], string> = {
+  amber: "from-amber-300/40 to-transparent",
+  cyan: "from-cyan-300/40 to-transparent",
+  emerald: "from-emerald-300/40 to-transparent",
+  violet: "from-violet-300/40 to-transparent",
+  rose: "from-rose-300/40 to-transparent",
+  gold: "from-yellow-200/50 to-transparent",
+  sky: "from-sky-300/40 to-transparent",
 };
 
 const SUIT_COLOR: Record<Agent["accent"], string> = {
@@ -68,48 +85,75 @@ const SUIT_COLOR: Record<Agent["accent"], string> = {
   sky: "fill-sky-500",
 };
 
-// 2-3 dwellers per agent room with desync timings + colors
-const DWELLERS_BY_AGENT: Record<
-  Agent["id"],
-  Array<{ start: number; cycle: number; delay: number; suit?: string; skin?: string; label: string }>
-> = {
+// 3-5 dwellers per room (walking + sitting) — desynced timings for life.
+type WalkerSpec = {
+  kind: "walk";
+  start: number;
+  cycle: number;
+  delay: number;
+  suit?: string;
+  skin?: string;
+  label: string;
+  scale?: number;
+};
+type SitterSpec = {
+  kind: "sit";
+  pos: number; // 0-1 horizontal
+  bottom: number; // px from floor
+  suit?: string;
+  skin?: string;
+  label: string;
+  scale?: number;
+};
+type AnyDweller = WalkerSpec | SitterSpec;
+
+const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
   jarvis: [
-    { start: 0.25, cycle: 14, delay: 0, label: "Jarvis" },
-    { start: 0.7, cycle: 11, delay: 2, label: "Ops Tech", suit: "fill-yellow-300" },
+    { kind: "sit", pos: 0.5, bottom: 4, suit: "fill-yellow-400", label: "Jarvis @ console", scale: 0.9 },
+    { kind: "walk", start: 0.2, cycle: 14, delay: 0, suit: "fill-yellow-300", label: "Ops Tech", scale: 0.85 },
+    { kind: "walk", start: 0.75, cycle: 12, delay: 3, suit: "fill-yellow-500", label: "System Admin", scale: 0.85 },
   ],
   mentat: [
-    { start: 0.3, cycle: 16, delay: 0, label: "Mentat", suit: "fill-violet-400" },
-    { start: 0.65, cycle: 13, delay: 3, label: "Strategist", suit: "fill-violet-300" },
+    { kind: "sit", pos: 0.35, bottom: 4, suit: "fill-violet-400", label: "Mentat", scale: 0.9 },
+    { kind: "sit", pos: 0.65, bottom: 4, suit: "fill-violet-300", label: "War Council", scale: 0.9 },
+    { kind: "walk", start: 0.85, cycle: 16, delay: 2, suit: "fill-violet-500", label: "Strategist", scale: 0.85 },
   ],
   holmes: [
-    { start: 0.2, cycle: 12, delay: 0, label: "Holmes", suit: "fill-amber-400" },
-    { start: 0.55, cycle: 15, delay: 2, label: "Field Agent", suit: "fill-amber-600" },
-    { start: 0.8, cycle: 10, delay: 4, label: "Analyst", suit: "fill-amber-500", skin: "fill-orange-300" },
+    { kind: "sit", pos: 0.78, bottom: 8, suit: "fill-amber-400", label: "Holmes @ desk", scale: 0.9 },
+    { kind: "walk", start: 0.2, cycle: 13, delay: 0, suit: "fill-amber-500", label: "Field Agent", scale: 0.85 },
+    { kind: "walk", start: 0.45, cycle: 16, delay: 2, suit: "fill-amber-600", label: "Analyst", skin: "fill-orange-300", scale: 0.85 },
+    { kind: "walk", start: 0.6, cycle: 11, delay: 4, suit: "fill-amber-300", label: "Surveillance", scale: 0.8 },
   ],
   nova: [
-    { start: 0.3, cycle: 13, delay: 0, label: "Nova", suit: "fill-cyan-400" },
-    { start: 0.7, cycle: 11, delay: 2, label: "Researcher", suit: "fill-cyan-300" },
+    { kind: "sit", pos: 0.7, bottom: 4, suit: "fill-cyan-400", label: "Nova @ scope", scale: 0.9 },
+    { kind: "walk", start: 0.3, cycle: 14, delay: 0, suit: "fill-cyan-300", label: "Researcher", scale: 0.85 },
+    { kind: "walk", start: 0.5, cycle: 12, delay: 2, suit: "fill-cyan-500", label: "Lab Tech", scale: 0.85 },
   ],
   comms: [
-    { start: 0.25, cycle: 12, delay: 0, label: "Comms", suit: "fill-sky-400" },
-    { start: 0.6, cycle: 14, delay: 3, label: "Operator", suit: "fill-sky-300" },
-    { start: 0.85, cycle: 10, delay: 1, label: "Triage", suit: "fill-sky-500" },
+    { kind: "sit", pos: 0.22, bottom: 4, suit: "fill-sky-400", label: "Comms @ board", scale: 0.9 },
+    { kind: "walk", start: 0.5, cycle: 13, delay: 0, suit: "fill-sky-300", label: "Operator", scale: 0.85 },
+    { kind: "walk", start: 0.7, cycle: 11, delay: 2, suit: "fill-sky-500", label: "Triage", scale: 0.85 },
+    { kind: "walk", start: 0.85, cycle: 14, delay: 4, suit: "fill-sky-200", label: "Dispatch", scale: 0.8 },
   ],
   treasury: [
-    { start: 0.3, cycle: 14, delay: 0, label: "Treasury", suit: "fill-emerald-400" },
-    { start: 0.7, cycle: 11, delay: 2, label: "Auditor", suit: "fill-emerald-300" },
+    { kind: "sit", pos: 0.7, bottom: 4, suit: "fill-emerald-400", label: "Treasury @ ledger", scale: 0.9 },
+    { kind: "walk", start: 0.3, cycle: 14, delay: 0, suit: "fill-emerald-300", label: "Auditor", scale: 0.85 },
+    { kind: "walk", start: 0.55, cycle: 12, delay: 3, suit: "fill-emerald-500", label: "Vault Guard", scale: 0.85 },
   ],
   steward: [
-    { start: 0.25, cycle: 13, delay: 0, label: "Steward", suit: "fill-emerald-300" },
-    { start: 0.55, cycle: 11, delay: 2, label: "Dorijan Ilić", suit: "fill-blue-400" },
-    { start: 0.8, cycle: 14, delay: 4, label: "Baywash", suit: "fill-cyan-400" },
+    { kind: "sit", pos: 0.2, bottom: 4, suit: "fill-emerald-300", label: "Steward @ reception", scale: 0.9 },
+    { kind: "walk", start: 0.45, cycle: 13, delay: 0, suit: "fill-blue-400", label: "Dorijan Ilić", scale: 0.85 },
+    { kind: "walk", start: 0.65, cycle: 11, delay: 2, suit: "fill-cyan-400", label: "Baywash", scale: 0.85 },
+    { kind: "walk", start: 0.85, cycle: 14, delay: 4, suit: "fill-emerald-500", label: "Onboarding", scale: 0.8 },
   ],
   atlas: [
-    { start: 0.3, cycle: 13, delay: 0, label: "Atlas", suit: "fill-rose-400" },
-    { start: 0.7, cycle: 11, delay: 2, label: "Editor", suit: "fill-rose-300" },
+    { kind: "sit", pos: 0.5, bottom: 4, suit: "fill-rose-400", label: "Atlas @ desk", scale: 0.9 },
+    { kind: "walk", start: 0.25, cycle: 13, delay: 0, suit: "fill-rose-300", label: "Editor", scale: 0.85 },
+    { kind: "walk", start: 0.7, cycle: 12, delay: 2, suit: "fill-rose-500", label: "Producer", scale: 0.85 },
   ],
   forge: [
-    { start: 0.3, cycle: 12, delay: 0, label: "Forge", suit: "fill-amber-500" },
+    { kind: "walk", start: 0.4, cycle: 12, delay: 0, suit: "fill-amber-500", label: "Forge", scale: 0.9 },
+    { kind: "sit", pos: 0.75, bottom: 4, suit: "fill-amber-700", label: "Apprentice", scale: 0.85 },
   ],
 };
 
@@ -122,6 +166,7 @@ export function VaultRoom({ agent }: { agent: Agent }) {
   const accentFloor = ACCENT_FLOOR[agent.accent];
   const accentWall = ACCENT_WALL[agent.accent];
   const accentGlow = ACCENT_GLOW[agent.accent];
+  const accentLight = ACCENT_LIGHT[agent.accent];
   const suitColor = SUIT_COLOR[agent.accent];
 
   const dwellers = isLocked ? [] : DWELLERS_BY_AGENT[agent.id] ?? [];
@@ -136,75 +181,170 @@ export function VaultRoom({ agent }: { agent: Agent }) {
           ? "border-stone-700/50 bg-stone-950 opacity-50"
           : `${accentFrame} ${accentGlow}`)
       }
-      style={{ height: 180 }}
+      style={{ height: 220 }}
     >
-      {/* Back wall — gradient + concrete texture */}
+      {/* === LAYER 1: Back wall (depth gradient) === */}
       <div
         className={
           "absolute inset-0 bg-gradient-to-b " +
           (isLocked ? "from-stone-900 to-stone-950" : accentWall)
         }
       >
-        {/* Subtle wall panels */}
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 32px), repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0 1px, transparent 1px 24px)",
-          }}
-        />
-      </div>
-
-      {/* Bulkhead lights */}
-      {!isLocked && (
-        <div className="absolute left-0 right-0 top-0 flex justify-around px-3">
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`h-1 w-4 rounded-b ${suitColor.replace("fill-", "bg-")} opacity-60`}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Furniture layer (back wall + props) */}
-      {!isLocked && <RoomFurniture agentId={agent.id} />}
-
-      {/* Floor strip — bottom 24px */}
-      <div
-        className={
-          "absolute bottom-0 left-0 right-0 h-6 border-t bg-gradient-to-b " +
-          (isLocked
-            ? "border-stone-800 from-stone-900 to-stone-950"
-            : `border-black/60 ${accentFloor}`)
-        }
-      >
-        {/* Floor tile lines */}
+        {/* Dense panel/tile texture */}
         <div
           className="absolute inset-0 opacity-40"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(90deg, rgba(0,0,0,0.4) 0 1px, transparent 1px 18px)",
+              "repeating-linear-gradient(90deg, rgba(0,0,0,0.45) 0 1px, transparent 1px 28px), repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0 1px, transparent 1px 22px)",
+          }}
+        />
+        {/* Bevel highlights on each tile (subtle top-row brighteners) */}
+        <div
+          className="absolute inset-0 opacity-25"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, rgba(255,255,255,0.08) 0 1px, transparent 1px 22px)",
           }}
         />
       </div>
 
-      {/* Walking dwellers */}
-      {dwellers.map((d, i) => (
-        <Dweller
-          key={i}
-          startPct={d.start}
-          cycleSec={d.cycle}
-          delaySec={d.delay}
-          suitColor={d.suit ?? suitColor}
-          skinColor={d.skin}
-          label={d.label}
-          scale={0.85}
-        />
-      ))}
+      {/* Vanishing-point side shadows — fake receding side walls */}
+      {!isLocked && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-black/60 via-black/20 to-transparent" />
+        </>
+      )}
 
-      {/* Room label — top-left ID plate */}
-      <div className="absolute left-1.5 top-1.5 z-20 flex items-center gap-1.5 rounded border border-black/60 bg-black/70 px-1.5 py-0.5 backdrop-blur-sm">
+      {/* === LAYER 2: Ceiling beam + conduits + accent light === */}
+      {!isLocked && (
+        <>
+          {/* Steel ceiling band */}
+          <div
+            className="absolute left-0 right-0 top-0 h-3 border-b border-black/70 bg-gradient-to-b from-stone-700 via-stone-800 to-stone-900 shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
+          >
+            {/* Rivets along the beam */}
+            <div className="absolute inset-x-0 top-0.5 flex justify-around">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-1 w-1 rounded-full border border-stone-900 bg-stone-600 shadow-inner"
+                />
+              ))}
+            </div>
+            {/* Center accent strip */}
+            <div
+              className={`absolute bottom-0 left-1/4 right-1/4 h-px bg-gradient-to-r ${accentLight.replace("from-", "from-").replace("/40", "/70")}`}
+            />
+          </div>
+
+          {/* Conduit pipes running across ceiling */}
+          <div className="absolute left-0 right-0 top-3 h-1 border-b border-black/40 bg-gradient-to-b from-stone-700/80 to-stone-800/60" />
+          <div className="absolute left-0 right-0 top-[1rem] flex items-center gap-[2px] px-1">
+            <div className="h-px flex-1 bg-amber-700/40" />
+            <div className="h-px flex-1 bg-stone-600/60" />
+            <div className="h-px flex-1 bg-emerald-700/40" />
+          </div>
+
+          {/* Hanging ceiling lamp + cone of light */}
+          <div className="absolute left-1/2 top-[1.1rem] -translate-x-1/2">
+            <div className="h-1 w-px bg-stone-600" />
+            <div
+              className={`mx-auto h-1 w-2 rounded-b border border-black/60 bg-gradient-to-b from-stone-300 to-stone-400 shadow-[0_0_4px_rgba(255,255,255,0.3)]`}
+            />
+          </div>
+          {/* Cone of light from lamp */}
+          <div
+            className={`pointer-events-none absolute left-1/2 top-[1.6rem] h-24 w-16 -translate-x-1/2 bg-gradient-to-b ${accentLight} opacity-50`}
+            style={{
+              clipPath: "polygon(40% 0, 60% 0, 100% 100%, 0 100%)",
+              filter: "blur(1px)",
+            }}
+          />
+
+          {/* Wall-mounted vent — top right */}
+          <div className="absolute right-2 top-[1.2rem] h-2 w-3 border border-stone-700 bg-stone-900/90">
+            <div className="absolute inset-x-0 top-0 h-px bg-stone-600" />
+            <div className="absolute inset-x-0 top-1 h-px bg-stone-600" />
+          </div>
+
+          {/* Wall-mounted control panel — top left */}
+          <div className="absolute left-2 top-[1.2rem] h-2 w-3 border border-stone-700 bg-stone-950 shadow-[inset_0_0_2px_rgba(0,0,0,0.6)]">
+            <div className="absolute left-0.5 top-0.5 h-px w-px rounded-full bg-emerald-400 shadow-[0_0_2px_rgba(16,185,129,0.9)]" />
+            <div className="absolute right-0.5 top-0.5 h-px w-px rounded-full bg-yellow-400 shadow-[0_0_2px_rgba(250,204,21,0.9)]" />
+            <div className="absolute left-0.5 bottom-0.5 h-px w-2 bg-stone-700" />
+          </div>
+        </>
+      )}
+
+      {/* === LAYER 3: Furniture vignette (per agent) === */}
+      {!isLocked && (
+        <div className="absolute inset-x-0 top-7 bottom-8">
+          <RoomFurniture agentId={agent.id} />
+        </div>
+      )}
+
+      {/* === LAYER 4: Floor with sheen + drop shadow === */}
+      <div
+        className={
+          "absolute bottom-0 left-0 right-0 h-8 border-t bg-gradient-to-b " +
+          (isLocked
+            ? "border-stone-800 from-stone-900 to-stone-950"
+            : `border-black/70 ${accentFloor}`)
+        }
+      >
+        {/* Tile lines */}
+        <div
+          className="absolute inset-0 opacity-50"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(0,0,0,0.5) 0 1px, transparent 1px 18px)",
+          }}
+        />
+        {/* Floor gloss / reflection band — top of floor */}
+        <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
+        <div className="absolute inset-x-0 top-px h-1 bg-gradient-to-b from-white/8 to-transparent" />
+        {/* Wall-to-floor cast shadow */}
+        <div className="absolute inset-x-0 -top-1 h-1 bg-gradient-to-b from-black/50 to-transparent" />
+        {/* Floor edge accent strip (room color) */}
+        {!isLocked && (
+          <div
+            className={`absolute inset-x-2 top-0 h-px bg-gradient-to-r ${accentLight}`}
+          />
+        )}
+      </div>
+
+      {/* === LAYER 5: Dwellers (walking + sitting) === */}
+      {dwellers.map((d, i) => {
+        if (d.kind === "sit") {
+          return (
+            <SitterDweller
+              key={`s-${i}`}
+              posPct={d.pos}
+              bottomPx={d.bottom}
+              suitColor={d.suit ?? suitColor}
+              skinColor={d.skin}
+              label={d.label}
+              scale={d.scale ?? 0.85}
+            />
+          );
+        }
+        return (
+          <Dweller
+            key={`w-${i}`}
+            startPct={d.start}
+            cycleSec={d.cycle}
+            delaySec={d.delay}
+            suitColor={d.suit ?? suitColor}
+            skinColor={d.skin}
+            label={d.label}
+            scale={d.scale ?? 0.85}
+          />
+        );
+      })}
+
+      {/* === LAYER 6: ID plate (top-left) === */}
+      <div className="absolute left-1.5 top-1.5 z-20 flex items-center gap-1.5 rounded border border-black/70 bg-black/80 px-1.5 py-0.5 backdrop-blur-sm shadow-md">
         <div
           className={
             "flex h-4 w-4 items-center justify-center rounded-sm " +
@@ -233,7 +373,7 @@ export function VaultRoom({ agent }: { agent: Agent }) {
         </div>
       </div>
 
-      {/* Status badges — top-right */}
+      {/* === LAYER 7: Status badges (top-right) === */}
       <div className="absolute right-1.5 top-1.5 z-20 flex items-center gap-1">
         {isSoon && (
           <span className="rounded border border-amber-500/50 bg-amber-500/20 px-1 py-0.5 font-mono text-[7px] uppercase tracking-wider text-amber-200 backdrop-blur-sm">
@@ -255,8 +395,8 @@ export function VaultRoom({ agent }: { agent: Agent }) {
 
       {/* Hover tooltip with role + hint */}
       {!isLocked && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 translate-y-2 px-2 pb-1 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
-          <div className="rounded border border-black/70 bg-black/85 px-2 py-1 text-[9px] leading-tight backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-x-0 bottom-9 z-20 translate-y-2 px-2 pb-1 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
+          <div className="rounded border border-black/70 bg-black/90 px-2 py-1 text-[9px] leading-tight backdrop-blur-sm shadow-lg">
             <p className={`font-medium ${accentText}`}>{agent.role}</p>
             <p className="mt-0.5 text-[8px] text-text-muted">{agent.hint}</p>
           </div>
@@ -265,9 +405,9 @@ export function VaultRoom({ agent }: { agent: Agent }) {
 
       {/* Locked overlay */}
       {isLocked && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
           <div className="flex flex-col items-center gap-1 text-center">
-            <Lock size={18} className="text-stone-500" />
+            <Lock size={20} className="text-stone-500" />
             <span className="font-mono text-[9px] uppercase tracking-wider text-stone-500">
               Sealed · Lvl {agent.unlockLevel}
             </span>
@@ -275,10 +415,10 @@ export function VaultRoom({ agent }: { agent: Agent }) {
         </div>
       )}
 
-      {/* CRT scanlines */}
+      {/* CRT scanlines overlay */}
       {!isLocked && (
         <div
-          className="pointer-events-none absolute inset-0 opacity-20"
+          className="pointer-events-none absolute inset-0 opacity-15"
           style={{
             background:
               "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
