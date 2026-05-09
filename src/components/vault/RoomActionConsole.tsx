@@ -23,6 +23,8 @@ interface RoomActionConsoleProps {
   onClose: () => void;
   onActionStarted: (actionRowId: string, agentId: Agent["id"]) => void;
   onViewResult: (actionRowId: string) => void;
+  /** Open a data-view drawer (kind="data-view" actions). */
+  onOpenDataView: (viewKey: string, title: string) => void;
 }
 
 interface PastAction {
@@ -42,6 +44,7 @@ export function RoomActionConsole({
   onClose,
   onActionStarted,
   onViewResult,
+  onOpenDataView,
 }: RoomActionConsoleProps) {
   return (
     <AnimatePresence>
@@ -51,6 +54,7 @@ export function RoomActionConsole({
           onClose={onClose}
           onActionStarted={onActionStarted}
           onViewResult={onViewResult}
+          onOpenDataView={onOpenDataView}
         />
       )}
     </AnimatePresence>
@@ -62,11 +66,13 @@ function ConsoleInner({
   onClose,
   onActionStarted,
   onViewResult,
+  onOpenDataView,
 }: {
   agent: Agent;
   onClose: () => void;
   onActionStarted: (actionRowId: string, agentId: Agent["id"]) => void;
   onViewResult: (actionRowId: string) => void;
+  onOpenDataView: (viewKey: string, title: string) => void;
 }) {
   const actions = getActionsForRoom(agent.id);
   const [past, setPast] = useState<PastAction[]>([]);
@@ -101,6 +107,12 @@ function ConsoleInner({
 
   function fire(action: AgentActionDef) {
     if (pendingId) return;
+    // Data-view actions don't trigger Inngest — open dashboard drawer directly.
+    if (action.kind === "data-view" && action.viewKey) {
+      onOpenDataView(action.viewKey, action.title);
+      onClose();
+      return;
+    }
     setPendingId(action.id);
     setError(null);
     startTransition(async () => {
@@ -209,13 +221,14 @@ function ConsoleInner({
                       </p>
                       <div className="flex items-center gap-2 text-[10px] text-text-muted">
                         <Hourglass size={10} />
-                        <span>
-                          ~{Math.round(a.estimatedSec / 60)} min · €
-                          {a.estimatedCostEur < 1
-                            ? a.estimatedCostEur.toFixed(2)
-                            : a.estimatedCostEur.toFixed(2)}
-                          /klik
-                        </span>
+                        {a.kind === "data-view" ? (
+                          <span>instant · €0 (pull iz baze)</span>
+                        ) : (
+                          <span>
+                            ~{Math.round(a.estimatedSec / 60)} min · €
+                            {a.estimatedCostEur.toFixed(2)}/klik
+                          </span>
+                        )}
                       </div>
                     </button>
                   );

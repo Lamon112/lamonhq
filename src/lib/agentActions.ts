@@ -18,7 +18,18 @@
 
 import type { AgentId } from "@/lib/vault";
 import type { LucideIcon } from "lucide-react";
-import { Lightbulb, Sparkles, Search, Target, Users, Crosshair } from "lucide-react";
+import {
+  Lightbulb,
+  Sparkles,
+  Search,
+  Target,
+  Users,
+  Crosshair,
+  CalendarDays,
+  CheckSquare,
+  Banknote,
+  HeartPulse,
+} from "lucide-react";
 
 /**
  * Three "kinds" of action drive different runtime backends:
@@ -294,18 +305,98 @@ const holmes10LeadsPipeline: AgentActionDef = {
 };
 
 // =====================================================================
+// Data-view actions — instant render (no Inngest, no AI cost)
+// Each opens a side drawer rendering the matching dashboard component.
+// =====================================================================
+
+const stewardClientsView: AgentActionDef = {
+  id: "steward.clients_view",
+  kind: "data-view",
+  scope: "all",
+  room: "steward",
+  title: "Svi klijenti — B2B + B2C",
+  description:
+    "Pregled aktivnih klijenata. B2B klinike (Rast paket) + B2C coach mentor klijenti — odvojeni tabovi.",
+  notionLabel: "Custom",
+  icon: Users,
+  estimatedSec: 0,
+  estimatedCostEur: 0,
+  viewKey: "clients",
+};
+
+const stewardClientStatsView: AgentActionDef = {
+  id: "steward.client_stats_view",
+  kind: "data-view",
+  scope: "all",
+  room: "steward",
+  title: "Klijent stats & churn risk",
+  description:
+    "Po klijentu: workflow, MRR doprinos, zadovoljstvo (proxy: na vrijeme isporuke + reply rate), churn risk score.",
+  notionLabel: "Custom",
+  icon: HeartPulse,
+  estimatedSec: 0,
+  estimatedCostEur: 0,
+  viewKey: "client_stats",
+};
+
+const treasuryRevenueView: AgentActionDef = {
+  id: "treasury.revenue_dashboard",
+  kind: "data-view",
+  scope: "all",
+  room: "treasury",
+  title: "Prihodi & troškovi",
+  description:
+    "MRR breakdown (B2B klinike vs B2C coachevi vs barter), izvor svakog prihoda, AI burn rate ovog mjeseca, runway.",
+  notionLabel: "Custom",
+  icon: Banknote,
+  estimatedSec: 0,
+  estimatedCostEur: 0,
+  viewKey: "revenue",
+};
+
+const jarvisTasksView: AgentActionDef = {
+  id: "jarvis.tasks_today_view",
+  kind: "data-view",
+  scope: "all",
+  room: "jarvis",
+  title: "Današnji zadaci",
+  description:
+    "Sve TODO za danas + ovaj tjedan, sortirano po prioritetu. Vidiš što fali da odeš spavati mirno.",
+  notionLabel: "Custom",
+  icon: CheckSquare,
+  estimatedSec: 0,
+  estimatedCostEur: 0,
+  viewKey: "tasks",
+};
+
+const atlasBookingView: AgentActionDef = {
+  id: "atlas.booking_view",
+  kind: "data-view",
+  scope: "all",
+  room: "atlas",
+  title: "Raspored / booking",
+  description:
+    "Discovery callovi + sastanci u sljedećih 7 dana. Tko, kada, koja klinika, brza priprema.",
+  notionLabel: "Custom",
+  icon: CalendarDays,
+  estimatedSec: 0,
+  estimatedCostEur: 0,
+  viewKey: "booking",
+};
+
+// =====================================================================
 // Action catalog — keyed by room
 // =====================================================================
 export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
   nova: [novaDeepBizImprovement, novaAiAutomatableBiz],
   holmes: [holmes10LeadsPipeline],
-  // Phase 2: other rooms get their own actions. For now show a "soon" state.
   mentat: [mentatCouncil],
-  jarvis: [],
+  steward: [stewardClientsView, stewardClientStatsView],
+  treasury: [treasuryRevenueView],
+  jarvis: [jarvisTasksView],
+  atlas: [atlasBookingView],
+  // Phase 2: comms (meeting brief), forge
   comms: [],
-  treasury: [],
-  steward: [],
-  atlas: [],
   forge: [],
 };
 

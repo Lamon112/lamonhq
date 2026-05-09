@@ -7,7 +7,9 @@ import { vaultFloors, FLOOR_LABEL, type Agent, type AgentId } from "@/lib/vault"
 import { VaultRoom } from "./VaultRoom";
 import { RoomActionConsole } from "./RoomActionConsole";
 import { ResearchResultDrawer } from "./ResearchResultDrawer";
+import { RoomDataViewDrawer } from "./RoomDataViewDrawer";
 import { createClient } from "@/lib/supabase/client";
+import type { RoomDataViewKey } from "@/app/actions/roomDataView";
 
 interface VaultProps {
   data: RoomData;
@@ -36,6 +38,7 @@ export function Vault({}: VaultProps) {
   const floors = vaultFloors();
   const [openRoom, setOpenRoom] = useState<Agent | null>(null);
   const [drawerActionId, setDrawerActionId] = useState<string | null>(null);
+  const [dataView, setDataView] = useState<{ key: RoomDataViewKey; title: string } | null>(null);
   // active jobs keyed by room id → progress text (allows multiple rooms
   // to research in parallel, even though typically only 1 at a time)
   const [active, setActive] = useState<Record<AgentId, ActiveJob>>(
@@ -174,12 +177,23 @@ export function Vault({}: VaultProps) {
           setOpenRoom(null);
           setDrawerActionId(id);
         }}
+        onOpenDataView={(viewKey, title) => {
+          setOpenRoom(null);
+          setDataView({ key: viewKey as RoomDataViewKey, title });
+        }}
       />
 
-      {/* Result side drawer */}
+      {/* Result side drawer (research / pipeline runs) */}
       <ResearchResultDrawer
         actionRowId={drawerActionId}
         onClose={() => setDrawerActionId(null)}
+      />
+
+      {/* Data-view side drawer (instant dashboards) */}
+      <RoomDataViewDrawer
+        viewKey={dataView?.key ?? null}
+        title={dataView?.title ?? null}
+        onClose={() => setDataView(null)}
       />
 
       {/* Inline styles for vault textures (kept here so the global stylesheet
