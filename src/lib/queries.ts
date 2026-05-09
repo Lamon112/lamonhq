@@ -256,6 +256,38 @@ export interface LeadRow {
   discovery_at: string | null;
   discovery_outcome: string | null;
   discovery_notes: string | null;
+  // person_enrichment is filled by deepEnrichLead — see actions/deepEnrich.ts
+  person_enrichment: {
+    owner: {
+      name: string;
+      title: string | null;
+      linkedin_url: string | null;
+      email: string | null;
+      email_status: string | null;
+      apollo_id: string | null;
+      match_score: number;
+      channels: { email?: string; linkedin?: string };
+      channelHealth?: {
+        linkedin?: {
+          status:
+            | "alive"
+            | "recently_active"
+            | "dormant"
+            | "dead"
+            | "blocked"
+            | "unknown";
+          followers?: number;
+          reason?: string;
+        };
+      };
+    } | null;
+    candidates_searched?: string[];
+    apollo_total?: number;
+    apollo_skipped?: boolean;
+    enriched_at?: string;
+    note?: string;
+  } | null;
+  email?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -32,6 +32,10 @@ import {
   type ProspectCandidate,
 } from "@/app/actions/prospector";
 import {
+  deepEnrichLead,
+  bulkDeepEnrichHot,
+} from "@/app/actions/deepEnrich";
+import {
   StatTile,
   TabButton,
   Field,
@@ -274,6 +278,7 @@ export function LeadScorerPanel({
         discovery_at: null,
         discovery_outcome: null,
         discovery_notes: null,
+        person_enrichment: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -626,6 +631,7 @@ export function LeadScorerPanel({
                 ))}
               </div>
               <BulkRescoreButton />
+              <BulkDeepEnrichButton />
             </div>
 
             {filtered.length === 0 && (
@@ -731,8 +737,18 @@ export function LeadScorerPanel({
                               ))}
                             </div>
                           )}
+                        <PersonEnrichmentBlock
+                          lead={l}
+                          onEnriched={(updated) =>
+                            setList((prev) =>
+                              prev.map((row) =>
+                                row.id === updated.id ? updated : row,
+                              ),
+                            )
+                          }
+                        />
                         {l.notes && (
-                          <p className="mb-2 whitespace-pre-wrap text-[11px] text-text-dim">
+                          <p className="mb-2 mt-2 whitespace-pre-wrap text-[11px] text-text-dim">
                             {l.notes}
                           </p>
                         )}
@@ -1520,6 +1536,202 @@ function BulkRescoreButton() {
       )}
       {error && (
         <span className="text-[10px] text-danger">{error}</span>
+      )}
+    </div>
+  );
+}
+
+// =====================================================================
+// Bulk Deep Enrich Hot leads (person-first via Apollo + channel health)
+// =====================================================================
+
+function BulkDeepEnrichButton() {
+  const [pending, startTransition] = useTransition();
+  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function run() {
+    setInfo(null);
+    setError(null);
+    startTransition(async () => {
+      const res = await bulkDeepEnrichHot();
+      if (!res.ok) {
+        setError("Bulk deep enrich greška");
+        return;
+      }
+      setInfo(
+        `🔬 ${res.enriched} owner-a pronađeno · ${res.skipped} preskočeno (već enrich-ano)${res.errors.length ? ` · ${res.errors.length} grešaka` : ""}. Refresh za update.`,
+      );
+      setTimeout(() => window.location.reload(), 2200);
+    });
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={run}
+        disabled={pending}
+        className="flex items-center gap-1.5 rounded-md border border-purple-500/40 bg-purple-500/10 px-2.5 py-1 text-[10px] font-medium text-purple-300 hover:border-purple-500/70 disabled:opacity-50"
+        title="Apollo people search za vlasnika svake Hot kline + LinkedIn alive check. Person-first."
+      >
+        {pending ? (
+          <Loader2 size={11} className="animate-spin" />
+        ) : (
+          "🔬"
+        )}
+        {pending ? "Tražim vlasnike…" : "Deep enrich Hot"}
+      </button>
+      {info && <span className="text-[10px] text-success">{info}</span>}
+      {error && <span className="text-[10px] text-danger">{error}</span>}
+    </div>
+  );
+}
+
+// =====================================================================
+// PersonEnrichmentBlock — owner card inside expanded lead view
+// =====================================================================
+
+function PersonEnrichmentBlock({
+  lead,
+  onEnriched,
+}: {
+  lead: LeadRow;
+  onEnriched: (updated: LeadRow) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const owner = lead.person_enrichment?.owner ?? null;
+  const note = lead.person_enrichment?.note;
+
+  function run() {
+    setError(null);
+    startTransition(async () => {
+      const res = await deepEnrichLead(lead.id);
+      if (!res.ok) {
+        setError(res.error ?? "Enrich greška");
+        return;
+      }
+      onEnriched({
+        ...lead,
+        person_enrichment: res.enrichment ?? null,
+      });
+    });
+  }
+
+  if (!owner && !note) {
+    return (
+      <div className="mb-2 rounded border border-dashed border-border bg-bg-card/30 p-2">
+        <button
+          onClick={run}
+          disabled={pending}
+          className="flex items-center gap-1.5 text-[11px] text-text-muted hover:text-purple-300 disabled:opacity-50"
+        >
+          {pending ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : (
+            "🔬"
+          )}
+          {pending ? "Tražim vlasnika…" : "Deep enrich (Apollo + LI check)"}
+        </button>
+        {error && (
+          <p className="mt-1 text-[10px] text-danger">{error}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-2 rounded border border-purple-500/30 bg-purple-500/5 p-2.5">
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <span className="text-[10px] uppercase tracking-wider text-purple-300">
+          👤 Vlasnik (person-first)
+        </span>
+        <button
+          onClick={run}
+          disabled={pending}
+          className="text-[10px] text-text-muted hover:text-purple-300 disabled:opacity-50"
+          title="Re-enrich"
+        >
+          {pending ? "…" : "↻"}
+        </button>
+      </div>
+      {note && !owner && (
+        <p className="text-[11px] italic text-warning">{note}</p>
+      )}
+      {owner && (
+        <>
+          <div className="flex flex-wrap items-baseline gap-2">
+            <span className="text-sm font-semibold text-text">
+              {owner.name}
+            </span>
+            {owner.title && (
+              <span className="text-[11px] text-text-dim">{owner.title}</span>
+            )}
+            <span
+              className="ml-auto text-[10px] text-text-muted"
+              title="Apollo match score"
+            >
+              {Math.round(owner.match_score * 100)}% match
+            </span>
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {owner.email && (
+              <a
+                href={`mailto:${owner.email}`}
+                className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[11px] text-emerald-300 hover:border-emerald-500"
+                title={
+                  owner.email_status
+                    ? `Apollo status: ${owner.email_status}`
+                    : owner.email
+                }
+              >
+                📧 {owner.email}
+              </a>
+            )}
+            {owner.linkedin_url && (
+              <a
+                href={owner.linkedin_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className={
+                  "rounded border px-1.5 py-0.5 text-[11px] " +
+                  (owner.channelHealth?.linkedin?.status === "dead"
+                    ? "border-danger/40 bg-danger/10 text-danger"
+                    : owner.channelHealth?.linkedin?.status === "dormant"
+                      ? "border-warning/40 bg-warning/10 text-warning"
+                      : "border-gold/40 bg-gold/10 text-gold")
+                }
+                title={
+                  owner.channelHealth?.linkedin
+                    ? `${owner.channelHealth.linkedin.status}${owner.channelHealth.linkedin.followers != null ? ` · ${owner.channelHealth.linkedin.followers} followers` : ""}${owner.channelHealth.linkedin.reason ? ` · ${owner.channelHealth.linkedin.reason}` : ""}`
+                    : owner.linkedin_url
+                }
+              >
+                {owner.channelHealth?.linkedin?.status === "dead"
+                  ? "❌"
+                  : owner.channelHealth?.linkedin?.status === "dormant"
+                    ? "⚠️"
+                    : "✅"}{" "}
+                💼 LinkedIn
+                {owner.channelHealth?.linkedin?.followers != null && (
+                  <span className="ml-1 text-text-dim">
+                    {owner.channelHealth.linkedin.followers}
+                  </span>
+                )}
+              </a>
+            )}
+          </div>
+          {owner.channelHealth?.linkedin?.status === "dead" && (
+            <p className="mt-1 text-[10px] text-danger">
+              LinkedIn vlasnika je mrtav — koristi email umjesto.
+            </p>
+          )}
+        </>
+      )}
+      {error && (
+        <p className="mt-1 text-[10px] text-danger">{error}</p>
       )}
     </div>
   );
