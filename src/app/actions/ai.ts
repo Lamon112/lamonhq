@@ -212,6 +212,102 @@ export async function draftOutreach(
   }
 }
 
+// Channel character limits (hard caps from each platform's UI)
+const CHANNEL_LIMITS: Record<string, number> = {
+  linkedin: 700, // LI DM = 750 hard cap, leave buffer
+  instagram: 950, // IG DM = 1000 hard cap, leave buffer
+  twitter: 270, // tweet/DM = 280
+  // email has no real limit; we don't shorten it
+};
+
+const SHORTEN_SYSTEM_PROMPT = `Ti si Leonardo Lamon's outreach copywriter. Dobiješ originalni V8 outreach (Email format, ~1500-2000 znakova) i moraš ga PREPISATI za drugi kanal koji ima striktni char limit. Zadrži V8 strukturu samo zbijenu:
+
+# Pravila skraćivanja
+1. **Pozdrav** ostaje (npr. "Frane, pozdrav 🤝")
+2. **Hook 1 (specifičan)** + **Hook 2 (brojka)** spoji u JEDNU rečenicu (max 200 znakova). Zadrži personalizaciju + autoritet.
+3. **Loss math** skrati na 1 rečenicu s konkretnim € rasponom.
+4. **Pivot "I onda sam baš pomislio na vas"** zadrži.
+5. **Solution** — samo 1 rečenica što radiš (npr. "Bavim se razvojem privatnih ordinacija kroz 6 stupova").
+6. **Finisher** — opcionalno, ako stane.
+7. **CTA** s dva termina ("u srijedu u 10:30 ili četvrtak nakon 18h?")
+8. **Potpis "Leonardo, Lamon"**
+
+# Limiti striktni
+- LinkedIn: max 700 znakova ukupno (uključujući razmake i nove redove)
+- Instagram: max 950 znakova
+- **Brojanje znakova je obavezno** — vrati malo manje da imaš zaštitnog prostora
+
+# Format
+- Vrati SAMO skraćeni tekst, bez objašnjenja, markdown fence-a, headera
+- Bez ALL CAPS
+- Govori s "vi/vam"
+- Bez emojia osim 🤝 u pozdravu i 1 max u tijelu
+`;
+
+export interface ShortenResult {
+  ok: boolean;
+  draft?: string;
+  charCount?: number;
+  error?: string;
+}
+
+export async function shortenForChannel(
+  originalDraft: string,
+  channel: "linkedin" | "instagram" | "twitter",
+  leadName: string,
+): Promise<ShortenResult> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { ok: false, error: "ANTHROPIC_API_KEY nije postavljen" };
+  }
+  const limit = CHANNEL_LIMITS[channel];
+  if (!limit)
+    return { ok: false, error: `Nepoznat kanal: ${channel}` };
+  try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const userMessage = `# Lead: ${leadName}
+# Kanal: ${channel}
+# Char limit: ${limit}
+
+# Originalni V8 draft (Email format):
+
+${originalDraft}
+
+Skrati ga za ${channel} po pravilima.`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 600,
+      system: [
+        {
+          type: "text",
+          text: SHORTEN_SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: [{ role: "user", content: userMessage }],
+    });
+
+    const textBlock = message.content.find((b) => b.type === "text");
+    let draft =
+      textBlock && textBlock.type === "text" ? textBlock.text.trim() : "";
+    if (!draft) return { ok: false, error: "AI nije vratio tekst" };
+
+    // Hard truncate as safety net if AI overshot
+    if (draft.length > limit) {
+      draft = draft.slice(0, limit - 1).trimEnd();
+    }
+    return { ok: true, draft, charCount: draft.length };
+  } catch (e) {
+    return {
+      ok: false,
+      error:
+        e instanceof Error
+          ? `Anthropic error: ${e.message}`
+          : "Nepoznata Anthropic greška",
+    };
+  }
+}
+
 const VARIANT_ANGLES = [
   {
     label: "🤔 Curiosity",

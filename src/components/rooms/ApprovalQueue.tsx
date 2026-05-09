@@ -9,6 +9,7 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Scissors,
 } from "lucide-react";
 import {
   generateColdDrafts,
@@ -18,6 +19,7 @@ import {
   getPendingColdDrafts,
   type PendingColdDraft,
 } from "@/app/actions/outreach";
+import { shortenForChannel } from "@/app/actions/ai";
 import { PrimaryButton, GhostButton, Badge } from "@/components/ui/common";
 import { formatRelative } from "@/lib/format";
 
@@ -128,6 +130,26 @@ export function ApprovalQueue() {
     }
   }
 
+  function shorten(d: PendingColdDraft, channel: "linkedin" | "instagram") {
+    setError(null);
+    setPendingId(d.id);
+    startTransition(async () => {
+      const ctx = d.context_payload ?? {};
+      const leadName = ctx.leadName ?? "Lead";
+      const original = edits[d.id] ?? d.draft_text;
+      const res = await shortenForChannel(original, channel, leadName);
+      setPendingId(null);
+      if (!res.ok || !res.draft) {
+        setError(res.error ?? "Shorten failed");
+        return;
+      }
+      setEdits((s) => ({ ...s, [d.id]: res.draft! }));
+      setInfo(
+        `✂️ Skraćeno za ${channel === "linkedin" ? "LinkedIn" : "Instagram"} (${res.charCount} znakova). Provjeri tekst pa Save edit.`,
+      );
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -232,9 +254,12 @@ export function ApprovalQueue() {
                 )}
 
                 <div className="mt-3">
-                  <label className="block text-[10px] uppercase tracking-wider text-text-muted">
-                    Poruka
-                  </label>
+                  <div className="flex items-baseline justify-between">
+                    <label className="block text-[10px] uppercase tracking-wider text-text-muted">
+                      Poruka
+                    </label>
+                    <CharCounter text={text} platform={platform} />
+                  </div>
                   <textarea
                     value={text}
                     onChange={(e) =>
@@ -243,6 +268,30 @@ export function ApprovalQueue() {
                     rows={Math.min(12, Math.max(5, text.split("\n").length + 1))}
                     className="mt-1 w-full rounded border border-border bg-bg/60 px-3 py-2 text-xs text-text font-mono focus:border-gold/40 focus:outline-none"
                   />
+                  {(platform === "linkedin" || platform === "instagram") && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {platform === "linkedin" && (
+                        <button
+                          onClick={() => shorten(d, "linkedin")}
+                          disabled={pendingId === d.id}
+                          className="flex items-center gap-1 rounded border border-border bg-bg/60 px-2 py-1 text-[10px] uppercase tracking-wider text-text-muted transition-colors hover:border-gold/40 hover:text-gold disabled:opacity-50"
+                        >
+                          <Scissors size={10} />
+                          {pendingId === d.id ? "Skraćujem…" : "Skrati za LI (700ch)"}
+                        </button>
+                      )}
+                      {platform === "instagram" && (
+                        <button
+                          onClick={() => shorten(d, "instagram")}
+                          disabled={pendingId === d.id}
+                          className="flex items-center gap-1 rounded border border-border bg-bg/60 px-2 py-1 text-[10px] uppercase tracking-wider text-text-muted transition-colors hover:border-gold/40 hover:text-gold disabled:opacity-50"
+                        >
+                          <Scissors size={10} />
+                          {pendingId === d.id ? "Skraćujem…" : "Skrati za IG (950ch)"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {d.reasoning && (
@@ -307,6 +356,39 @@ export function ApprovalQueue() {
         </div>
       )}
     </div>
+  );
+}
+
+const CHANNEL_HARD_LIMITS: Record<string, number> = {
+  linkedin: 750,
+  instagram: 1000,
+};
+
+function CharCounter({ text, platform }: { text: string; platform: string }) {
+  const limit = CHANNEL_HARD_LIMITS[platform];
+  const len = text.length;
+  if (!limit) {
+    return (
+      <span className="text-[10px] text-text-dim">{len} znakova</span>
+    );
+  }
+  const over = len > limit;
+  const near = !over && len > limit * 0.85;
+  return (
+    <span
+      className={
+        "text-[10px] " +
+        (over
+          ? "text-danger font-semibold"
+          : near
+            ? "text-warning"
+            : "text-text-dim")
+      }
+      title={`${platform} hard limit: ${limit}`}
+    >
+      {len} / {limit}
+      {over && " · IMA PREKO!"}
+    </span>
   );
 }
 
