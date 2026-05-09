@@ -20,6 +20,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
   ddgSearch,
+  findCompanySocialUrl,
   findOfficialWebsite,
   findPersonalInstagram,
   findPersonalLinkedIn,
@@ -262,16 +263,75 @@ export async function runAgentHolmes(
       : Promise.resolve(null),
   ]);
 
-  // Step 4b: Social depth analysis — measures HOW VIRAL the company's
+  // Step 4b: For each social platform missing in the website scrape,
+  // try a DDG site:platform.com "<clinic name>" search. This catches
+  // viral company TikToks (like Štimac's 5.8M-view content) that the
+  // homepage might not link to, plus Instagram handles that lazy-load
+  // via JS in the footer. Run in parallel.
+  const [
+    fallbackTikTok,
+    fallbackInstagram,
+    fallbackYouTube,
+    fallbackFacebook,
+  ] = await Promise.all([
+    websiteScrape?.tiktok?.[0]
+      ? Promise.resolve(websiteScrape.tiktok[0])
+      : findCompanySocialUrl(input.leadName, "tiktok").catch(() => null),
+    websiteScrape?.instagram?.[0]
+      ? Promise.resolve(websiteScrape.instagram[0])
+      : findCompanySocialUrl(input.leadName, "instagram").catch(() => null),
+    websiteScrape?.youtube?.[0]
+      ? Promise.resolve(websiteScrape.youtube[0])
+      : findCompanySocialUrl(input.leadName, "youtube").catch(() => null),
+    websiteScrape?.facebook?.[0]
+      ? Promise.resolve(websiteScrape.facebook[0])
+      : findCompanySocialUrl(input.leadName, "facebook").catch(() => null),
+  ]);
+
+  // Step 4c: Social depth analysis — measures HOW VIRAL the company's
   // public content engine is. Drives pitch_tier in synthesis.
   const socialDepth = await analyzeSocialDepth({
-    instagram:
-      websiteScrape?.instagram?.[0] ?? igUrl ?? undefined,
-    tiktok: websiteScrape?.tiktok?.[0] ?? undefined,
-    youtube: websiteScrape?.youtube?.[0] ?? undefined,
+    instagram: fallbackInstagram ?? igUrl ?? undefined,
+    tiktok: fallbackTikTok ?? undefined,
+    youtube: fallbackYouTube ?? undefined,
     linkedin:
       websiteScrape?.linkedin_company?.[0] ?? liUrl ?? undefined,
   }).catch(() => null);
+
+  // Merge fallback URLs back into website_scrape so the UI surfaces them
+  // alongside the originally-scraped channels.
+  if (websiteScrape) {
+    if (fallbackTikTok && !websiteScrape.tiktok?.includes(fallbackTikTok)) {
+      websiteScrape.tiktok = [...(websiteScrape.tiktok ?? []), fallbackTikTok];
+    }
+    if (
+      fallbackInstagram &&
+      !websiteScrape.instagram?.includes(fallbackInstagram)
+    ) {
+      websiteScrape.instagram = [
+        ...(websiteScrape.instagram ?? []),
+        fallbackInstagram,
+      ];
+    }
+    if (
+      fallbackYouTube &&
+      !websiteScrape.youtube?.includes(fallbackYouTube)
+    ) {
+      websiteScrape.youtube = [
+        ...(websiteScrape.youtube ?? []),
+        fallbackYouTube,
+      ];
+    }
+    if (
+      fallbackFacebook &&
+      !websiteScrape.facebook?.includes(fallbackFacebook)
+    ) {
+      websiteScrape.facebook = [
+        ...(websiteScrape.facebook ?? []),
+        fallbackFacebook,
+      ];
+    }
+  }
 
   // Step 5: Synthesize
   const evidence: HolmesEvidence = {

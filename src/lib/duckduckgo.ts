@@ -210,3 +210,63 @@ export async function findPublicity(
     return [];
   }
 }
+
+/**
+ * Per-platform search to find a company's social-media profile URL when
+ * the website scrape didn't surface it (often because of JS rendering or
+ * a footer that links via image-only icons).
+ *
+ * Returns canonical-looking profile URLs, filtering out post/reel/video
+ * permalinks.
+ */
+export async function findCompanySocialUrl(
+  clinicName: string,
+  platform: "tiktok" | "instagram" | "youtube" | "facebook" | "linkedin",
+): Promise<string | null> {
+  const cleaned = clinicName
+    .replace(/\s*\/\s*[^/]+$/, "") // strip "/ Dr. X" tail
+    .trim();
+  const domain =
+    platform === "tiktok"
+      ? "tiktok.com"
+      : platform === "instagram"
+        ? "instagram.com"
+        : platform === "youtube"
+          ? "youtube.com"
+          : platform === "facebook"
+            ? "facebook.com"
+            : "linkedin.com/company";
+  const q = `site:${domain} "${cleaned}"`;
+  try {
+    const results = await ddgSearch(q, 6);
+    // Filter to canonical profile URLs (no post/reel/video permalinks)
+    const filtered = results.filter((r) => {
+      if (!r.url.includes(domain.split("/")[0])) return false;
+      if (
+        /\/(p|reel|tv|video|status|posts|tag|hashtag|explore|stories|shorts|watch)\//i.test(
+          r.url,
+        )
+      )
+        return false;
+      return true;
+    });
+    if (filtered.length === 0) return null;
+    // Pick the one whose URL path most closely matches the clinic name
+    const cleanedSlug = cleaned
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+    filtered.sort((a, b) => {
+      const aPath = a.url.toLowerCase();
+      const bPath = b.url.toLowerCase();
+      const aMatch = cleanedSlug ? aPath.includes(cleanedSlug.slice(0, 5)) : false;
+      const bMatch = cleanedSlug ? bPath.includes(cleanedSlug.slice(0, 5)) : false;
+      if (aMatch !== bMatch) return aMatch ? -1 : 1;
+      return 0;
+    });
+    return filtered[0].url;
+  } catch {
+    return null;
+  }
+}
