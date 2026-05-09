@@ -103,17 +103,17 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
 
   const selected = filtered.find((l) => l.id === selectedId) ?? null;
 
-  function bulkInvestigate() {
+  function bulkInvestigate(force = false) {
     setError(null);
     setInfo(null);
     startBulkTransition(async () => {
-      const res = await bulkRunHolmesHot();
+      const res = await bulkRunHolmesHot({ force });
       if (!res.ok) {
         setError("Bulk Holmes greška");
         return;
       }
       setInfo(
-        `🕵️ ${res.investigated} leadova istraženo · ${res.skipped} preskočeno (već imaju report)${res.errors.length ? ` · ${res.errors.length} grešaka` : ""}. Refresh za update.`,
+        `🕵️ ${res.investigated} leadova istraženo · ${res.skipped} preskočeno${res.errors.length ? ` · ${res.errors.length} grešaka` : ""}. Refresh za update.`,
       );
       setTimeout(() => window.location.reload(), 2200);
     });
@@ -183,18 +183,32 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
 
       {/* Bulk action + filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <PrimaryButton onClick={bulkInvestigate} disabled={bulkPending}>
+        <PrimaryButton
+          onClick={() => bulkInvestigate(false)}
+          disabled={bulkPending}
+        >
           {bulkPending ? (
             <>
               <Loader2 size={14} className="animate-spin" /> Holmes istražuje
               sve…
             </>
           ) : (
-            <>
-              🕵️ Investigate all Hot
-            </>
+            <>🕵️ Investigate Hot (samo novi)</>
           )}
         </PrimaryButton>
+        <button
+          onClick={() => bulkInvestigate(true)}
+          disabled={bulkPending}
+          className="flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300 hover:border-amber-500/70 disabled:opacity-50"
+          title="Ponovno istraži SVE Hot leadove, briše stare report-ove"
+        >
+          {bulkPending ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <RefreshCw size={12} />
+          )}
+          🔄 Re-investigate all (force)
+        </button>
         <div className="ml-auto flex items-center gap-1">
           <FilterChip
             active={filter === "all"}
