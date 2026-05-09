@@ -1,5 +1,5 @@
 import { ResourceBar } from "@/components/ResourceBar";
-import { Building } from "@/components/Building";
+import { HQViewport } from "@/components/HQViewport";
 import { ActionBar } from "@/components/ActionBar";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { DailyBriefing } from "@/components/DailyBriefing";
@@ -118,7 +118,7 @@ export default async function HQPage() {
       <DailyBriefing initialBriefing={todaysBriefing} />
       <FollowUpsPanel initialDrafts={followUps} />
       <InboxTriage initialMessages={inboundMessages} />
-      <Building
+      <HQViewport
         data={{
           outreach: { list: outreachList, stats: outreachStats },
           clients: { list: clientList, stats: clientStats },
