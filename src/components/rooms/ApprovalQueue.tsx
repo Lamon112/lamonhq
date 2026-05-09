@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Sparkles, Send, X as XIcon, Mail, Copy, Check } from "lucide-react";
+import {
+  Sparkles,
+  Send,
+  X as XIcon,
+  Mail,
+  Copy,
+  Check,
+  ExternalLink,
+} from "lucide-react";
 import {
   generateColdDrafts,
   approveAndSendDraft,
@@ -237,6 +245,15 @@ export function ApprovalQueue() {
                   </p>
                 )}
 
+                <ChannelRow
+                  channels={
+                    (ctx as { channels?: Record<string, string> }).channels
+                  }
+                  email={ctx.email ?? null}
+                  message={text}
+                  onCopy={copyToClipboard}
+                />
+
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <PrimaryButton
                     onClick={() => approve(d)}
@@ -283,6 +300,93 @@ export function ApprovalQueue() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+interface ChannelRowProps {
+  channels?: Record<string, string>;
+  email: string | null;
+  message: string;
+  onCopy: (t: string) => void;
+}
+
+function ChannelRow({ channels, email, message, onCopy }: ChannelRowProps) {
+  const list: Array<{
+    key: string;
+    label: string;
+    href: string;
+    title: string;
+  }> = [];
+  const finalEmail = channels?.email ?? email;
+  if (finalEmail)
+    list.push({
+      key: "email",
+      label: "📧 Email",
+      href: `mailto:${finalEmail}`,
+      title: finalEmail,
+    });
+  if (channels?.instagram)
+    list.push({
+      key: "ig",
+      label: "📷 Instagram",
+      href: channels.instagram,
+      title: channels.instagram,
+    });
+  if (channels?.linkedin)
+    list.push({
+      key: "li",
+      label: "💼 LinkedIn",
+      href: channels.linkedin,
+      title: channels.linkedin,
+    });
+  if (channels?.facebook)
+    list.push({
+      key: "fb",
+      label: "👥 Facebook",
+      href: channels.facebook,
+      title: channels.facebook,
+    });
+  if (channels?.tiktok)
+    list.push({
+      key: "tt",
+      label: "🎵 TikTok",
+      href: channels.tiktok,
+      title: channels.tiktok,
+    });
+  if (channels?.website)
+    list.push({
+      key: "web",
+      label: "🌐 Web",
+      href: channels.website,
+      title: channels.website,
+    });
+
+  if (list.length === 0) return null;
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+      <span className="text-[10px] uppercase tracking-wider text-text-muted">
+        Pošalji preko:
+      </span>
+      {list.map((c) => (
+        <a
+          key={c.key}
+          href={c.href}
+          target={c.key === "email" ? undefined : "_blank"}
+          rel={c.key === "email" ? undefined : "noreferrer"}
+          title={c.title}
+          onClick={() => {
+            // for non-email channels, also copy message to clipboard so
+            // Leonardo can paste in DM right after the link opens
+            if (c.key !== "email") void onCopy(message);
+          }}
+          className="flex items-center gap-1 rounded border border-border bg-bg/60 px-2 py-1 text-[11px] text-text-muted transition-colors hover:border-gold/40 hover:text-gold"
+        >
+          {c.label}
+          <ExternalLink size={10} />
+        </a>
+      ))}
     </div>
   );
 }

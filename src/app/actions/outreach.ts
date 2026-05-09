@@ -110,6 +110,48 @@ function pickPlatformFromNotes(
   return "linkedin";
 }
 
+interface LeadChannels {
+  email?: string;
+  instagram?: string;
+  linkedin?: string;
+  facebook?: string;
+  tiktok?: string;
+  website?: string;
+  phone?: string;
+}
+
+function extractChannels(
+  notes: string | null,
+  email: string | null,
+): LeadChannels {
+  const ch: LeadChannels = {};
+  if (email) ch.email = email;
+  if (!notes) return ch;
+
+  // Apollo / enrichment notes typically embed lines like:
+  //   Owner phone: +385...
+  //   Org LinkedIn: http://...
+  //   Instagram: https://www.instagram.com/...
+  //   Website: https://...
+  const grab = (re: RegExp) => notes.match(re)?.[1]?.trim();
+
+  ch.linkedin =
+    grab(/(?:Org\s+LinkedIn|LinkedIn):\s*(https?:\/\/\S+)/i) ?? ch.linkedin;
+  ch.instagram =
+    grab(/Instagram:\s*(https?:\/\/\S+)/i) ?? ch.instagram;
+  ch.facebook = grab(/Facebook:\s*(https?:\/\/\S+)/i);
+  ch.tiktok = grab(/TikTok:\s*(https?:\/\/\S+)/i);
+  ch.website =
+    grab(/(?:Website|Web|Site):\s*(https?:\/\/\S+)/i) ?? ch.website;
+  ch.phone = grab(/(?:Owner phone|Phone|Tel):\s*([+\d\s()/-]+)/i);
+
+  // Strip trailing punctuation
+  for (const k of Object.keys(ch) as (keyof LeadChannels)[]) {
+    if (ch[k]) ch[k] = ch[k]!.replace(/[.,;)\]]+$/, "");
+  }
+  return ch;
+}
+
 function extractHook(notes: string | null): string | undefined {
   if (!notes) return undefined;
   const reasoning = notes.match(/^🤖 ([^\n]+)/m)?.[1];
@@ -187,6 +229,7 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
   for (const lead of todo) {
     const platform = pickPlatformFromNotes(lead.notes, !!lead.email);
     const hook = extractHook(lead.notes);
+    const channels = extractChannels(lead.notes, lead.email);
     const res = await draftOutreach({
       leadName: lead.name,
       platform,
@@ -207,6 +250,7 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
         niche: lead.niche,
         platform,
         email: lead.email,
+        channels,
       },
       status: "pending",
     });
