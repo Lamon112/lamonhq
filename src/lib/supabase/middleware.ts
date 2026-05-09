@@ -36,6 +36,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron") ||
+    pathname.startsWith("/api/inngest") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico";
 
