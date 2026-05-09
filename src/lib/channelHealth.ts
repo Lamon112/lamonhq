@@ -110,25 +110,40 @@ export async function checkInstagramProfile(url: string): Promise<ChannelHealth>
     if (posts != null) out.postCount = posts;
   }
 
-  // If IG redirected to login wall, mark blocked
-  if (/accounts\/login/i.test(html) && !desc) {
+  // If we got NO description data at all, IG almost certainly served us
+  // a login wall / Cloudflare interstitial. Treat as blocked, not dead —
+  // the profile is most likely fine, we just can't see it from a
+  // datacenter IP.
+  if (!desc) {
     out.status = "blocked";
-    out.reason = "IG vraća login wall (datacenter IP)";
+    out.reason =
+      /accounts\/login|challenge|enforce_login/i.test(html)
+        ? "IG vraća login wall (datacenter IP)"
+        : "IG ne vraća og:description — vjerojatno blokiran";
     return out;
   }
 
-  // Heuristic decisions
-  if (out.postCount === 0) {
+  // Heuristic decisions — only run when we actually parsed numbers
+  if (out.postCount === 0 && out.followers != null) {
     out.status = "dead";
     out.reason = "0 postova";
-  } else if ((out.followers ?? 0) < 10 && (out.postCount ?? 0) < 3) {
+  } else if (
+    (out.followers ?? 0) < 10 &&
+    (out.postCount ?? 0) < 3 &&
+    out.followers != null
+  ) {
     out.status = "dead";
     out.reason = `${out.followers ?? 0} followers · ${out.postCount ?? 0} postova`;
-  } else if ((out.followers ?? 0) < 100) {
+  } else if ((out.followers ?? 0) < 100 && out.followers != null) {
     out.status = "dormant";
     out.reason = `samo ${out.followers} followers`;
-  } else {
+  } else if (out.followers != null) {
     out.status = "alive";
+  } else {
+    // We had a description but couldn't extract counts — treat as alive
+    // since the profile clearly responds to fetches.
+    out.status = "alive";
+    out.reason = "ne mogu parsirati brojeve, ali profil odgovara";
   }
   return out;
 }

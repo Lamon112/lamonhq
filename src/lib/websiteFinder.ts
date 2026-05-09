@@ -65,29 +65,66 @@ function deterministicCandidates(leadName: string): string[] {
   if (distinctive.length >= 2) {
     out.add(`https://${distinctive[0]}-${distinctive[1]}.hr`);
     out.add(`https://${distinctive[0]}${distinctive[1]}.hr`);
+    out.add(`https://${distinctive[0]}-${distinctive[1]}.com`);
   }
-  // Single-token guesses
+  // Single-token guesses (HR doctor naming patterns)
   for (const t of distinctive) {
     out.add(`https://${t}.hr`);
-    out.add(`https://www.${t}.hr`);
+    out.add(`https://${t}.com`);
     out.add(`https://dr${t}.hr`);
     out.add(`https://dr${t}.com`);
-    out.add(`https://${t}.com`);
+    out.add(`https://dr-${t}.hr`);
+    out.add(`https://dr-${t}.com`);
+    out.add(`https://${t}-dental.hr`);
+    out.add(`https://centar-${t}.hr`);
   }
-  return [...out].slice(0, 8);
+  return [...out].slice(0, 12);
 }
 
 /* -------------------- AI candidate generator ------------------------ */
 
 const AI_SYSTEM_PROMPT = `Ti si AI helper koji predviđa website URL hrvatskih privatnih dentalnih/estetskih/zdravstvenih klinika na temelju njihovog naziva.
 
-Pravila:
-1. Vrati JSON: { "candidates": ["url1", "url2", "url3"] }
-2. Maksimalno 4 kandidata.
-3. Predloži samo realistic .hr / .com domene koje doktorska praksa u HR vjerojatno koristi.
-4. Ako u nazivu vidiš ime doktora/vlasnika, predloži dr-prezime.com / drprezime.hr / prezime-dental.hr varijante.
-5. Bez halucinacija — ne izmišljaj agresivno; ako nemaš ideju, vrati prazan array.
-6. Striktni JSON, bez markdown fence-a, bez objašnjenja.`;
+# Format
+Vrati STRIKT JSON: { "candidates": ["url1", "url2", "url3", ...] }
+Maksimalno 6 kandidata. Bez markdown fence-a, bez objašnjenja.
+
+# HR doktorski domain patterns (BIT BITNO — koristi sve relevantne)
+
+Ako naziv sadrži ime doktora/vlasnika "dr. PREZIME":
+- drprezime.com    (npr. drstimac.com, drmilanovic.com, drcuvalo.com)
+- dr-prezime.com   (npr. dr-stimac.com)
+- drprezime.hr
+- dr-prezime.hr
+- prezime-dental.hr
+- prezime.hr
+
+Ako naziv sadrži kratku marku/centar (npr. "Orto Nova", "Smile Design", "Tina Babic Dental"):
+- markamarkayuhr (npr. orto-nova.hr, smile-design.hr, dental-babic.hr)
+- markamarkacom
+
+Ako je generic naziv (npr. "Stomatološka ordinacija X"):
+- skip generic patterns, fokus na X
+
+# Primjeri input/output
+
+Input: "Dental - Centar Štimac / Štimac (obitelj)"
+Output: { "candidates": ["https://drstimac.com", "https://stimac-dental.hr", "https://centarstimac.hr", "https://stimac.hr", "https://dr-stimac.com"] }
+
+Input: "Stomatološka ordinacija Smile Design Kovač / Željko Kovač"
+Output: { "candidates": ["https://smile-design-kovac.hr", "https://smiledesign.hr", "https://drkovac.hr", "https://kovacdental.hr", "https://drkovac.com"] }
+
+Input: "Orto Nova Centar Dentalne Medicine / Tiberio Zaverski"
+Output: { "candidates": ["https://orto-nova.hr", "https://ortonova.hr", "https://orto-nova.com", "https://drzaverski.hr"] }
+
+Input: "Dental clinic Tina Babic, DDS. / dr. Tina Babić"
+Output: { "candidates": ["https://drbabic.hr", "https://dr-babic.com", "https://tinababic.hr", "https://dental-babic.hr", "https://drbabic.com"] }
+
+# Pravila
+- Bez halucinacija agresivnih: ako stvarno nemaš ideju, vrati malo (3-4) realistic candidates
+- DIACRITICS skidaj (š→s, ć→c, č→c, đ→d) jer se domene ne mogu unicode
+- Bez "https://www." prefiksa — samo "https://"
+- Bez putanja iza domene (samo do .hr/.com)`;
 
 async function aiCandidates(leadName: string): Promise<string[]> {
   if (!process.env.ANTHROPIC_API_KEY) return [];

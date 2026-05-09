@@ -188,8 +188,26 @@ function classifyTier(d: Omit<SocialDepth, "tier" | "tier_reason" | "score">): {
     }
   }
 
-  // Dead: every channel dead/dormant with <50 followers
-  const allWeak = channels.every(
+  // Filter out channels we couldn't actually inspect (blocked / unknown)
+  // — they should NOT count toward "dead" classification because the
+  // underlying profile is probably fine, we just can't see it from a
+  // datacenter IP.
+  const inspectable = channels.filter(
+    (c) => c.status !== "blocked" && c.status !== "unknown",
+  );
+
+  if (inspectable.length === 0) {
+    // Profiles exist + we have URLs, but every health check was blocked.
+    // Default to starter so the synthesis pitches general content angles
+    // rather than premium / dead.
+    return {
+      tier: "starter",
+      reason: "Profili postoje ali health check blokiran (datacenter IP) — pretpostavi starter",
+    };
+  }
+
+  // Dead: every inspectable channel is dead/dormant with <50 followers
+  const allWeak = inspectable.every(
     (c) =>
       c.status === "dead" ||
       (c.status === "dormant" && (c.followers ?? 0) < 50),
@@ -197,7 +215,7 @@ function classifyTier(d: Omit<SocialDepth, "tier" | "tier_reason" | "score">): {
   if (allWeak)
     return {
       tier: "dead",
-      reason: "Svi profili mrtvi ili <50 followers",
+      reason: "Svi inspectable profili mrtvi ili <50 followers",
     };
 
   return {
