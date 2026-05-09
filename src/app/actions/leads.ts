@@ -395,14 +395,20 @@ export async function bulkDiscoverWebsites(): Promise<{
     };
   }
 
-  // Lazy-import the DDG helper (server-only)
+  // AI-guess + HTTP probe pipeline (no DDG dependency)
+  const { findWebsiteForLead } = await import("@/lib/websiteFinder");
   const { findOfficialWebsite } = await import("@/lib/duckduckgo");
 
   let discovered = 0;
   const errors: string[] = [];
   for (const l of todo) {
     try {
-      const url = await findOfficialWebsite(l.name as string);
+      const found = await findWebsiteForLead(l.name as string);
+      let url = found?.url ?? null;
+      if (!url) {
+        // Last-resort DDG search
+        url = await findOfficialWebsite(l.name as string).catch(() => null);
+      }
       if (url) {
         await supabase
           .from("leads")
@@ -413,7 +419,7 @@ export async function bulkDiscoverWebsites(): Promise<{
     } catch (e) {
       errors.push(`${l.id}: ${e instanceof Error ? e.message : "unknown"}`);
     }
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 400));
   }
   revalidatePath("/");
   return {

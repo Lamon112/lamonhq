@@ -39,9 +39,18 @@ export async function runHolmesForLead(
     };
   }
 
+  // Persist any newly-discovered website URL back to lead.website_url so
+  // subsequent runs (and outreach drafts) skip the discovery step.
+  const discoveredWebsite = result.report.evidence?.clinic_website;
+  const updatePayload: Record<string, unknown> = {
+    holmes_report: result.report,
+  };
+  if (discoveredWebsite && !lead.website_url) {
+    updatePayload.website_url = discoveredWebsite;
+  }
   const { error } = await supabase
     .from("leads")
-    .update({ holmes_report: result.report })
+    .update(updatePayload)
     .eq("id", leadId);
   if (error) return { ok: false, error: error.message };
 

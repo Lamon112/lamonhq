@@ -26,6 +26,7 @@ import {
   findPublicity,
   type SearchResult,
 } from "@/lib/duckduckgo";
+import { findWebsiteForLead } from "@/lib/websiteFinder";
 import { scrapeCompanyWebsite, type ScrapedChannels } from "@/lib/websiteScraper";
 import {
   checkInstagramProfile,
@@ -207,14 +208,21 @@ export async function runAgentHolmes(
   if (!process.env.ANTHROPIC_API_KEY)
     return { ok: false, error: "ANTHROPIC_API_KEY nije postavljen" };
 
-  // Step 1: Find official website. Prefer the pre-set URL on the lead
-  // (Leonardo can paste it manually); fall back to DDG search.
-  const website =
-    normalizeWebsite(input.websiteUrl) ??
-    (await findOfficialWebsite(
+  // Step 1: Find official website. Three-stage cascade:
+  //   1. pre-set URL on the lead (manual override, fastest)
+  //   2. AI-guess + HTTP probe (websiteFinder, no external deps)
+  //   3. DDG search as last resort
+  let website: string | null = normalizeWebsite(input.websiteUrl);
+  if (!website) {
+    const found = await findWebsiteForLead(input.leadName).catch(() => null);
+    website = found?.url ?? null;
+  }
+  if (!website) {
+    website = await findOfficialWebsite(
       input.leadName,
       input.hintCity ?? undefined,
-    ));
+    );
+  }
 
   // Step 2: Identify owner candidate
   const candidates = parseOwnerCandidates(input.leadName);
