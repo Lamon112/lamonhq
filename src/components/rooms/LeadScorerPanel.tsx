@@ -678,6 +678,12 @@ export function LeadScorerPanel({
                           )}
                           <span>{formatRelative(l.created_at)}</span>
                         </div>
+                        <LeadChannelChips
+                          notes={l.notes}
+                          email={
+                            (l as { email?: string | null }).email ?? null
+                          }
+                        />
                       </div>
                       <ChevronRight
                         size={16}
@@ -1515,6 +1521,117 @@ function BulkRescoreButton() {
       {error && (
         <span className="text-[10px] text-danger">{error}</span>
       )}
+    </div>
+  );
+}
+
+interface ParsedChannels {
+  email?: string;
+  instagram?: string;
+  linkedin?: string;
+  facebook?: string;
+  tiktok?: string;
+  website?: string;
+  phone?: string;
+}
+
+function parseChannels(
+  notes: string | null,
+  email: string | null,
+): ParsedChannels {
+  const ch: ParsedChannels = {};
+  if (email) ch.email = email;
+  if (!notes) return ch;
+  const grab = (re: RegExp) => notes.match(re)?.[1]?.trim();
+  ch.linkedin =
+    grab(/(?:Org\s+LinkedIn|LinkedIn):\s*(https?:\/\/\S+)/i) ?? ch.linkedin;
+  ch.instagram = grab(/Instagram:\s*(https?:\/\/\S+)/i);
+  ch.facebook = grab(/Facebook:\s*(https?:\/\/\S+)/i);
+  ch.tiktok = grab(/TikTok:\s*(https?:\/\/\S+)/i);
+  ch.website = grab(/(?:Website|Web|Site):\s*(https?:\/\/\S+)/i);
+  ch.phone = grab(/(?:Owner phone|Phone|Tel):\s*([+\d\s()/-]+)/i);
+  for (const k of Object.keys(ch) as (keyof ParsedChannels)[]) {
+    if (ch[k]) ch[k] = ch[k]!.replace(/[.,;)\]]+$/, "");
+  }
+  return ch;
+}
+
+function LeadChannelChips({
+  notes,
+  email,
+}: {
+  notes: string | null;
+  email: string | null;
+}) {
+  const ch = parseChannels(notes, email);
+  const items: Array<{ key: string; emoji: string; href: string; title: string }> = [];
+  if (ch.email)
+    items.push({
+      key: "email",
+      emoji: "📧",
+      href: `mailto:${ch.email}`,
+      title: ch.email,
+    });
+  if (ch.instagram)
+    items.push({
+      key: "ig",
+      emoji: "📷",
+      href: ch.instagram,
+      title: ch.instagram,
+    });
+  if (ch.linkedin)
+    items.push({
+      key: "li",
+      emoji: "💼",
+      href: ch.linkedin,
+      title: ch.linkedin,
+    });
+  if (ch.facebook)
+    items.push({
+      key: "fb",
+      emoji: "👥",
+      href: ch.facebook,
+      title: ch.facebook,
+    });
+  if (ch.tiktok)
+    items.push({
+      key: "tt",
+      emoji: "🎵",
+      href: ch.tiktok,
+      title: ch.tiktok,
+    });
+  if (ch.website)
+    items.push({
+      key: "web",
+      emoji: "🌐",
+      href: ch.website,
+      title: ch.website,
+    });
+  if (ch.phone)
+    items.push({
+      key: "phone",
+      emoji: "📞",
+      href: `tel:${ch.phone.replace(/\s+/g, "")}`,
+      title: ch.phone,
+    });
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1">
+      {items.map((c) => (
+        <a
+          key={c.key}
+          href={c.href}
+          target={c.key === "email" || c.key === "phone" ? undefined : "_blank"}
+          rel={
+            c.key === "email" || c.key === "phone" ? undefined : "noreferrer"
+          }
+          title={c.title}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded border border-border bg-bg/60 px-1.5 py-0.5 text-[11px] transition-colors hover:border-gold/40 hover:bg-gold/10"
+        >
+          {c.emoji}
+        </a>
+      ))}
     </div>
   );
 }
