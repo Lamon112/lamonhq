@@ -153,8 +153,16 @@ function classifyTier(d: Omit<SocialDepth, "tier" | "tier_reason" | "score">): {
   const channels = [d.tiktok, d.instagram, d.youtube, d.linkedin].filter(
     (c): c is ChannelDepth => !!c,
   );
+  // No social channels found in scrape — but the clinic still has a
+  // website (Holmes wouldn't run depth at all otherwise), so default
+  // to STARTER ("they exist, just don't have a content game we can
+  // detect") rather than "dead". Avoids wrongly nuking obviously-real
+  // clinics whose social URLs we just couldn't scrape.
   if (channels.length === 0)
-    return { tier: "dead", reason: "Nema niti jednog social kanala" };
+    return {
+      tier: "starter",
+      reason: "Nismo pronašli social kanale u scrape-u — vjerojatno content beginner ili JS-rendered footer",
+    };
 
   // Veteran: any single viral hit OR any 10K+ followers
   for (const c of channels) {
