@@ -132,7 +132,7 @@ async function aiCandidates(leadName: string): Promise<string[]> {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 200,
+      max_tokens: 500,
       system: [
         {
           type: "text",
