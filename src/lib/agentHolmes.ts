@@ -64,7 +64,46 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 5. **opening_hook** — PRVA rečenica V8 outreach-a. MORA biti tier-prilagođena. Za veteran: spomeni njihov konkretan viralni hit ili brojku. Za starter: industry stat.
 6. **avoid** — 1-3 stvari koje NE treba spomenuti (npr. za veteran: NE pričaj o "kako pomoći s contentom" — uvrijedit ćeš ih).
 7. **reachability** — RANGIRAJ kanale po šansi za reply. Neaktivan profil = nizak score.
-8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis "Leonardo Lamon" — BEZ zareza). Tier-prilagođen.
+8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis "Leonardo Lamon" — BEZ zareza). Tier-prilagođen. Ovo je legacy / fallback draft.
+
+12. **primary_channel** — odluči koji kanal je BEST first-touch:
+   - "instagram" ako vlasnik aktivan na osobnom IG (alive, redoviti posts) — lifestyle moment, neformalno-premium tone
+   - "linkedin" ako vlasnik ima aktivan personal LI s 200+ followers — profesionalno, peer-to-peer
+   - "phone" ako reachability stavlja telefon kao top + premium klinika (vlasnici premium klinika cijene direktan poziv kao signal autoriteta)
+   - "whatsapp" ako WA broj u scrape + smal-business signal (jednostavan, kratak)
+   - "email" kao fallback (uvijek radi, ali najmanji reply rate)
+
+13. **channel_drafts** — za TOP 1-3 kanala generiraj **POSEBNE** prilagođene drafts:
+
+    - **instagram** (max 950 znakova): casual-premium ton, lifestyle hook, 1-2 emoji OK, kratki rečenice, ne formalan, paragraph-based ne list. Hook: "Vidio sam vaš [konkretan post / story]..." ili "Slijedim [aktivnost]...". Pitch sažet, CTA "Imate 15 min ovaj tjedan? Mogu poslati i 60s voice memo s detaljima ako želite."
+
+    - **linkedin** (max 700 znakova): profesionalno, peer-to-peer, no emoji osim 🤝 u pozdravu. Reference LI post / connection / mutual ako moguće. Hook short. Solution 1 rečenica. CTA "Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?". Potpis "Leonardo Lamon".
+
+    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Privatne ordinacije + AI gatekeeper → [klinika]" ili "Razvoj [niche] kroz 6 stupova — pitanje za [ime]". Sign-off "S poštovanjem, Leonardo Lamon".
+
+    - **phone** — POSEBNI FORMAT, NE PORUKA, nego **CALL SCRIPT** (3 min):
+      \`\`\`
+      📞 PHONE SCRIPT (3 min, prilagodi vlasnika)
+
+      [0-30s OPENER]
+      "Dr. [ime], dobar dan. Leonardo Lamon ovdje. Bavim se isključivo razvojem privatnih ordinacija — primijetio sam [konkretni signal] kod [klinika], zato vas zovem direktno. Imate li 2-3 min za kratko pitanje?"
+
+      [30-90s PITCH]
+      "[Industry stat + njihova procjena gubitka]. Razlog što vas zovem: vidim da [pain konkretan]. To realno znači [€ raspon] godišnje izgubljenog prihoda."
+
+      [90-150s 2 QUESTIONS]
+      Q1: "Kako trenutno hvatate pozive izvan radnog vremena?"
+      Q2: "Tko trenutno odlučuje o [marketing / automatizacija / web]?"
+
+      [150-180s CTA]
+      "Predlažem 15 min Zoom u srijedu u 10:30 ili četvrtak 18h — pokazat ću vam konkretnu mehaniku za [pain]. Šaljem invite na koji email?"
+
+      [Ako odbiju] "Razumijem. Mogu li poslati kratki email s 2-3 brojke koje će vam možda promijeniti pristup?"
+      \`\`\`
+
+    - **whatsapp** (kombinacija text + voice memo prep): kratki opener text (3-4 line) + bullet-list "Voice memo (60s) talking points:" — jer voice memo na WA daje osobni vibe + autoritet.
+
+    Generiraj samo za kanale koji su u TOP 3 reachability. Skip dead/blocked kanale. Ako jedan kanal nije relevantan (npr. nema phone broj), izostavi ga.
 
    **OBAVEZNO**: U solution-u ili pivot-u SUPTILNO embed-aj da je Leonardov posao **razvoj privatnih ordinacija** — to je signal autoriteta koji svaka ordinacija želi imati za sebe. Ne mora biti cijela rečenica — može biti dio konteksta dok pričaš o nečem drugom. Primjeri:
    - "Bavim se razvojem privatnih ordinacija kroz 6 stupova — ovo (AI gatekeeper / chatbot / itd.) je glavni stup za vašu situaciju."
@@ -125,6 +164,14 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
   ],
   "publicity": [{ "title": "string", "url": "string", "snippet": "string" }],
   "outreach_draft": "string",
+  "primary_channel": "instagram|linkedin|email|phone|whatsapp",
+  "channel_drafts": {
+    "instagram": "string|null (≤950 chars, casual-premium)",
+    "linkedin": "string|null (≤700 chars, professional)",
+    "email": "string|null (full V8 ~1500-2000 chars, with Subject: line)",
+    "phone": "string|null (3-min CALL SCRIPT format with stage labels)",
+    "whatsapp": "string|null (text opener + voice memo prep bullets)"
+  },
   "pitch_tier": "starter|intermediate|veteran|dead",
   "recommended_package": "string"
 }
@@ -169,6 +216,20 @@ export interface HolmesReport {
   }>;
   publicity: Array<{ title: string; url: string; snippet: string }>;
   outreach_draft: string;
+  /**
+   * Per-channel adapted drafts. Holmes generates these based on
+   * reachability ranking — the top channel gets a fully-tailored
+   * format (IG = casual lifestyle, LI = professional, phone = call
+   * script, email = full V8, WhatsApp = text + voice memo prep).
+   */
+  channel_drafts?: {
+    instagram?: string;
+    linkedin?: string;
+    email?: string;
+    phone?: string;
+    whatsapp?: string;
+  };
+  primary_channel?: "instagram" | "linkedin" | "email" | "phone" | "whatsapp";
   pitch_tier?: "starter" | "intermediate" | "veteran" | "dead";
   recommended_package?: string;
   social_depth?: SocialDepth;
@@ -359,7 +420,7 @@ export async function runAgentHolmes(
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 3000,
+      max_tokens: 6000, // bumped to fit channel_drafts × 5 platforms
       system: [
         {
           type: "text",

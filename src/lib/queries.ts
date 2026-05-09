@@ -337,6 +337,19 @@ export interface LeadRow {
     }>;
     publicity: Array<{ title: string; url: string; snippet: string }>;
     outreach_draft: string;
+    primary_channel?:
+      | "instagram"
+      | "linkedin"
+      | "email"
+      | "phone"
+      | "whatsapp";
+    channel_drafts?: {
+      instagram?: string | null;
+      linkedin?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      whatsapp?: string | null;
+    };
     pitch_tier?: "starter" | "intermediate" | "veteran" | "dead";
     recommended_package?: string;
     social_depth?: {

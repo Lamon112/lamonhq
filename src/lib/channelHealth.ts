@@ -10,9 +10,21 @@
  * profile HTML still leaks the meta tags we need.
  */
 
-const UA =
+const UA_DESKTOP =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+// Mobile UAs often bypass IG / TikTok / FB datacenter login walls
+// because their CDN serves a lighter, no-JS profile fragment to mobile.
+const UA_MOBILE_IPHONE =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) " +
+  "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1";
+
+const UA_MOBILE_ANDROID =
+  "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 " +
+  "(KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
+
+const UA = UA_DESKTOP; // legacy alias for the rest of this file
 
 export type HealthStatus =
   | "alive"
@@ -77,23 +89,55 @@ async function probeUrl(url: string): Promise<{
 
 export async function checkInstagramProfile(url: string): Promise<ChannelHealth> {
   const out: ChannelHealth = { url, status: "unknown" };
-  let html: string;
-  try {
-    const res = await fetchWithTimeout(url);
-    if (res.status === 404) {
-      out.status = "dead";
-      out.reason = "404 — handle ne postoji";
-      return out;
+
+  // IG aggressively blocks datacenter IPs with desktop UA. Try a small
+  // ladder of mobile UAs first (which often get a lighter no-JS variant
+  // of the profile page) and only fall back to desktop if those fail.
+  const uaLadder = [UA_MOBILE_IPHONE, UA_MOBILE_ANDROID, UA_DESKTOP];
+  let html = "";
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < uaLadder.length; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, {
+        headers: { "User-Agent": uaLadder[attempt] },
+      });
+      lastStatus = res.status;
+      if (res.status === 404) {
+        out.status = "dead";
+        out.reason = "404 — handle ne postoji";
+        return out;
+      }
+      if (res.status === 429) {
+        // Rate-limited — wait briefly before next UA attempt
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        continue;
+      }
+      if (!res.ok) {
+        // 4xx (other) or 5xx — try next UA before giving up
+        continue;
+      }
+      const candidate = await res.text();
+      // Check if THIS response is the blocked login wall (very small
+      // payload or login redirect). If so, try the next UA.
+      if (
+        candidate.length < 5000 &&
+        /accounts\/login|challenge|enforce_login/i.test(candidate)
+      ) {
+        continue;
+      }
+      html = candidate;
+      break;
+    } catch (e) {
+      out.reason = e instanceof Error ? e.message : "fetch failed";
     }
-    if (!res.ok) {
-      out.status = res.status >= 500 ? "unknown" : "blocked";
-      out.reason = `HTTP ${res.status}`;
-      return out;
-    }
-    html = await res.text();
-  } catch (e) {
-    out.status = "unknown";
-    out.reason = e instanceof Error ? e.message : "fetch failed";
+  }
+  if (!html) {
+    out.status = lastStatus === 429 ? "blocked" : "unknown";
+    out.reason =
+      out.reason ??
+      (lastStatus === 429
+        ? "IG rate-limit (HTTP 429) — datacenter IP throttled"
+        : `IG nije vratio readable HTML (zadnji status ${lastStatus || "?"})`);
     return out;
   }
 

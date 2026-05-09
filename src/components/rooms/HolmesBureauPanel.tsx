@@ -654,24 +654,7 @@ function SelectedDetail({
               )}
             </div>
 
-            {r.outreach_draft && (
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[10px] uppercase tracking-wider text-text-muted">
-                    ✉️ V8 outreach (Holmes-personalizirano · tier-prilagođen)
-                  </span>
-                  <button
-                    onClick={() => onCopy(r.outreach_draft)}
-                    className="flex items-center gap-1 text-[10px] text-text-muted hover:text-amber-300"
-                  >
-                    <Copy size={10} /> Copy
-                  </button>
-                </div>
-                <pre className="mt-1 max-h-72 overflow-auto whitespace-pre-wrap rounded border border-border bg-bg/60 p-2 text-[11px] font-mono text-text">
-                  {r.outreach_draft}
-                </pre>
-              </div>
-            )}
+            <ChannelDraftPicker report={r} onCopy={onCopy} />
           </motion.div>
         )}
 
@@ -779,4 +762,126 @@ function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toString();
+}
+
+const CHANNEL_META: Record<
+  string,
+  { label: string; emoji: string; format: string }
+> = {
+  instagram: { label: "Instagram DM", emoji: "📷", format: "≤950ch · casual premium" },
+  linkedin: { label: "LinkedIn DM", emoji: "💼", format: "≤700ch · professional" },
+  email: { label: "Email", emoji: "📧", format: "full V8 · with subject" },
+  phone: { label: "Phone Script", emoji: "📞", format: "3-min call script" },
+  whatsapp: { label: "WhatsApp", emoji: "🟢", format: "text + voice memo prep" },
+};
+
+function ChannelDraftPicker({
+  report,
+  onCopy,
+}: {
+  report: NonNullable<LeadRow["holmes_report"]>;
+  onCopy: (s: string) => void;
+}) {
+  const drafts = report.channel_drafts ?? {};
+  const primary = report.primary_channel;
+  // Build available channels list, primary first
+  const available: Array<{
+    key: keyof typeof CHANNEL_META;
+    text: string;
+  }> = [];
+  const order: Array<keyof typeof CHANNEL_META> = primary
+    ? [
+        primary as keyof typeof CHANNEL_META,
+        ...(["instagram", "linkedin", "email", "phone", "whatsapp"] as const).filter(
+          (k) => k !== primary,
+        ),
+      ]
+    : ["email", "instagram", "linkedin", "phone", "whatsapp"];
+  for (const k of order) {
+    const t = (drafts as Record<string, string | null | undefined>)[k];
+    if (typeof t === "string" && t.trim().length > 0) {
+      available.push({ key: k, text: t });
+    }
+  }
+  // Fallback to legacy outreach_draft if no per-channel drafts (older
+  // Holmes runs).
+  if (available.length === 0 && report.outreach_draft) {
+    available.push({ key: "email", text: report.outreach_draft });
+  }
+  const [activeKey, setActiveKey] = useState<keyof typeof CHANNEL_META | null>(
+    available[0]?.key ?? null,
+  );
+  if (available.length === 0) return null;
+
+  const active =
+    available.find((a) => a.key === activeKey) ?? available[0];
+  const meta = CHANNEL_META[active.key];
+  const len = active.text.length;
+  const limit =
+    active.key === "linkedin" ? 750 : active.key === "instagram" ? 1000 : null;
+  const over = limit ? len > limit : false;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="text-[10px] uppercase tracking-wider text-text-muted">
+          ✉️ Outreach po kanalu (Holmes-personalizirano · tier-prilagođen)
+        </span>
+        {primary && (
+          <span className="text-[10px] text-amber-300">
+            ⭐ Primary: {CHANNEL_META[primary].label}
+          </span>
+        )}
+      </div>
+      <div className="mb-1.5 flex flex-wrap items-center gap-1">
+        {available.map(({ key }) => {
+          const m = CHANNEL_META[key];
+          const isActive = key === active.key;
+          const isPrimary = key === primary;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveKey(key)}
+              className={
+                "flex items-center gap-1 rounded border px-2 py-1 text-[10px] transition-colors " +
+                (isActive
+                  ? "border-amber-500 bg-amber-500/15 text-amber-200"
+                  : "border-border bg-bg/60 text-text-muted hover:border-amber-500/40 hover:text-amber-300")
+              }
+              title={m.format}
+            >
+              {isPrimary && "⭐ "}
+              {m.emoji} {m.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mb-1 flex items-baseline justify-between text-[10px]">
+        <span className="text-text-dim">{meta.format}</span>
+        <span
+          className={
+            over
+              ? "text-danger font-semibold"
+              : limit && len > limit * 0.85
+                ? "text-warning"
+                : "text-text-dim"
+          }
+        >
+          {len} {limit ? `/ ${limit}` : "znakova"}
+          {over && " · IMA PREKO!"}
+        </span>
+      </div>
+      <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded border border-border bg-bg/60 p-2 text-[11px] font-mono text-text">
+        {active.text}
+      </pre>
+      <div className="mt-1.5 flex justify-end">
+        <button
+          onClick={() => onCopy(active.text)}
+          className="flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-300 hover:border-amber-500"
+        >
+          <Copy size={10} /> Copy {meta.label}
+        </button>
+      </div>
+    </div>
+  );
 }
