@@ -49,11 +49,11 @@ create index if not exists cash_ledger_user_occurred_idx
 create index if not exists cash_ledger_category_idx
   on public.cash_ledger (category, occurred_at desc);
 
--- Idempotency for recurring expenses — prevents double-debit if cron
--- runs multiple times on the same day
-create unique index if not exists cash_ledger_recurring_unique_idx
-  on public.cash_ledger (user_id, category, label, date(occurred_at))
-  where category = 'fixed_expense';
+-- Idempotency for recurring expenses is enforced in application code
+-- (src/lib/cashLedger.ts). Postgres requires an IMMUTABLE expression
+-- for partial-index keys, and `date(timestamptz)` / `(at tz)::date` are
+-- both STABLE — so a SQL-level guard isn't possible without adding a
+-- generated column.
 
 -- RLS owner-only
 alter table public.cash_ledger enable row level security;

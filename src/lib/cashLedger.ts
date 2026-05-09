@@ -109,10 +109,11 @@ export async function debitAiActionCost(opts: {
 // Recurring monthly fixed expenses
 //
 // Inngest cron runs daily at 09:00 Zagreb. Each call checks today's
-// day-of-month and inserts the matching expense row. The cash_ledger
-// unique index on (user_id, category, label, date(occurred_at)) where
-// category='fixed_expense' makes this idempotent — re-running the cron
-// the same day is a no-op.
+// day-of-month and inserts the matching expense row. Idempotency is
+// enforced in code (select-first, insert-if-missing) because the
+// equivalent partial unique index couldn't be created — Postgres
+// requires an IMMUTABLE expression for index keys, and any way to
+// extract "the date" from a timestamptz is STABLE at best.
 // =====================================================================
 export const RECURRING_EXPENSES: Array<{
   dayOfMonth: number;
@@ -129,15 +130,43 @@ export async function applyRecurringExpensesForToday(): Promise<{
   skipped: Array<{ label: string; reason: string }>;
 }> {
   const today = new Date();
-  // Use Zagreb date — Croatia (CET/CEST). Convert: take UTC + 1-2h offset.
-  // Simplification: use UTC date — close enough for monthly recurrence.
   const dayOfMonth = today.getUTCDate();
   const due = RECURRING_EXPENSES.filter((r) => r.dayOfMonth === dayOfMonth);
 
   const applied: Array<{ label: string; amountCents: number }> = [];
   const skipped: Array<{ label: string; reason: string }> = [];
+  if (due.length === 0) return { applied, skipped };
+
+  const supabase = getServiceSupabase();
+  const ownerUserId = await getOwnerUserId(supabase);
+  if (!ownerUserId) {
+    return {
+      applied,
+      skipped: due.map((d) => ({ label: d.label, reason: "no owner user" })),
+    };
+  }
+
+  // Idempotency window: today's UTC date (00:00 → next 00:00).
+  const dayStart = new Date(Date.UTC(
+    today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(),
+  ));
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
   for (const exp of due) {
+    const existing = await supabase
+      .from("cash_ledger")
+      .select("id")
+      .eq("user_id", ownerUserId)
+      .eq("category", "fixed_expense")
+      .eq("label", exp.label)
+      .gte("occurred_at", dayStart.toISOString())
+      .lt("occurred_at", dayEnd.toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (existing.data) {
+      skipped.push({ label: exp.label, reason: "already booked today" });
+      continue;
+    }
     const ok = await appendCashTxn({
       amountCents: -exp.amountCents,
       category: "fixed_expense",
@@ -145,7 +174,7 @@ export async function applyRecurringExpensesForToday(): Promise<{
       meta: { recurring: true, dayOfMonth: exp.dayOfMonth },
     });
     if (ok) applied.push({ label: exp.label, amountCents: exp.amountCents });
-    else skipped.push({ label: exp.label, reason: "insert failed (likely duplicate today)" });
+    else skipped.push({ label: exp.label, reason: "insert failed" });
   }
 
   return { applied, skipped };
