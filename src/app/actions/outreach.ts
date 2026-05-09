@@ -100,6 +100,19 @@ interface HotLeadCandidate {
   niche: string | null;
   notes: string | null;
   icp_score: number | null;
+  person_enrichment: {
+    owner: {
+      name: string;
+      title: string | null;
+      linkedin_url: string | null;
+      email: string | null;
+      channels?: { email?: string; linkedin?: string; instagram?: string };
+      channelHealth?: {
+        linkedin?: { status: string };
+        instagram?: { status: string };
+      };
+    } | null;
+  } | null;
 }
 
 function pickPlatformFromNotes(
@@ -111,6 +124,45 @@ function pickPlatformFromNotes(
   if (/instagram:\s*https?:\/\//i.test(notes)) return "instagram";
   if (/linkedin:\s*https?:\/\//i.test(notes)) return "linkedin";
   if (/Org LinkedIn:/i.test(notes)) return "linkedin";
+  return "linkedin";
+}
+
+/**
+ * Picks the optimal platform for outreach given person-first enrichment.
+ *
+ * Priority (best → fallback):
+ *   1. Owner email (Apollo verified)
+ *   2. Owner LinkedIn (alive)
+ *   3. Owner Instagram (alive)
+ *   4. Company email
+ *   5. Company LinkedIn / Instagram
+ *   6. linkedin (legacy fallback)
+ */
+function pickBestPlatformForLead(
+  lead: HotLeadCandidate,
+  orgChannels: LeadChannels,
+): "linkedin" | "instagram" | "email" | "other" {
+  const owner = lead.person_enrichment?.owner;
+  if (owner?.email) return "email";
+
+  const liStatus = owner?.channelHealth?.linkedin?.status;
+  if (owner?.linkedin_url && liStatus !== "dead" && liStatus !== "blocked") {
+    return "linkedin";
+  }
+
+  const igStatus = owner?.channelHealth?.instagram?.status;
+  if (
+    owner?.channels?.instagram &&
+    igStatus !== "dead" &&
+    igStatus !== "blocked"
+  ) {
+    return "instagram";
+  }
+
+  // Fall back to company channels
+  if (orgChannels.email) return "email";
+  if (orgChannels.linkedin) return "linkedin";
+  if (orgChannels.instagram) return "instagram";
   return "linkedin";
 }
 
@@ -188,7 +240,7 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
   // 1. Hot leads (≥15) in active stages
   const { data: hotLeads } = await supabase
     .from("leads")
-    .select("id, name, email, niche, notes, icp_score")
+    .select("id, name, email, niche, notes, icp_score, person_enrichment")
     .gte("icp_score", 15)
     .in("stage", ["discovery", "pricing", "financing", "booking"])
     .order("icp_score", { ascending: false })
@@ -231,14 +283,26 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
   // 3. Generate drafts (sequential to respect rate limits)
   let generated = 0;
   for (const lead of todo) {
-    const platform = pickPlatformFromNotes(lead.notes, !!lead.email);
+    const orgChannels = extractChannels(lead.notes, lead.email);
+    const owner = lead.person_enrichment?.owner ?? null;
+
+    // Pick best platform: prefer owner's alive channels > company channels
+    const platform = pickBestPlatformForLead(lead, orgChannels);
     const hook = extractHook(lead.notes);
-    const channels = extractChannels(lead.notes, lead.email);
+    const ownerCtx = owner
+      ? {
+          name: owner.name,
+          firstName: owner.name.split(/\s+/)[0],
+          title: owner.title ?? null,
+        }
+      : undefined;
+
     const res = await draftOutreach({
       leadName: lead.name,
       platform,
       niche: lead.niche ?? undefined,
       hook,
+      owner: ownerCtx,
     });
     if (!res.ok || !res.draft) continue;
 
@@ -250,12 +314,26 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
       const shortened = await shortenForChannel(
         res.draft,
         platform,
-        lead.name,
+        owner?.name ?? lead.name,
       );
       if (shortened.ok && shortened.draft) {
         finalDraft = shortened.draft;
       }
     }
+
+    // Build a "merged" channel set with owner's personal links overriding
+    // org-level ones where present (so UI surfaces vlasnik prvo).
+    const ownerChannels = owner?.channels ?? {};
+    const mergedChannels: LeadChannels = {
+      ...orgChannels,
+      ...(ownerChannels.email ? { email: ownerChannels.email } : {}),
+      ...(ownerChannels.linkedin
+        ? { linkedin: ownerChannels.linkedin }
+        : {}),
+      ...(ownerChannels.instagram
+        ? { instagram: ownerChannels.instagram }
+        : {}),
+    };
 
     const { error } = await supabase.from("pending_drafts").insert({
       user_id: userId,
@@ -268,8 +346,19 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
         score: lead.icp_score,
         niche: lead.niche,
         platform,
-        email: lead.email,
-        channels,
+        email: ownerChannels.email ?? lead.email,
+        channels: mergedChannels,
+        owner: owner
+          ? {
+              name: owner.name,
+              title: owner.title,
+              email: owner.email,
+              linkedin_url: owner.linkedin_url,
+              channels: ownerChannels,
+              channelHealth: owner.channelHealth,
+            }
+          : null,
+        orgChannels,
       },
       status: "pending",
     });
@@ -292,6 +381,112 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
     generated,
     skipped: candidates.length - todo.length,
   };
+}
+
+/**
+ * Re-generate a single pending draft using the lead's latest
+ * person_enrichment (owner context). Useful after Deep Enrich finds an
+ * owner for a lead whose draft was generated against the clinic name.
+ */
+export async function regenerateDraftWithOwner(
+  draftId: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return { ok: false, error: "Niste prijavljeni" };
+
+  const { data: draft } = await supabase
+    .from("pending_drafts")
+    .select("id, lead_id, context_payload")
+    .eq("id", draftId)
+    .maybeSingle();
+  if (!draft || !draft.lead_id)
+    return { ok: false, error: "Draft nije pronađen" };
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id, name, email, niche, notes, icp_score, person_enrichment")
+    .eq("id", draft.lead_id)
+    .maybeSingle();
+  if (!lead) return { ok: false, error: "Lead nije pronađen" };
+
+  const candidate = lead as HotLeadCandidate;
+  const orgChannels = extractChannels(candidate.notes, candidate.email);
+  const owner = candidate.person_enrichment?.owner ?? null;
+  if (!owner)
+    return {
+      ok: false,
+      error: "Lead nema enrichment vlasnika — pokreni Deep Enrich prvo",
+    };
+
+  const platform = pickBestPlatformForLead(candidate, orgChannels);
+  const hook = extractHook(candidate.notes);
+  const ownerCtx = {
+    name: owner.name,
+    firstName: owner.name.split(/\s+/)[0],
+    title: owner.title ?? null,
+  };
+
+  const res = await draftOutreach({
+    leadName: candidate.name,
+    platform,
+    niche: candidate.niche ?? undefined,
+    hook,
+    owner: ownerCtx,
+  });
+  if (!res.ok || !res.draft)
+    return { ok: false, error: res.error ?? "AI greška" };
+
+  let finalDraft = res.draft;
+  if (platform === "linkedin" || platform === "instagram") {
+    const shortened = await shortenForChannel(
+      res.draft,
+      platform,
+      owner.name,
+    );
+    if (shortened.ok && shortened.draft) finalDraft = shortened.draft;
+  }
+
+  const ownerChannels = owner.channels ?? {};
+  const mergedChannels: LeadChannels = {
+    ...orgChannels,
+    ...(ownerChannels.email ? { email: ownerChannels.email } : {}),
+    ...(ownerChannels.linkedin ? { linkedin: ownerChannels.linkedin } : {}),
+    ...(ownerChannels.instagram
+      ? { instagram: ownerChannels.instagram }
+      : {}),
+  };
+
+  const { error } = await supabase
+    .from("pending_drafts")
+    .update({
+      draft_text: finalDraft,
+      status: "pending",
+      reasoning: hook ?? null,
+      generated_at: new Date().toISOString(),
+      context_payload: {
+        leadName: candidate.name,
+        score: candidate.icp_score,
+        niche: candidate.niche,
+        platform,
+        email: ownerChannels.email ?? candidate.email,
+        channels: mergedChannels,
+        owner: {
+          name: owner.name,
+          title: owner.title,
+          email: owner.email,
+          linkedin_url: owner.linkedin_url,
+          channels: ownerChannels,
+          channelHealth: owner.channelHealth,
+        },
+        orgChannels,
+      },
+    })
+    .eq("id", draftId);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/");
+  return { ok: true };
 }
 
 export async function editPendingDraft(
@@ -451,6 +646,18 @@ export interface PendingColdDraft {
     email?: string | null;
     channels?: LeadChannels;
     channelHealth?: ChannelHealthMap;
+    owner?: {
+      name: string;
+      title: string | null;
+      email: string | null;
+      linkedin_url: string | null;
+      channels?: { email?: string; linkedin?: string; instagram?: string };
+      channelHealth?: {
+        linkedin?: { status: string; followers?: number; reason?: string };
+        instagram?: { status: string; followers?: number; reason?: string };
+      };
+    } | null;
+    orgChannels?: LeadChannels;
   } | null;
 }
 

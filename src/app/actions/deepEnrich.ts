@@ -9,6 +9,7 @@ import {
   type OwnerCandidate,
 } from "@/lib/personSearch";
 import { checkLinkedInProfile } from "@/lib/channelHealth";
+import { huntOwnerInstagram } from "@/lib/instagramHunter";
 import { logActivity } from "./activityLog";
 
 interface ApolloIntegrationConfig {
@@ -50,10 +51,13 @@ export interface PersonEnrichmentRecord {
   channels: {
     email?: string;
     linkedin?: string;
+    instagram?: string;
   };
   channelHealth?: {
     linkedin?: PersonEnrichmentChannel;
+    instagram?: PersonEnrichmentChannel;
   };
+  instagram_pattern?: string; // tells us how the IG handle was guessed
 }
 
 export interface LeadPersonEnrichment {
@@ -143,6 +147,37 @@ export async function deepEnrichLead(
     } else {
       apolloTotal = apolloPeople.people?.length ?? 0;
       const match = pickBestOwnerMatch(candidates, apolloPeople.people ?? []);
+
+      // No Apollo hit but we DO have a parsed candidate from the clinic
+      // name — still try IG hunt + record the name as best-effort owner.
+      if ((!match || match.score < 0.3) && candidates[0]) {
+        const c = candidates[0];
+        const igHunt = await huntOwnerInstagram(
+          c.firstName,
+          c.lastName,
+        ).catch(() => null);
+        if (igHunt) {
+          owner = {
+            name: c.fullName,
+            title: null,
+            linkedin_url: null,
+            email: null,
+            email_status: null,
+            apollo_id: null,
+            match_score: c.confidence,
+            channels: { instagram: igHunt.url },
+            channelHealth: {
+              instagram: {
+                status: "alive",
+                followers: igHunt.followers,
+                reason: `pattern: ${igHunt.matchedPattern}`,
+              },
+            },
+            instagram_pattern: igHunt.matchedPattern,
+          };
+        }
+      }
+
       if (match && match.score >= 0.3) {
         const p = match.person;
         const fullName =
@@ -153,17 +188,48 @@ export async function deepEnrichLead(
         if (p.linkedin_url) channels.linkedin = p.linkedin_url;
 
         const channelHealth: PersonEnrichmentRecord["channelHealth"] = {};
-        if (p.linkedin_url) {
-          try {
-            const liHealth = await checkLinkedInProfile(p.linkedin_url);
-            channelHealth.linkedin = {
-              status: liHealth.status,
-              followers: liHealth.followers,
-              reason: liHealth.reason,
-            };
-          } catch {
-            /* skip on error */
-          }
+
+        // Run LinkedIn check + IG handle hunt in parallel — both are slow
+        const liPromise = p.linkedin_url
+          ? checkLinkedInProfile(p.linkedin_url).catch(() => null)
+          : Promise.resolve(null);
+
+        const firstName =
+          p.first_name ??
+          fullName.split(/\s+/)[0] ??
+          match.matchedCandidate?.firstName ??
+          "";
+        const lastName =
+          p.last_name ??
+          fullName.split(/\s+/).slice(-1)[0] ??
+          match.matchedCandidate?.lastName ??
+          "";
+        const igPromise =
+          firstName && lastName
+            ? huntOwnerInstagram(firstName, lastName).catch(() => null)
+            : Promise.resolve(null);
+
+        const [liHealth, igHunt] = await Promise.all([liPromise, igPromise]);
+
+        if (liHealth) {
+          channelHealth.linkedin = {
+            status: liHealth.status,
+            followers: liHealth.followers,
+            reason: liHealth.reason,
+          };
+        }
+
+        let instagramPattern: string | undefined;
+        if (igHunt) {
+          channels.instagram = igHunt.url;
+          channelHealth.instagram = {
+            status: "alive",
+            followers: igHunt.followers,
+            reason: igHunt.followers
+              ? `${igHunt.followers} followers · pattern: ${igHunt.matchedPattern}`
+              : `pattern: ${igHunt.matchedPattern}`,
+          };
+          instagramPattern = igHunt.matchedPattern;
         }
 
         owner = {
@@ -176,6 +242,7 @@ export async function deepEnrichLead(
           match_score: Number(match.score.toFixed(2)),
           channels,
           channelHealth,
+          instagram_pattern: instagramPattern,
         };
       }
     }

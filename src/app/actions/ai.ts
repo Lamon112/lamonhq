@@ -10,6 +10,16 @@ export interface DraftInput {
   niche?: string;
   hook?: string;
   previousMessage?: string;
+  /**
+   * Person-first context: when set, the draft is addressed directly to
+   * the named owner instead of the clinic. Owner-name pozdrav, owner
+   * title used for credibility framing, etc.
+   */
+  owner?: {
+    name: string;
+    firstName?: string;
+    title?: string | null;
+  };
 }
 
 export interface DraftResult {
@@ -151,15 +161,21 @@ function buildUserMessage(
           .join("\n\n")}\n\n# Platform templates kao backup tone reference:\n${templates}\n`
       : `# Platform templates kao tone reference (uhvati strukturu, ne kopiraj sadržaj):\n\n${templates}\n`;
 
+  const ownerLine = input.owner
+    ? `**Vlasnik (PIŠI DIREKTNO NJEMU/NJOJ):** ${input.owner.name}${input.owner.title ? ` — ${input.owner.title}` : ""}
+**OBAVEZNO:** Pozdrav počni s "${input.owner.firstName ?? input.owner.name.split(/\s+/)[0]}, pozdrav 🤝" (ne s nazivom klinike). Cijela poruka mora zvučati osobno — kao da pišeš VLASNIKU, ne ordinaciji.`
+    : "";
+
   return `**Lead:** ${input.leadName}
 **Platforma:** ${input.platform}
 ${input.niche ? `**Niche:** ${input.niche}` : ""}
+${ownerLine}
 ${input.hook ? `**Hook / kontekst (što sam vidio kod njih):** ${input.hook}` : ""}
 ${input.previousMessage ? `**Prijašnja poruka (ovo je follow-up):**\n${input.previousMessage}` : ""}
 ${angleHint ? `\n**Specifični angle za ovaj draft:** ${angleHint}\n` : ""}
 ${goodSection}
 
-Sad napiši poruku za ${input.leadName} prema svim pravilima.`;
+Sad napiši poruku za ${input.owner?.name ?? input.leadName} prema svim pravilima.`;
 }
 
 export async function draftOutreach(

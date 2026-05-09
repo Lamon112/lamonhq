@@ -10,6 +10,7 @@ import {
   Check,
   ExternalLink,
   Scissors,
+  RefreshCw,
 } from "lucide-react";
 import {
   generateColdDrafts,
@@ -17,6 +18,7 @@ import {
   editPendingDraft,
   dismissPendingDraft,
   getPendingColdDrafts,
+  regenerateDraftWithOwner,
   type PendingColdDraft,
 } from "@/app/actions/outreach";
 import { shortenForChannel } from "@/app/actions/ai";
@@ -147,6 +149,27 @@ export function ApprovalQueue() {
       setInfo(
         `✂️ Skraćeno za ${channel === "linkedin" ? "LinkedIn" : "Instagram"} (${res.charCount} znakova). Provjeri tekst pa Save edit.`,
       );
+    });
+  }
+
+  function regenWithOwner(d: PendingColdDraft) {
+    setError(null);
+    setPendingId(d.id);
+    startTransition(async () => {
+      const res = await regenerateDraftWithOwner(d.id);
+      setPendingId(null);
+      if (!res.ok) {
+        setError(res.error ?? "Regen greška");
+        return;
+      }
+      setInfo("🔄 Draft regeneriran s owner kontekstom");
+      // Drop any local edit since the underlying draft just changed
+      setEdits((s) => {
+        const next = { ...s };
+        delete next[d.id];
+        return next;
+      });
+      await refresh();
     });
   }
 
@@ -304,8 +327,22 @@ export function ApprovalQueue() {
                   </p>
                 )}
 
+                {ctx.owner && (
+                  <OwnerSection
+                    owner={ctx.owner}
+                    message={text}
+                    onCopy={copyToClipboard}
+                  />
+                )}
+
                 <ChannelRow
                   channels={
+                    (
+                      ctx as {
+                        orgChannels?: Record<string, string>;
+                        channels?: Record<string, string>;
+                      }
+                    ).orgChannels ??
                     (ctx as { channels?: Record<string, string> }).channels
                   }
                   channelHealth={
@@ -315,6 +352,7 @@ export function ApprovalQueue() {
                   email={ctx.email ?? null}
                   message={text}
                   onCopy={copyToClipboard}
+                  label={ctx.owner ? "🏥 Ordinacija (fallback):" : "Pošalji preko:"}
                 />
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -342,6 +380,13 @@ export function ApprovalQueue() {
                       <Copy size={13} /> Copy text
                     </GhostButton>
                   )}
+                  <GhostButton
+                    onClick={() => regenWithOwner(d)}
+                    disabled={pendingId === d.id}
+                  >
+                    <RefreshCw size={12} />
+                    {pendingId === d.id ? "Regeneram…" : "Regen s vlasnikom"}
+                  </GhostButton>
                   {edits[d.id] !== undefined &&
                     edits[d.id] !== d.draft_text && (
                       <GhostButton
@@ -425,6 +470,115 @@ function CharCounter({ text, platform }: { text: string; platform: string }) {
       {len} / {limit}
       {over && " · IMA PREKO!"}
     </span>
+  );
+}
+
+interface OwnerSectionProps {
+  owner: {
+    name: string;
+    title: string | null;
+    email: string | null;
+    linkedin_url: string | null;
+    channels?: { email?: string; linkedin?: string; instagram?: string };
+    channelHealth?: {
+      linkedin?: { status: string; followers?: number; reason?: string };
+      instagram?: { status: string; followers?: number; reason?: string };
+    };
+  };
+  message: string;
+  onCopy: (t: string) => void;
+}
+
+function OwnerSection({ owner, message, onCopy }: OwnerSectionProps) {
+  const items: Array<{
+    key: string;
+    label: string;
+    href: string;
+    title: string;
+    health?: { status: string; followers?: number; reason?: string };
+  }> = [];
+  const email = owner.channels?.email ?? owner.email;
+  if (email)
+    items.push({
+      key: "email",
+      label: "📧 Email",
+      href: `mailto:${email}`,
+      title: email,
+    });
+  const li = owner.channels?.linkedin ?? owner.linkedin_url;
+  if (li)
+    items.push({
+      key: "li",
+      label: "💼 LinkedIn",
+      href: li,
+      title: li,
+      health: owner.channelHealth?.linkedin,
+    });
+  if (owner.channels?.instagram)
+    items.push({
+      key: "ig",
+      label: "📷 Instagram",
+      href: owner.channels.instagram,
+      title: owner.channels.instagram,
+      health: owner.channelHealth?.instagram,
+    });
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mt-3 rounded border border-purple-500/30 bg-purple-500/5 p-2">
+      <div className="mb-1.5 flex items-baseline gap-2">
+        <span className="text-[10px] uppercase tracking-wider text-purple-300">
+          👤 Vlasnik (preferiraj)
+        </span>
+        <span className="text-xs font-medium text-text">{owner.name}</span>
+        {owner.title && (
+          <span className="text-[10px] text-text-dim">{owner.title}</span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((c) => {
+          const dead = c.health?.status === "dead";
+          const dormant = c.health?.status === "dormant";
+          const colorClass = dead
+            ? "border-danger/40 bg-danger/5 text-danger/70 hover:border-danger"
+            : dormant
+              ? "border-warning/40 bg-warning/5 text-warning hover:border-warning"
+              : "border-purple-500/40 bg-purple-500/10 text-purple-200 hover:border-purple-500";
+          const tooltip = c.health
+            ? `${c.health.status}${c.health.followers != null ? ` · ${c.health.followers} followers` : ""}${c.health.reason ? ` · ${c.health.reason}` : ""} · ${c.title}`
+            : c.title;
+          return (
+            <a
+              key={c.key}
+              href={c.href}
+              target={c.key === "email" ? undefined : "_blank"}
+              rel={c.key === "email" ? undefined : "noreferrer"}
+              title={tooltip}
+              onClick={() => {
+                if (c.key !== "email") void onCopy(message);
+              }}
+              className={`flex items-center gap-1 rounded border px-2 py-1 text-[11px] transition-colors ${colorClass}`}
+            >
+              {c.health
+                ? c.health.status === "dead"
+                  ? "❌ "
+                  : c.health.status === "dormant"
+                    ? "⚠️ "
+                    : "✅ "
+                : ""}
+              {c.label}
+              {c.health?.followers != null && (
+                <span className="ml-1 text-[10px] opacity-70">
+                  {c.health.followers}
+                </span>
+              )}
+              <ExternalLink size={10} />
+            </a>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -516,6 +670,7 @@ interface ChannelRowProps {
   email: string | null;
   message: string;
   onCopy: (t: string) => void;
+  label?: string;
 }
 
 function ChannelRow({
@@ -524,6 +679,7 @@ function ChannelRow({
   email,
   message,
   onCopy,
+  label = "Pošalji preko:",
 }: ChannelRowProps) {
   const list: Array<{
     key: string;
@@ -587,7 +743,7 @@ function ChannelRow({
   return (
     <div className="mt-3 flex flex-wrap items-center gap-1.5">
       <span className="text-[10px] uppercase tracking-wider text-text-muted">
-        Pošalji preko:
+        {label}
       </span>
       {list.map((c) => {
         const h = c.healthKey ? channelHealth?.[c.healthKey] : undefined;
