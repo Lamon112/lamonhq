@@ -286,6 +286,18 @@ export interface LeadRow {
     apollo_skipped?: boolean;
     enriched_at?: string;
     note?: string;
+    org_channels_scraped?: {
+      instagram?: string[];
+      facebook?: string[];
+      linkedin_company?: string[];
+      linkedin_personal?: string[];
+      tiktok?: string[];
+      youtube?: string[];
+      whatsapp?: string[];
+      emails?: string[];
+      phones?: string[];
+      pages_visited?: string[];
+    };
   } | null;
   email?: string | null;
   created_at: string;

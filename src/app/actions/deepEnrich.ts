@@ -10,6 +10,10 @@ import {
 } from "@/lib/personSearch";
 import { checkLinkedInProfile } from "@/lib/channelHealth";
 import { huntOwnerInstagram } from "@/lib/instagramHunter";
+import {
+  scrapeCompanyWebsite,
+  type ScrapedChannels,
+} from "@/lib/websiteScraper";
 import { logActivity } from "./activityLog";
 
 interface ApolloIntegrationConfig {
@@ -68,12 +72,34 @@ export interface LeadPersonEnrichment {
   enriched_at: string;
   city_filter?: string | null;
   note?: string;
+  /** Social URLs harvested from the company website */
+  org_channels_scraped?: ScrapedChannels;
 }
 
 export interface DeepEnrichResult {
   ok: boolean;
   enrichment?: LeadPersonEnrichment;
   error?: string;
+}
+
+/**
+ * Pulls the company website URL out of Apollo enrichment notes.
+ * Notes typically embed a "Website: https://..." line; falls back to
+ * any http(s) URL that doesn't point to a known social/aggregator host.
+ */
+function extractWebsiteUrl(notes: string | null): string | null {
+  if (!notes) return null;
+  const explicit = notes.match(
+    /(?:Website|Web|Site|Domain):\s*(https?:\/\/\S+)/i,
+  );
+  if (explicit?.[1]) return explicit[1].replace(/[.,;)\]]+$/, "");
+
+  const blocked = /(instagram|facebook|linkedin|tiktok|youtube|wa\.me|whatsapp|google|maps|companywall)/i;
+  const all = notes.match(/https?:\/\/[\w.-]+(?:\/\S*)?/g) ?? [];
+  for (const u of all) {
+    if (!blocked.test(u)) return u.replace(/[.,;)\]]+$/, "");
+  }
+  return null;
 }
 
 /**
@@ -115,7 +141,7 @@ export async function deepEnrichLead(
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, name, niche")
+    .select("id, name, niche, notes")
     .eq("id", leadId)
     .maybeSingle();
   if (!lead) return { ok: false, error: "Lead nije pronađen" };
@@ -124,6 +150,12 @@ export async function deepEnrichLead(
 
   // 1. Owner candidates from clinic name
   const candidates = parseOwnerCandidates(lead.name as string);
+
+  // 1b. Kick off website scrape in parallel — independent of Apollo path.
+  const websiteUrl = extractWebsiteUrl(lead.notes as string | null);
+  const scrapePromise: Promise<ScrapedChannels | null> = websiteUrl
+    ? scrapeCompanyWebsite(websiteUrl).catch(() => null)
+    : Promise.resolve(null);
 
   // 2. Apollo search (skipped if no key configured)
   const orgKeyword = extractOrgKeyword(lead.name as string);
@@ -248,6 +280,71 @@ export async function deepEnrichLead(
     }
   }
 
+  // 2c. Wait for the website scrape (started in parallel above) and merge
+  // any social URLs we found there into the owner record. Website-scraped
+  // links are usually MORE accurate than Apollo because they come straight
+  // from the clinic's footer.
+  const scraped = await scrapePromise;
+  if (scraped && owner) {
+    // Promote first scraped Instagram / personal LinkedIn into owner.channels
+    // if owner doesn't already have one.
+    const igFromScrape = scraped.instagram?.[0];
+    if (igFromScrape && !owner.channels.instagram) {
+      owner.channels.instagram = igFromScrape;
+      owner.channelHealth = owner.channelHealth ?? {};
+      owner.channelHealth.instagram = {
+        status: "alive",
+        reason: "scraped from company website",
+      };
+    }
+    const personalLi = scraped.linkedin_personal?.find(
+      (u) => !owner!.linkedin_url || !u.includes(owner!.linkedin_url),
+    );
+    if (personalLi && !owner.linkedin_url) {
+      owner.linkedin_url = personalLi;
+      owner.channels.linkedin = personalLi;
+    }
+    const scrapedEmail = scraped.emails?.[0];
+    if (scrapedEmail && !owner.email) {
+      owner.email = scrapedEmail;
+      owner.channels.email = scrapedEmail;
+    }
+  }
+
+  // If Apollo never produced an owner but the website footer DOES have
+  // social links + we parsed a candidate name, build a minimal owner
+  // record from the scraped data so the UI has something useful to show.
+  if (!owner && scraped && candidates[0]) {
+    const ig = scraped.instagram?.[0];
+    const li = scraped.linkedin_personal?.[0];
+    const em = scraped.emails?.[0];
+    if (ig || li || em) {
+      const c = candidates[0];
+      const ch: PersonEnrichmentRecord["channels"] = {};
+      const ph: PersonEnrichmentRecord["channelHealth"] = {};
+      if (em) ch.email = em;
+      if (li) ch.linkedin = li;
+      if (ig) {
+        ch.instagram = ig;
+        ph.instagram = {
+          status: "alive",
+          reason: "scraped from company website",
+        };
+      }
+      owner = {
+        name: c.fullName,
+        title: null,
+        linkedin_url: li ?? null,
+        email: em ?? null,
+        email_status: null,
+        apollo_id: null,
+        match_score: c.confidence * 0.7,
+        channels: ch,
+        channelHealth: ph,
+      };
+    }
+  }
+
   // 3. Persist (always — even if owner is null, we record the attempt)
   const enrichment: LeadPersonEnrichment = {
     owner,
@@ -256,6 +353,7 @@ export async function deepEnrichLead(
     apollo_skipped: apolloSkipped || undefined,
     enriched_at: new Date().toISOString(),
     note,
+    org_channels_scraped: scraped ?? undefined,
   };
 
   const { error } = await supabase

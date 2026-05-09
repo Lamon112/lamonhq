@@ -1619,7 +1619,9 @@ function PersonEnrichmentBlock({
     });
   }
 
-  if (!owner && !note) {
+  const scraped = lead.person_enrichment?.org_channels_scraped;
+
+  if (!owner && !note && !scraped) {
     return (
       <div className="mb-2 rounded border border-dashed border-border bg-bg-card/30 p-2">
         <button
@@ -1632,7 +1634,7 @@ function PersonEnrichmentBlock({
           ) : (
             "🔬"
           )}
-          {pending ? "Tražim vlasnika…" : "Deep enrich (Apollo + LI check)"}
+          {pending ? "Tražim vlasnika…" : "Deep enrich (Apollo + scrape sajt)"}
         </button>
         {error && (
           <p className="mt-1 text-[10px] text-danger">{error}</p>
@@ -1730,11 +1732,126 @@ function PersonEnrichmentBlock({
           )}
         </>
       )}
+      {scraped && (
+        <ScrapedOrgChannels scraped={scraped} />
+      )}
       {error && (
         <p className="mt-1 text-[10px] text-danger">{error}</p>
       )}
     </div>
   );
+}
+
+function ScrapedOrgChannels({
+  scraped,
+}: {
+  scraped: NonNullable<LeadRow["person_enrichment"]>["org_channels_scraped"];
+}) {
+  if (!scraped) return null;
+  const groups: Array<{
+    label: string;
+    items: string[];
+    hrefBuilder: (s: string) => string;
+  }> = [];
+  if (scraped.emails?.length)
+    groups.push({
+      label: "📧",
+      items: scraped.emails,
+      hrefBuilder: (s) => `mailto:${s}`,
+    });
+  if (scraped.instagram?.length)
+    groups.push({
+      label: "📷 IG",
+      items: scraped.instagram,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.linkedin_personal?.length)
+    groups.push({
+      label: "💼 LI (osoba)",
+      items: scraped.linkedin_personal,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.linkedin_company?.length)
+    groups.push({
+      label: "💼 LI (firma)",
+      items: scraped.linkedin_company,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.facebook?.length)
+    groups.push({
+      label: "👥 FB",
+      items: scraped.facebook,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.tiktok?.length)
+    groups.push({
+      label: "🎵 TT",
+      items: scraped.tiktok,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.youtube?.length)
+    groups.push({
+      label: "▶️ YT",
+      items: scraped.youtube,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.whatsapp?.length)
+    groups.push({
+      label: "💬 WA",
+      items: scraped.whatsapp,
+      hrefBuilder: (s) => s,
+    });
+  if (scraped.phones?.length)
+    groups.push({
+      label: "📞",
+      items: scraped.phones,
+      hrefBuilder: (s) => `tel:${s.replace(/\s+/g, "")}`,
+    });
+  if (groups.length === 0) return null;
+  return (
+    <div className="mt-2 border-t border-purple-500/20 pt-2">
+      <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted">
+        🌐 Scraped sa stranice
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {groups.flatMap((g) =>
+          g.items.slice(0, 3).map((item, i) => (
+            <a
+              key={`${g.label}-${i}-${item}`}
+              href={g.hrefBuilder(item)}
+              target={
+                g.label.startsWith("📧") || g.label === "📞"
+                  ? undefined
+                  : "_blank"
+              }
+              rel={
+                g.label.startsWith("📧") || g.label === "📞"
+                  ? undefined
+                  : "noreferrer"
+              }
+              onClick={(e) => e.stopPropagation()}
+              title={item}
+              className="rounded border border-cyan-500/30 bg-cyan-500/5 px-1.5 py-0.5 text-[11px] text-cyan-200 hover:border-cyan-500"
+            >
+              {g.label} {compactItem(item)}
+            </a>
+          )),
+        )}
+      </div>
+    </div>
+  );
+}
+
+function compactItem(s: string): string {
+  if (s.includes("@") && !s.startsWith("http")) return s;
+  if (s.startsWith("tel:") || /^[+\d]/.test(s)) return s;
+  try {
+    const u = new URL(s);
+    const path = u.pathname.replace(/\/$/, "");
+    return path ? path.replace(/^\/+/, "@").replace(/\/.*$/, "") : u.host;
+  } catch {
+    return s;
+  }
 }
 
 interface ParsedChannels {
