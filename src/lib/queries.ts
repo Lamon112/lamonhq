@@ -299,6 +299,46 @@ export interface LeadRow {
       pages_visited?: string[];
     };
   } | null;
+  holmes_report?: {
+    owner: {
+      name: string | null;
+      title: string | null;
+      bio: string | null;
+      photo: string | null;
+      education: string[];
+      languages: string[];
+      years_experience: number | null;
+    };
+    channels: {
+      linkedin_personal: string | null;
+      instagram_personal: string | null;
+      email: string | null;
+      phone: string | null;
+      linkedin_company: string | null;
+      instagram_company: string | null;
+      website: string | null;
+    };
+    personal_angles: {
+      interests: string[];
+      values: string[];
+      recent_activity: string[];
+      pain_points: string[];
+    };
+    best_angle: {
+      summary: string;
+      opening_hook: string;
+      avoid: string[];
+    };
+    reachability: Array<{
+      channel: string;
+      url: string;
+      confidence: number;
+      reasoning: string;
+    }>;
+    publicity: Array<{ title: string; url: string; snippet: string }>;
+    outreach_draft: string;
+    generated_at: string;
+  } | null;
   email?: string | null;
   created_at: string;
   updated_at: string;

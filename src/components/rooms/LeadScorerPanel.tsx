@@ -35,6 +35,7 @@ import {
   deepEnrichLead,
   bulkDeepEnrichHot,
 } from "@/app/actions/deepEnrich";
+import { runHolmesForLead } from "@/app/actions/holmes";
 import {
   StatTile,
   TabButton,
@@ -740,6 +741,16 @@ export function LeadScorerPanel({
                         <PersonEnrichmentBlock
                           lead={l}
                           onEnriched={(updated) =>
+                            setList((prev) =>
+                              prev.map((row) =>
+                                row.id === updated.id ? updated : row,
+                              ),
+                            )
+                          }
+                        />
+                        <HolmesBlock
+                          lead={l}
+                          onComplete={(updated) =>
                             setList((prev) =>
                               prev.map((row) =>
                                 row.id === updated.id ? updated : row,
@@ -1738,6 +1749,273 @@ function PersonEnrichmentBlock({
       {error && (
         <p className="mt-1 text-[10px] text-danger">{error}</p>
       )}
+    </div>
+  );
+}
+
+// =====================================================================
+// Agent Holmes — AI detective dossier
+// =====================================================================
+
+function HolmesBlock({
+  lead,
+  onComplete,
+}: {
+  lead: LeadRow;
+  onComplete: (updated: LeadRow) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const report = lead.holmes_report ?? null;
+
+  function run() {
+    setError(null);
+    startTransition(async () => {
+      const res = await runHolmesForLead(lead.id);
+      if (!res.ok) {
+        setError(res.error ?? "Holmes greška");
+        return;
+      }
+      onComplete({ ...lead, holmes_report: res.report ?? null });
+      setExpanded(true);
+    });
+  }
+
+  if (!report) {
+    return (
+      <div className="mb-2 rounded border border-dashed border-amber-500/40 bg-amber-500/5 p-2">
+        <button
+          onClick={run}
+          disabled={pending}
+          className="flex items-center gap-1.5 text-[11px] text-amber-300 hover:text-amber-200 disabled:opacity-50"
+        >
+          {pending ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : (
+            "🕵️"
+          )}
+          {pending ? "Holmes istražuje (~30s)…" : "Pokreni Agent Holmes"}
+        </button>
+        {error && <p className="mt-1 text-[10px] text-danger">{error}</p>}
+      </div>
+    );
+  }
+
+  const owner = report.owner;
+  const angles = report.personal_angles;
+  const best = report.best_angle;
+  const reach = [...report.reachability]
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 4);
+
+  return (
+    <div className="mb-2 rounded border border-amber-500/30 bg-amber-500/5 p-2.5">
+      <button
+        onClick={() => setExpanded((s) => !s)}
+        className="flex w-full items-baseline justify-between gap-2 text-left"
+      >
+        <span className="text-[10px] uppercase tracking-wider text-amber-300">
+          🕵️ Holmes Report
+        </span>
+        <div className="flex items-baseline gap-2">
+          {owner.name && (
+            <span className="text-xs font-semibold text-text">
+              {owner.name}
+            </span>
+          )}
+          <span className="text-[10px] text-text-dim">
+            {expanded ? "↑" : "↓"}
+          </span>
+        </div>
+      </button>
+
+      {!expanded && best?.summary && (
+        <p className="mt-1 text-[11px] italic text-text-dim">
+          {best.summary}
+        </p>
+      )}
+
+      {expanded && (
+        <div className="mt-2 space-y-3">
+          {/* Owner profile */}
+          {(owner.name || owner.title || owner.bio) && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                👤 Vlasnik
+              </div>
+              <div className="mt-0.5 text-sm font-medium text-text">
+                {owner.name ?? "—"}
+              </div>
+              {owner.title && (
+                <div className="text-[11px] text-text-dim">{owner.title}</div>
+              )}
+              {owner.bio && (
+                <p className="mt-1 text-[11px] text-text-dim">
+                  {owner.bio}
+                </p>
+              )}
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-text-dim">
+                {owner.years_experience != null && (
+                  <span>📅 {owner.years_experience}+ god iskustva</span>
+                )}
+                {owner.education?.length > 0 && (
+                  <span>🎓 {owner.education.join(", ")}</span>
+                )}
+                {owner.languages?.length > 0 && (
+                  <span>🌐 {owner.languages.join(", ")}</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Personal angles */}
+          {(angles.interests.length ||
+            angles.values.length ||
+            angles.recent_activity.length ||
+            angles.pain_points.length) > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                🎯 Osobni angles
+              </div>
+              <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {angles.interests.length > 0 && (
+                  <AngleList label="Interesi" items={angles.interests} />
+                )}
+                {angles.values.length > 0 && (
+                  <AngleList label="Vrijednosti" items={angles.values} />
+                )}
+                {angles.recent_activity.length > 0 && (
+                  <AngleList label="Recent activity" items={angles.recent_activity} />
+                )}
+                {angles.pain_points.length > 0 && (
+                  <AngleList label="Pain points" items={angles.pain_points} />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Best angle */}
+          {best && (
+            <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2">
+              <div className="text-[10px] uppercase tracking-wider text-amber-300">
+                💡 Najbolji kut
+              </div>
+              <p className="mt-0.5 text-[12px] text-text">{best.summary}</p>
+              {best.opening_hook && (
+                <p className="mt-1.5 rounded border border-amber-500/30 bg-bg/40 px-2 py-1 text-[11px] italic text-amber-200">
+                  &quot;{best.opening_hook}&quot;
+                </p>
+              )}
+              {best.avoid?.length > 0 && (
+                <p className="mt-1 text-[10px] text-danger">
+                  ⛔ Izbjegavaj: {best.avoid.join(" · ")}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Reachability */}
+          {reach.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                📡 Najbolji kanal
+              </div>
+              <ul className="mt-1 space-y-1">
+                {reach.map((r, i) => (
+                  <li
+                    key={`${r.channel}-${i}`}
+                    className="flex items-baseline gap-2"
+                  >
+                    <span className="text-[11px] font-medium text-amber-200">
+                      {Math.round(r.confidence * 100)}%
+                    </span>
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] text-text underline-offset-2 hover:underline"
+                    >
+                      {r.channel}
+                    </a>
+                    <span className="text-[10px] text-text-dim">
+                      {r.reasoning}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Publicity */}
+          {report.publicity?.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                🎤 Publicity
+              </div>
+              <ul className="mt-1 space-y-0.5">
+                {report.publicity.slice(0, 5).map((p, i) => (
+                  <li key={i} className="text-[11px]">
+                    <a
+                      href={p.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-amber-200 hover:underline"
+                    >
+                      {p.title}
+                    </a>
+                    {p.snippet && (
+                      <span className="text-text-dim"> · {p.snippet.slice(0, 100)}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Outreach draft */}
+          {report.outreach_draft && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-muted">
+                ✉️ V8 outreach (Holmes-personalizirano)
+              </div>
+              <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap rounded border border-border bg-bg/60 p-2 text-[11px] font-mono text-text">
+                {report.outreach_draft}
+              </pre>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              onClick={run}
+              disabled={pending}
+              className="text-[10px] text-text-muted hover:text-amber-300 disabled:opacity-50"
+            >
+              {pending ? "Re-istražujem…" : "↻ Re-run Holmes"}
+            </button>
+          </div>
+        </div>
+      )}
+      {error && <p className="mt-1 text-[10px] text-danger">{error}</p>}
+    </div>
+  );
+}
+
+function AngleList({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div>
+      <div className="text-[9px] uppercase tracking-wider text-text-muted">
+        {label}
+      </div>
+      <ul className="mt-0.5 space-y-0.5">
+        {items.slice(0, 4).map((it, i) => (
+          <li key={i} className="text-[11px] text-text">
+            • {it}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
