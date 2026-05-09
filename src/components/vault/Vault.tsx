@@ -23,26 +23,14 @@ export function Vault({}: VaultProps) {
       {/* Dot-grid + scanlines background layer */}
       <div className="pointer-events-none absolute inset-0 vault-scanlines" />
 
-      <div className="mx-auto max-w-[1400px] px-4 pb-12 pt-20 lg:px-8">
-        {/* Vault header — terminal-style banner */}
-        <div className="mb-6 rounded-lg border border-amber-500/30 bg-black/40 p-4 font-mono text-amber-200 shadow-[0_0_30px_rgba(245,158,11,0.06)]">
-          <div className="flex items-baseline justify-between gap-3">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-amber-400/80">
-                ▸ Vault-Tec Industries · Lamon HQ
-              </div>
-              <h1 className="mt-1 text-xl font-bold tracking-wider">
-                ☢ VAULT 30K
-              </h1>
-              <p className="mt-0.5 text-[11px] text-amber-300/70">
-                AI agent operations · 9 active personas · status nominal
-              </p>
-            </div>
-            <div className="hidden text-right text-[10px] text-amber-400/60 sm:block">
-              <div>STATUS: ONLINE</div>
-              <div>OVERSEER: Leonardo Lamon</div>
-              <div>SEC LEVEL: 7</div>
-            </div>
+      <div className="mx-auto max-w-[1400px] px-4 pb-12 pt-8 lg:px-8">
+        {/* Minimal terminal banner — no logos, just nameplate */}
+        <div className="mb-4 flex items-baseline justify-between border-b border-amber-700/30 pb-2 font-mono text-amber-300/80">
+          <div className="text-[10px] uppercase tracking-[0.3em]">
+            ▸ Lamon Vault · cross-section
+          </div>
+          <div className="hidden text-[10px] uppercase tracking-[0.2em] text-amber-400/50 sm:block">
+            overseer · Leonardo Lamon
           </div>
         </div>
 
@@ -79,8 +67,8 @@ export function Vault({}: VaultProps) {
           </div>
         </div>
 
-        <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.3em] text-amber-500/40">
-          ☢ Vault-Tec · A Brighter Future, Underground ☢
+        <p className="mt-4 text-center font-mono text-[9px] uppercase tracking-[0.3em] text-amber-500/30">
+          ▸ Lamon Vault · Alt+V → Classic
         </p>
       </div>
 

@@ -136,7 +136,7 @@ export function VaultRoom({ agent }: { agent: Agent }) {
           ? "border-stone-700/50 bg-stone-950 opacity-50"
           : `${accentFrame} ${accentGlow}`)
       }
-      style={{ height: 140 }}
+      style={{ height: 180 }}
     >
       {/* Back wall — gradient + concrete texture */}
       <div

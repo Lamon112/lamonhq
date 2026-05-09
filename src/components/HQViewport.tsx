@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building as ClassicBuilding, BoxSelect } from "lucide-react";
+import { Building as ClassicBuilding, BoxSelect, Eye, EyeOff } from "lucide-react";
 import { Building } from "./Building";
 import { type RoomData } from "./RoomModal";
 import { Vault } from "./vault/Vault";
@@ -9,31 +9,36 @@ import { Vault } from "./vault/Vault";
 type ViewMode = "classic" | "vault";
 
 const STORAGE_KEY = "lamon-hq:view-mode";
+const PANELS_KEY = "lamon-hq:vault-show-panels";
 
 export function HQViewport({ data }: { data: RoomData }) {
   const [view, setView] = useState<ViewMode>("classic");
+  const [showPanelsInVault, setShowPanelsInVault] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Restore last preference on mount
+  // Restore last preferences on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved === "vault" || saved === "classic") setView(saved);
+      const panels = localStorage.getItem(PANELS_KEY);
+      if (panels === "1") setShowPanelsInVault(true);
     } catch {
       /* ignore SSR / privacy mode */
     }
     setHydrated(true);
   }, []);
 
-  // Mirror view mode onto <body> so siblings (floating panels) can hide
-  // themselves via CSS without needing to know about the viewport state.
+  // Mirror view mode + peek state onto <body> so siblings (floating
+  // panels) can hide via CSS without knowing the viewport state.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.body.dataset.viewMode = view;
+    const hidePanels = view === "vault" && !showPanelsInVault;
+    document.body.dataset.viewMode = hidePanels ? "vault" : "classic";
     return () => {
       delete document.body.dataset.viewMode;
     };
-  }, [view]);
+  }, [view, showPanelsInVault]);
 
   // Keyboard shortcut: Alt+V toggles
   useEffect(() => {
@@ -55,7 +60,7 @@ export function HQViewport({ data }: { data: RoomData }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  function toggle() {
+  function toggleView() {
     setView((prev) => {
       const next = prev === "classic" ? "vault" : "classic";
       try {
@@ -67,12 +72,25 @@ export function HQViewport({ data }: { data: RoomData }) {
     });
   }
 
+  function togglePanels() {
+    setShowPanelsInVault((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(PANELS_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
   return (
     <>
-      <ViewSwitcher
+      <ViewControls
         view={view}
-        onToggle={toggle}
-        // Avoid hydration flicker — render switcher only once preference loaded
+        showPanels={showPanelsInVault}
+        onToggleView={toggleView}
+        onTogglePanels={togglePanels}
         hidden={!hydrated}
       />
       {view === "classic" ? <Building data={data} /> : <Vault data={data} />}
@@ -80,42 +98,65 @@ export function HQViewport({ data }: { data: RoomData }) {
   );
 }
 
-function ViewSwitcher({
+function ViewControls({
   view,
-  onToggle,
+  showPanels,
+  onToggleView,
+  onTogglePanels,
   hidden,
 }: {
   view: ViewMode;
-  onToggle: () => void;
+  showPanels: boolean;
+  onToggleView: () => void;
+  onTogglePanels: () => void;
   hidden: boolean;
 }) {
   if (hidden) return null;
   const isVault = view === "vault";
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      title={`Switch to ${isVault ? "Classic" : "Vault"} view (Alt+V)`}
-      className={
-        // Bottom-right floating chip — out of the way of stats / header
-        "fixed bottom-4 right-4 z-40 " +
-        "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium shadow-lg backdrop-blur-md transition-colors " +
-        (isVault
-          ? "border-amber-500/60 bg-black/70 text-amber-200 hover:border-amber-400 hover:bg-black/90"
-          : "border-border bg-bg-elevated/80 text-text-muted hover:border-gold/50 hover:text-gold")
-      }
-    >
-      {isVault ? (
-        <>
-          <ClassicBuilding size={13} />
-          <span>Exit Vault → Classic</span>
-        </>
-      ) : (
-        <>
-          <BoxSelect size={13} />
-          <span>☢ Enter Vault</span>
-        </>
+    <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2">
+      {/* Show/hide panels toggle — only visible in vault mode */}
+      {isVault && (
+        <button
+          type="button"
+          onClick={onTogglePanels}
+          title={showPanels ? "Sakrij action panele" : "Prikaži action panele"}
+          className={
+            "flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium shadow-lg backdrop-blur-md transition-colors " +
+            (showPanels
+              ? "border-emerald-500/60 bg-black/70 text-emerald-200 hover:border-emerald-400"
+              : "border-amber-500/40 bg-black/70 text-amber-200/70 hover:border-amber-400 hover:text-amber-200")
+          }
+        >
+          {showPanels ? <EyeOff size={12} /> : <Eye size={12} />}
+          <span>{showPanels ? "Hide panels" : "Show panels"}</span>
+        </button>
       )}
-    </button>
+
+      {/* View toggle */}
+      <button
+        type="button"
+        onClick={onToggleView}
+        title={`Switch to ${isVault ? "Classic" : "Vault"} view (Alt+V)`}
+        className={
+          "flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium shadow-lg backdrop-blur-md transition-colors " +
+          (isVault
+            ? "border-amber-500/60 bg-black/70 text-amber-200 hover:border-amber-400 hover:bg-black/90"
+            : "border-border bg-bg-elevated/80 text-text-muted hover:border-gold/50 hover:text-gold")
+        }
+      >
+        {isVault ? (
+          <>
+            <ClassicBuilding size={13} />
+            <span>Exit Vault</span>
+          </>
+        ) : (
+          <>
+            <BoxSelect size={13} />
+            <span>Enter Vault</span>
+          </>
+        )}
+      </button>
+    </div>
   );
 }
