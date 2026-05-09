@@ -282,13 +282,38 @@ export async function generateBriefing(): Promise<{
 async function generateBriefingForUser(
   userId: string,
   supabaseOpt?: Awaited<ReturnType<typeof createClient>>,
+  opts: { force?: boolean } = {},
 ): Promise<{
   ok: boolean;
   error?: string;
   briefing?: DailyBriefing;
+  skipped?: boolean;
 }> {
   try {
     const supabase = supabaseOpt ?? (await createClient());
+
+    // Idempotency: if today's briefing already exists AND has been pushed,
+    // skip the entire generation + push to avoid Jarvis spam (multiple
+    // cron retries / manual curls / page-load triggers).
+    if (!opts.force) {
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const { data: existing } = await supabase
+        .from("daily_briefings")
+        .select(
+          "id, briefing_date, greeting, top_actions, context_summary, motivational_hook, generated_at, pushed_to_telegram_at",
+        )
+        .eq("user_id", userId)
+        .eq("briefing_date", todayIso)
+        .maybeSingle();
+      if (existing?.pushed_to_telegram_at) {
+        return {
+          ok: true,
+          skipped: true,
+          briefing: existing as DailyBriefing,
+        };
+      }
+    }
+
     const ctx = await gatherContext(userId);
 
     const anthropic = new Anthropic({
@@ -344,7 +369,7 @@ async function generateBriefingForUser(
 
     if (error) return { ok: false, error: error.message };
 
-    // Push Jarvis briefing summary to Telegram (idempotent per briefing).
+    // Push Jarvis briefing summary to Telegram exactly once per day.
     // pushTelegramNotification is no-op if Telegram not configured / disabled.
     try {
       const top = parsed.top_actions
@@ -352,7 +377,12 @@ async function generateBriefingForUser(
         .map((a, i) => `${i + 1}. ${a.title}`)
         .join("\n");
       const tgText = `🤵 *Dobro jutro, Leonardo.*\n☀️ Briefing za ${ctx.weekday} je spreman.\n\n${parsed.greeting}\n\n*Plan dana:*\n${top}\n\n💪 _${parsed.motivational_hook}_\n\nNa raspolaganju sam. _— Jarvis_\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
-      void pushTelegramNotification("briefing", tgText, userId);
+      await pushTelegramNotification("briefing", tgText, userId);
+      // Mark as pushed so future cron/manual runs short-circuit.
+      await supabase
+        .from("daily_briefings")
+        .update({ pushed_to_telegram_at: new Date().toISOString() })
+        .eq("id", upserted.id);
     } catch {
       /* never throw on push */
     }
@@ -414,6 +444,7 @@ export async function toggleBriefingAction(
 export async function generateBriefingsForAllUsers(): Promise<{
   ok: boolean;
   generated: number;
+  skipped?: number;
   errors: string[];
 }> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -444,9 +475,24 @@ export async function generateBriefingsForAllUsers(): Promise<{
   );
 
   let generated = 0;
+  let skipped = 0;
   const errors: string[] = [];
   for (const userId of userIds) {
     try {
+      // Idempotency: skip user if today's briefing was already pushed.
+      // Stops Jarvis spam when cron retries / curl is hit multiple times.
+      const todayDateStr = new Date().toISOString().slice(0, 10);
+      const { data: existingBriefing } = await admin
+        .from("daily_briefings")
+        .select("id, pushed_to_telegram_at")
+        .eq("user_id", userId)
+        .eq("briefing_date", todayDateStr)
+        .maybeSingle();
+      if (existingBriefing?.pushed_to_telegram_at) {
+        skipped++;
+        continue;
+      }
+
       const ctx = await gatherContextAdmin(userId, admin);
       const anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -468,19 +514,26 @@ export async function generateBriefingsForAllUsers(): Promise<{
         errors.push(`user ${userId}: invalid JSON`);
         continue;
       }
-      const { error } = await admin.from("daily_briefings").upsert(
-        {
-          user_id: userId,
-          briefing_date: ctx.today,
-          greeting: parsed.greeting,
-          top_actions: parsed.top_actions.map((a) => ({ ...a, done: false })),
-          context_summary: parsed.context_summary,
-          motivational_hook: parsed.motivational_hook,
-          raw_payload: ctx,
-          generated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,briefing_date" },
-      );
+      const { data: upserted, error } = await admin
+        .from("daily_briefings")
+        .upsert(
+          {
+            user_id: userId,
+            briefing_date: ctx.today,
+            greeting: parsed.greeting,
+            top_actions: parsed.top_actions.map((a) => ({
+              ...a,
+              done: false,
+            })),
+            context_summary: parsed.context_summary,
+            motivational_hook: parsed.motivational_hook,
+            raw_payload: ctx,
+            generated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,briefing_date" },
+        )
+        .select("id")
+        .single();
       if (error) errors.push(`user ${userId}: ${error.message}`);
       else {
         generated++;
@@ -490,7 +543,14 @@ export async function generateBriefingsForAllUsers(): Promise<{
           .map((a, i) => `${i + 1}. ${a.title}`)
           .join("\n");
         const tgText = `🤵 *Dobro jutro, Leonardo.*\n☀️ Briefing za ${ctx.weekday} je spreman.\n\n${parsed.greeting}\n\n*Plan dana:*\n${top}\n\n💪 _${parsed.motivational_hook}_\n\nNa raspolaganju sam. _— Jarvis_\n\n[Otvori HQ](${process.env.NEXT_PUBLIC_APP_URL ?? "https://lamon-hq.vercel.app"})`;
-        void pushTelegramNotification("briefing", tgText, userId);
+        await pushTelegramNotification("briefing", tgText, userId);
+        // Mark as pushed so subsequent cron retries don't re-spam.
+        if (upserted?.id) {
+          await admin
+            .from("daily_briefings")
+            .update({ pushed_to_telegram_at: new Date().toISOString() })
+            .eq("id", upserted.id);
+        }
       }
     } catch (e) {
       errors.push(
@@ -499,7 +559,7 @@ export async function generateBriefingsForAllUsers(): Promise<{
     }
   }
 
-  return { ok: errors.length === 0, generated, errors };
+  return { ok: errors.length === 0, generated, skipped, errors };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

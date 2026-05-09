@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "./activityLog";
-import { draftOutreach } from "./ai";
+import { draftOutreach, shortenForChannel } from "./ai";
 import { sendViaGmail } from "./gmail";
 import { pushTelegramNotification } from "./telegram";
 
@@ -238,11 +238,26 @@ export async function generateColdDrafts(): Promise<ColdDraftBatchResult> {
     });
     if (!res.ok || !res.draft) continue;
 
+    // Auto-shorten for channels with hard char limits so the draft that
+    // lands in the queue is already paste-ready (LinkedIn 750 hard cap,
+    // Instagram 1000). Email + other have no limit.
+    let finalDraft = res.draft;
+    if (platform === "linkedin" || platform === "instagram") {
+      const shortened = await shortenForChannel(
+        res.draft,
+        platform,
+        lead.name,
+      );
+      if (shortened.ok && shortened.draft) {
+        finalDraft = shortened.draft;
+      }
+    }
+
     const { error } = await supabase.from("pending_drafts").insert({
       user_id: userId,
       lead_id: lead.id,
       draft_type: "cold_outreach",
-      draft_text: res.draft,
+      draft_text: finalDraft,
       reasoning: hook ?? null,
       context_payload: {
         leadName: lead.name,
