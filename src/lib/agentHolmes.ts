@@ -86,7 +86,7 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
     - **linkedin** (max 700 znakova): profesionalno, peer-to-peer, no emoji osim 🤝 u pozdravu. Reference LI post / connection / mutual ako moguće. Hook short. Solution 1 rečenica. CTA "Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?". Potpis "Leonardo Lamon".
 
-    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis). Spomeni Plima paket mid-message kao rješenje, NE u headline-u. Voice se ne spominje pre-discovery — to je za demo poziv. Sign-off "S poštovanjem, Leonardo Lamon".
+    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis, NE "5 stupova"). Spomeni Plima paket mid-message kao rješenje + reci "to je 5 ljudi posla u 1 sustavu — recepcionar 24/7, marketer, brand, PR, analytics — koji bi te u HR koštali 10-15K€/mj bruto, dobivate za 1.497€/mj". Voice se ne spominje pre-discovery — to je za demo poziv. Detaljnije nabrajanje 5 stupova ide na discovery call, ne u prvi mail. Sign-off "S poštovanjem, Leonardo Lamon".
 
     - **phone** — POSEBNI FORMAT, NE PORUKA, nego **CALL SCRIPT** (3 min):
       \`\`\`

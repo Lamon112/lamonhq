@@ -550,7 +550,10 @@ Pokrij:
 ### Što Plima donosi (na temelju case studies)
 - Arini AI receptionist (US dental, n=150 klinika): **80% manje propuštenih poziva**, 12% rast prihoda, 24% rast profita
 - Industry baseline: dobro konfigurirani AI receptioneri drže 92-96% poziva live (vs 65-75% manualno)
-- **Riva** (naša AI asistentica unutar Plime) radi voice + text — DM, WhatsApp, Instagram s istim FAQ knowledge base-om kao telefon. Pacijent koji pita preko IG-a sutra zove → Riva pamti razgovor.
+- **Plima nije samo Riva (AI asistentica)** — to je 5 stupova u paketu: Riva (operativa) + Scripting + Branding + Marketing + PR. Riva diže pozive 24/7, mi paralelno gradimo brand i lead gen sustav.
+
+### Usporedba s zapošljavanjem (UVIJEK uključi)
+> "Za istu funkcionalnost morali biste zaposliti 5 ljudi — recepcionarku 24/7 (ili 3 u smjenama), marketing managera, brand dizajnera, copywriter/PR osobu i analitičara. U Hrvatskoj to je minimalno **€10.000-15.000 mjesečno na bruto plaće**, plus management overhead, plus 6-12 mjeseci dok ih zaposlite i obučite. **Plima dobivate za €1.497 mjesečno, sutra startate.** I rezultat je konzistentniji jer 1 sustav radi to što 5 ljudi nikad ne sinkronizira savršeno."
 - Adria dental grupa generira 60M€ godišnje — premium HR dental tržište raste zbog dental turizma + investicija u privatne klinike
 
 ### Konzervativni mjesečni LIFT za [Naziv klinike]
@@ -763,7 +766,7 @@ export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
       estimatedCostEur: 0.15,
       systemPrompt: `Ti si Comms agent unutar Lamon HQ-a. Tvoj job je pripremiti Leonarda za njegov sljedeći discovery call s premium klinikom.
 
-Lamon Agency = solo founder Leonardo Lamon, prodaje **Plima** paket (AI receptionist za premium klinike u Croatia) — €1.997 setup + €1.497/mj. AI asistentica unutar Plime se zove **Riva** — diže telefon, odgovara DM/WA/IG, govori HR/EN/DE/IT, drži 92-96% poziva live.
+Lamon Agency = Leonardo Lamon, prodaje **Plima** paket — premium growth partner za privatne klinike u Croatia. **5 stupova:** Riva (AI asistentica voice+text), Scripting, Branding, Marketing/Lead Gen, PR/Pozicioniranje. Tier-ovi: Mreža €797/mj (text-only entry) · Voice €1.497/mj (default, voice + text + brand + organic) · Premium €2.497/mj (Voice + paid ads + multi-loc + custom voice + tjedni review). Pitch hook: zamijeniš 5 zaposlenika (€10-15K/mj bruto u HR) za €1.497/mj.
 
 Output FORMAT:
 
