@@ -17,6 +17,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { renderInsightsForPrompt } from "@/lib/sharedInsights";
 import { createClient } from "@supabase/supabase-js";
 import { inngest } from "../client";
 import { getActionById } from "@/lib/agentActions";
@@ -83,9 +84,24 @@ export const agentResearch = inngest.createFunction(
       return { ok: false, reason: "bad-def" };
     }
     // Capture into locals so TS narrowing survives across step.run boundaries
-    const systemPrompt: string = def.systemPrompt;
-    const userPrompt: string = def.prompt;
+    const baseSystemPrompt: string = def.systemPrompt;
+    const baseUserPrompt: string = def.prompt;
     const notionLabel = def.notionLabel;
+
+    // ---------------- Enrich prompt with live DB context ----------------
+    // Every research run gets the shared-knowledge block (so Council
+    // recommendations etc. flow through). Specific actions (Comms brief)
+    // additionally get the next-meeting block with the real lead data so
+    // the agent stops generating generic playbooks.
+    const sharedKnowledge = await renderInsightsForPrompt(10);
+    let extraUserContext = "";
+    if (row.action_type === "comms.meeting_brief") {
+      extraUserContext = await buildNextMeetingContext(supabase);
+    }
+    const systemPrompt = baseSystemPrompt + sharedKnowledge;
+    const userPrompt = extraUserContext
+      ? `${extraUserContext}\n\n---\n\n${baseUserPrompt}`
+      : baseUserPrompt;
 
     // ---------------- Step 2: mark running ----------------
     await step.run("mark-running", async () => {
@@ -262,6 +278,99 @@ export const agentResearch = inngest.createFunction(
     };
   },
 );
+
+/**
+ * Build a structured "## NEXT MEETING" block for the Comms brief agent
+ * by reading the soonest upcoming discovery from the leads table.
+ * Falls back to "no upcoming meeting" so the agent knows to write a
+ * generic playbook instead of inventing a fictional meeting.
+ */
+async function buildNextMeetingContext(
+  supabase: ReturnType<typeof getServiceSupabase>,
+): Promise<string> {
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("leads")
+    .select(
+      "id, name, niche, stage, icp_score, discovery_at, discovery_notes, notes, website_url, holmes_report",
+    )
+    .gte("discovery_at", nowIso)
+    .order("discovery_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return [
+      "## NEXT MEETING",
+      "U bazi nema nadolazeći discovery / sastanak (leads.discovery_at >= now je prazno).",
+      "Daj generic playbook za 'premium dentalna klinika Zagreb, vlasnik = doktor, prvi cold call' — Leonardo nema rezerviran konkretni sastanak.",
+    ].join("\n");
+  }
+
+  type HolmesReport = {
+    owner?: { name?: string; title?: string; bio?: string };
+    channels?: { website?: string; instagram_personal?: string; phone?: string; email?: string };
+    pitch_tier?: string;
+    recommended_package?: string;
+    recommended_contact?: { name?: string; channel?: string; why?: string };
+    best_angle?: { summary?: string; opening_hook?: string; avoid?: string[] };
+    personal_angles?: { interests?: string[]; pain_points?: string[]; values?: string[] };
+    team?: { size_estimate?: string; structure_note?: string };
+  };
+  const r = (data.holmes_report ?? null) as HolmesReport | null;
+
+  const lines: string[] = ["## NEXT MEETING — STVARNI SASTANAK U LEONARDOVOM KALENDARU"];
+  lines.push("");
+  lines.push(`**Klinika:** ${data.name}`);
+  lines.push(
+    `**Termin:** ${new Date(data.discovery_at as string).toLocaleString("hr-HR", { dateStyle: "full", timeStyle: "short" })}`,
+  );
+  if (data.website_url) lines.push(`**Web:** ${data.website_url}`);
+  if (data.icp_score != null) lines.push(`**ICP score:** ${data.icp_score}/20`);
+  if (data.stage) lines.push(`**Stage:** ${data.stage}`);
+  if (data.niche) lines.push(`**Niche:** ${data.niche}`);
+  if (data.discovery_notes) lines.push(`**Bilješke za poziv:** ${data.discovery_notes}`);
+  if (data.notes) lines.push(`**Općenito:** ${String(data.notes).slice(0, 600)}`);
+
+  if (r) {
+    lines.push("");
+    lines.push("### Holmes dossier");
+    if (r.owner?.name) {
+      lines.push(`- **Vlasnik:** ${r.owner.name}${r.owner.title ? ` (${r.owner.title})` : ""}`);
+      if (r.owner.bio) lines.push(`  - ${r.owner.bio}`);
+    }
+    if (r.pitch_tier) lines.push(`- **Pitch tier:** ${r.pitch_tier}`);
+    if (r.recommended_package) lines.push(`- **Preporučeni paket:** ${r.recommended_package}`);
+    if (r.recommended_contact?.name) {
+      lines.push(
+        `- **Holmes preporuča kontakt:** ${r.recommended_contact.name}${r.recommended_contact.channel ? ` (${r.recommended_contact.channel})` : ""}${r.recommended_contact.why ? ` — ${r.recommended_contact.why}` : ""}`,
+      );
+    }
+    if (r.best_angle?.summary) lines.push(`- **Best angle:** ${r.best_angle.summary}`);
+    if (r.best_angle?.opening_hook) lines.push(`- **Opening hook:** "${r.best_angle.opening_hook}"`);
+    if (r.best_angle?.avoid?.length) lines.push(`- **Izbjegavaj:** ${r.best_angle.avoid.join(" · ")}`);
+    if (r.personal_angles?.pain_points?.length)
+      lines.push(`- **Pain points:** ${r.personal_angles.pain_points.slice(0, 4).join(" · ")}`);
+    if (r.personal_angles?.interests?.length)
+      lines.push(`- **Interesi:** ${r.personal_angles.interests.slice(0, 4).join(" · ")}`);
+    if (r.team?.size_estimate)
+      lines.push(`- **Veličina tima:** ${r.team.size_estimate}${r.team.structure_note ? ` — ${r.team.structure_note}` : ""}`);
+    if (r.channels?.website) lines.push(`- **Web (Holmes):** ${r.channels.website}`);
+    if (r.channels?.instagram_personal) lines.push(`- **IG vlasnika:** ${r.channels.instagram_personal}`);
+    if (r.channels?.phone) lines.push(`- **Telefon:** ${r.channels.phone}`);
+    if (r.channels?.email) lines.push(`- **Email:** ${r.channels.email}`);
+  } else {
+    lines.push("");
+    lines.push("### Holmes dossier");
+    lines.push("- Holmes još nije istražio ovu kliniku — koristi public web znanje + ovo iznad.");
+  }
+
+  lines.push("");
+  lines.push(
+    "**VAŽNO:** Brief napiši ZA OVU SPECIFIČNU KLINIKU I OSOBU. Imenuj vlasnika u opening hook-u, koristi recommended package iz Holmes dossiera, referenciraj njegov pain point. NIJE generic playbook — Leonardo zna tko je, želi pripremu na njega točno.",
+  );
+  return lines.join("\n");
+}
 
 async function markFailed(
   supabase: ReturnType<typeof getServiceSupabase>,
