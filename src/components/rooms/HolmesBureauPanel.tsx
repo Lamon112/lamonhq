@@ -279,7 +279,12 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+      {/* Two-pane layout. The right detail panel is `sticky top-2` so when
+          the parent scrolls (long lead list on the left) the dossier stays
+          visible — clicking down the list updates the right pane in place
+          instead of disappearing offscreen. `items-start` keeps each grid
+          cell its own height so sticky has a containing block to anchor in. */}
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="space-y-1.5">
           {filtered.length === 0 ? (
             <div className="rounded border border-dashed border-border bg-bg-card/40 p-6 text-center text-sm text-text-muted">
@@ -344,7 +349,7 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
           )}
         </div>
 
-        <div className="rounded border border-border bg-bg-card/40 p-3">
+        <div className="lg:sticky lg:top-2 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto rounded border border-border bg-bg-card/40 p-3">
           {!selected && (
             <div className="flex h-full min-h-[200px] items-center justify-center text-sm text-text-muted">
               Klikni lead lijevo za detaljni Holmes report

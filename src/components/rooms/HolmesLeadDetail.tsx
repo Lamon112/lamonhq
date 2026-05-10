@@ -471,6 +471,15 @@ function fmt(n: number): string {
 function TeamTab({ report }: { report: NonNullable<LeadRow["holmes_report"]> }) {
   const team = report.team;
   const rec = report.recommended_contact;
+  const owner = report.owner;
+  // Derive an "age signal" for the owner so we can surface it next to
+  // the name wherever the owner appears (recommended_contact card, team
+  // member list). Holmes stores `years_experience` (career years) — that
+  // proxies "doctor's age cohort" tightly enough for Leonardo's pitch.
+  const ownerYears = owner?.years_experience ?? null;
+  const ownerNorm = (owner?.name ?? "").trim().toLowerCase();
+  const isOwner = (name?: string | null) =>
+    !!name && !!ownerNorm && name.trim().toLowerCase() === ownerNorm;
   const sizeLabel: Record<string, string> = {
     solo: "Solo praksa (1-3 doctors)",
     small: "Mala praksa (4-8)",
@@ -488,6 +497,11 @@ function TeamTab({ report }: { report: NonNullable<LeadRow["holmes_report"]> }) 
             <span className="text-base font-semibold text-text">
               {rec.name}
             </span>
+            {isOwner(rec.name) && ownerYears != null && (
+              <span className="rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-mono text-amber-200">
+                📅 {ownerYears}+ god iskustva
+              </span>
+            )}
             {rec.role && (
               <span className="text-[11px] text-text-dim">{rec.role}</span>
             )}
@@ -541,6 +555,11 @@ function TeamTab({ report }: { report: NonNullable<LeadRow["holmes_report"]> }) 
                   <span className="text-sm font-medium text-text">
                     {m.name}
                   </span>
+                  {isOwner(m.name) && ownerYears != null && (
+                    <span className="rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-mono text-amber-200">
+                      📅 {ownerYears}+ god
+                    </span>
+                  )}
                   {m.role && (
                     <span className="text-[11px] text-text-dim">{m.role}</span>
                   )}
