@@ -15,10 +15,11 @@ import { inngest } from "@/lib/inngest/client";
 import { agentResearch } from "@/lib/inngest/functions/agentResearch";
 import { holmesPipeline } from "@/lib/inngest/functions/holmesPipeline";
 import { dailyExpenseCron } from "@/lib/inngest/functions/dailyExpenseCron";
+import { raidScanner } from "@/lib/inngest/functions/raidScanner";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [agentResearch, holmesPipeline, dailyExpenseCron],
+  functions: [agentResearch, holmesPipeline, dailyExpenseCron, raidScanner],
   // Allow long-running steps without Vercel cutting them off — Inngest
   // takes over execution; this route only sends/receives step signals.
 });

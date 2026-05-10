@@ -221,10 +221,17 @@ export function InboxTriage({
       className="hq-classic-only mx-auto mb-4 max-w-7xl px-4 lg:px-8"
     >
       <div className="overflow-hidden rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-bg-elevated/80 to-purple-500/5 backdrop-blur">
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => setOpen((s) => !s)}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/5"
-          type="button"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setOpen((s) => !s);
+            }
+          }}
+          className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/5"
         >
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-blue-400/40 bg-blue-400/10">
@@ -270,7 +277,7 @@ export function InboxTriage({
               <ChevronDown size={16} className="text-text-muted" />
             )}
           </div>
-        </button>
+        </div>
 
         <AnimatePresence initial={false}>
           {open && (

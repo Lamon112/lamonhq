@@ -17,8 +17,12 @@
 import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 import type { Agent } from "@/lib/vault";
+import type { RaidSeverity } from "@/lib/raids";
+import type { ActiveRaid } from "@/app/actions/raids";
 import { Dweller, SitterDweller } from "./Dweller";
 import { RoomFurniture } from "./RoomFurniture";
+import { RaidIncomingBadge } from "./RaidIncomingBadge";
+import { RaidVisual } from "./RaidVisual";
 
 const ACCENT_FRAME: Record<Agent["accent"], string> = {
   amber: "border-amber-600/70",
@@ -168,10 +172,26 @@ interface VaultRoomProps {
   /** When set, renders the room in "RESEARCHING…" mode (pulsing border,
    *  faster dwellers, progress text overlay). Driven by Supabase Realtime. */
   researchProgress?: string | null;
+  /** Number of incoming raids targeting this room. */
+  raidCount?: number;
+  /** Highest severity across this room's raids — drives badge color. */
+  raidSeverity?: RaidSeverity | null;
+  /** Active raid rows for this room — drives big visual attackers/hazards. */
+  raids?: ActiveRaid[];
+  /** Click on the raid badge (separate from room body). */
+  onRaidBadgeClick?: () => void;
   onClick?: (agent: Agent) => void;
 }
 
-export function VaultRoom({ agent, researchProgress, onClick }: VaultRoomProps) {
+export function VaultRoom({
+  agent,
+  researchProgress,
+  raidCount = 0,
+  raidSeverity = null,
+  raids = [],
+  onRaidBadgeClick,
+  onClick,
+}: VaultRoomProps) {
   const Icon = agent.icon;
   const isLocked = agent.status === "locked";
   const isSoon = agent.status === "soon";
@@ -185,17 +205,28 @@ export function VaultRoom({ agent, researchProgress, onClick }: VaultRoomProps) 
   const suitColor = SUIT_COLOR[agent.accent];
 
   const dwellers = isLocked ? [] : DWELLERS_BY_AGENT[agent.id] ?? [];
+  const isUnderAttack = raidCount > 0;
+  const hasCriticalRaid = raids.some((r) => r.severity === "critical");
 
   return (
     <motion.div
       whileHover={isLocked ? undefined : { y: -1 }}
       transition={{ duration: 0.15 }}
       onClick={isLocked || !onClick ? undefined : () => onClick(agent)}
+      animate={
+        hasCriticalRaid
+          ? { x: [0, -2, 2, -2, 2, 0], transition: { duration: 0.4, repeat: Infinity, repeatDelay: 1.5 } }
+          : isUnderAttack
+            ? { x: [0, -1, 1, 0], transition: { duration: 0.5, repeat: Infinity, repeatDelay: 3 } }
+            : undefined
+      }
       className={
         "group relative overflow-hidden rounded-md border-2 " +
         (isLocked
           ? "border-stone-700/50 bg-stone-950 opacity-50"
-          : `${accentFrame} ${accentGlow} cursor-pointer`) +
+          : isUnderAttack
+            ? `border-rose-500/80 shadow-[inset_0_0_50px_rgba(244,63,94,0.4),0_0_30px_rgba(244,63,94,0.4)] cursor-pointer vault-room-under-attack`
+            : `${accentFrame} ${accentGlow} cursor-pointer`) +
         (isResearching ? " vault-room-researching" : "")
       }
       style={{ height: 260 }}
@@ -331,6 +362,11 @@ export function VaultRoom({ agent, researchProgress, onClick }: VaultRoomProps) 
         )}
       </div>
 
+      {/* === RAID VISUAL LAYER (between floor and dwellers) === */}
+      {!isLocked && raids.length > 0 && (
+        <RaidVisual raids={raids} seed={agent.slot} />
+      )}
+
       {/* === LAYER 5: Dwellers (walking + sitting) === */}
       {dwellers.map((d, i) => {
         if (d.kind === "sit") {
@@ -389,6 +425,15 @@ export function VaultRoom({ agent, researchProgress, onClick }: VaultRoomProps) 
           </span>
         </div>
       </div>
+
+      {/* === RAID BADGE (top-right corner overlay) === */}
+      {!isLocked && raidCount > 0 && raidSeverity && onRaidBadgeClick && (
+        <RaidIncomingBadge
+          count={raidCount}
+          highestSeverity={raidSeverity}
+          onClick={onRaidBadgeClick}
+        />
+      )}
 
       {/* === LAYER 7: Status badges (top-right) === */}
       <div className="absolute right-1.5 top-1.5 z-20 flex items-center gap-1">
