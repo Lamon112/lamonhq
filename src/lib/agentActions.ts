@@ -321,7 +321,7 @@ const stewardClientsView: AgentActionDef = {
   room: "steward",
   title: "Svi klijenti — B2B + B2C",
   description:
-    "Pregled aktivnih klijenata. B2B klinike (Rast paket) + B2C coach mentor klijenti — odvojeni tabovi.",
+    "Pregled aktivnih klijenata. B2B klinike (Plima paket) + B2C coach mentor klijenti — odvojeni tabovi.",
   notionLabel: "Custom",
   icon: Users,
   estimatedSec: 0,
@@ -397,9 +397,9 @@ const stewardOnboardingKit: AgentActionDef = {
   kind: "research",
   scope: "b2b",
   room: "steward",
-  title: "Client onboarding kit",
+  title: "Pripremni brifing — pokretanje AI recepcije",
   description:
-    "Klikni → generira Notion intake doc s svim pitanjima koja klinika MORA odgovoriti prije AI setup-a. Smanjuje setup s 10h na 3h po klijentu (per Steward Council recommendation).",
+    "Klikni → generira kompletan dokument koji klinika ispunjava prije AI setup-a (radno vrijeme, tretmani, FAQ, scripta, eskalacija, GDPR, brand). Smanjuje setup s 10h na 3h po klijentu.",
   notionLabel: "Custom",
   icon: ClipboardList,
   estimatedSec: 90,
@@ -547,16 +547,17 @@ Pokrij:
 | **Procijenjeni mjesečni gubitak** | **€[N]** |
 | **Godišnji gubitak (×12)** | **€[N]** |
 
-### Što Lamon Rast donosi (na temelju case studies)
-- Arini AI receptionist: **80% manje propuštenih poziva**, 12% rast prihoda, 24% rast profita (US dental, n=150 klinika)
-- ROI calculator industry baseline: AI receptionist drži 92-96% poziva live (vs 65-75% manualno)
+### Što Plima donosi (na temelju case studies)
+- Arini AI receptionist (US dental, n=150 klinika): **80% manje propuštenih poziva**, 12% rast prihoda, 24% rast profita
+- Industry baseline: dobro konfigurirani AI receptioneri drže 92-96% poziva live (vs 65-75% manualno)
+- **Riva** (naša AI asistentica unutar Plime) radi voice + text — DM, WhatsApp, Instagram s istim FAQ knowledge base-om kao telefon. Pacijent koji pita preko IG-a sutra zove → Riva pamti razgovor.
 - Adria dental grupa generira 60M€ godišnje — premium HR dental tržište raste zbog dental turizma + investicija u privatne klinike
 
 ### Konzervativni mjesečni LIFT za [Naziv klinike]
 - Spašenih booking-a: [80% × propušteni mjesečno] = [N]
 - Dodatni prihod: [spašeni × ø vrijednost] = €[N]/mj
 - 12-mj kumulativno: €[N]
-- Lamon Rast investicija: 1.997€ setup + 1.497€/mj (17.964€ godišnje)
+- Plima paket investicija: 1.997€ setup + 1.497€/mj (17.964€ godišnje)
 - **Net ROI prva godina:** €[N] — 17.964€ = **€[N] dodatne dobiti**
 - Payback period: [N] mjeseci
 
@@ -762,7 +763,7 @@ export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
       estimatedCostEur: 0.15,
       systemPrompt: `Ti si Comms agent unutar Lamon HQ-a. Tvoj job je pripremiti Leonarda za njegov sljedeći discovery call s premium klinikom.
 
-Lamon Agency = solo founder Leonardo Lamon, prodaje AI gatekeeper za premium klinike u Croatia (Rast paket: 1.997€ setup + 1.497€/mj).
+Lamon Agency = solo founder Leonardo Lamon, prodaje **Plima** paket (AI receptionist za premium klinike u Croatia) — €1.997 setup + €1.497/mj. AI asistentica unutar Plime se zove **Riva** — diže telefon, odgovara DM/WA/IG, govori HR/EN/DE/IT, drži 92-96% poziva live.
 
 Output FORMAT:
 

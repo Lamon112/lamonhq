@@ -67,7 +67,7 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
     (c) Godina osnivanja klinike kao floor: ako nema doktorske godine ali "klinika osnovana 20XX" i vlasnik je founder → vrati (2026 - godina_osnivanja).
     Samo ako sva 3 ne daju ništa → null. Ne ostavljaj null lijeno — pretraži bio, title, education, web, LinkedIn experience.
 3. **personal_angles** — minimalno 2 stvari u svakom polju. Izvuci iz BIO-a, IG bio-a, LinkedIn headline-a, recent posts-a, publicity rezultata.
-4. **best_angle.summary** — 1 rečenica taktički iskoristiv "zašto OVAJ vlasnik baš OVAJ angle". MORA referencirati pitch tier (npr. "Viralni TT (5.8M views) — pitchaj AI gatekeeper, ne content strategy").
+4. **best_angle.summary** — 1 rečenica taktički iskoristiv "zašto OVAJ vlasnik baš OVAJ angle". MORA referencirati pitch tier (npr. "Viralni TT (5.8M views) — pitchaj Plima paket s Rivom (premium voice + cross-channel), ne content strategy"). Voice se NE spominje u prvoj rečenici outreach-a — Council pravilo: prvo ROI bol, tek na demo poziv tech detalj.
 5. **opening_hook** — PRVA rečenica V8 outreach-a. MORA biti tier-prilagođena. Za veteran: spomeni njihov konkretan viralni hit ili brojku. Za starter: industry stat.
 6. **avoid** — 1-3 stvari koje NE treba spomenuti (npr. za veteran: NE pričaj o "kako pomoći s contentom" — uvrijedit ćeš ih).
 7. **reachability** — RANGIRAJ kanale po šansi za reply. Neaktivan profil = nizak score.
@@ -86,7 +86,7 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
     - **linkedin** (max 700 znakova): profesionalno, peer-to-peer, no emoji osim 🤝 u pozdravu. Reference LI post / connection / mutual ako moguće. Hook short. Solution 1 rečenica. CTA "Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?". Potpis "Leonardo Lamon".
 
-    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Privatne ordinacije + AI gatekeeper → [klinika]" ili "Razvoj [niche] kroz 6 stupova — pitanje za [ime]". Sign-off "S poštovanjem, Leonardo Lamon".
+    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis). Spomeni Plima paket mid-message kao rješenje, NE u headline-u. Voice se ne spominje pre-discovery — to je za demo poziv. Sign-off "S poštovanjem, Leonardo Lamon".
 
     - **phone** — POSEBNI FORMAT, NE PORUKA, nego **CALL SCRIPT** (3 min):
       \`\`\`
@@ -140,7 +140,7 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 16. **channel_drafts ADRESIRAJ NA recommended_contact**, ne na vlasnika ako su različiti. Pozdrav s imenom recommended_contact-a, hook prilagođen NJIHOVOJ ulozi (voditelj = pricaj o ROI/efikasnosti, marketing = pricaj o conversion/funnel, vlasnik = pricaj o viziji/brand).
 
    **OBAVEZNO**: U solution-u ili pivot-u SUPTILNO embed-aj da je Leonardov posao **razvoj privatnih ordinacija** — to je signal autoriteta koji svaka ordinacija želi imati za sebe. Ne mora biti cijela rečenica — može biti dio konteksta dok pričaš o nečem drugom. Primjeri:
-   - "Bavim se razvojem privatnih ordinacija kroz 6 stupova — ovo (AI gatekeeper / chatbot / itd.) je glavni stup za vašu situaciju."
+   - "Bavim se razvojem privatnih ordinacija — Plima paket (s AI asistenticom Rivom koja diže svaki poziv 24/7) je glavni stup za vašu situaciju."
    - "Iz prakse razvoja privatnih ordinacija — vidio sam X kod sličnih tier-a."
    - "Specijalizirao sam se za razvoj privatnih ordinacija; baš zato me Y kod vas zanima."
 
