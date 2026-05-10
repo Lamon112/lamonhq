@@ -131,25 +131,88 @@ function ViewBody({ payload }: { payload: Extract<RoomDataViewPayload, { ok: tru
 }
 
 /* =============================== Clients =============================== */
+const STAGE_LABEL: Record<string, { emoji: string; label: string; tone: string }> = {
+  hot_lead: { emoji: "🔥", label: "Hot Lead", tone: "text-amber-300 border-amber-500/40 bg-amber-500/5" },
+  discovery: { emoji: "🤝", label: "Discovery", tone: "text-cyan-300 border-cyan-500/40 bg-cyan-500/5" },
+  negotiation: { emoji: "💬", label: "Negotiation", tone: "text-violet-300 border-violet-500/40 bg-violet-500/5" },
+  onboarding: { emoji: "🛠", label: "Onboarding", tone: "text-blue-300 border-blue-500/40 bg-blue-500/5" },
+  live: { emoji: "✅", label: "Live", tone: "text-emerald-300 border-emerald-500/40 bg-emerald-500/5" },
+  lost: { emoji: "✖", label: "Lost", tone: "text-stone-400 border-stone-600 bg-stone-800/40" },
+};
+
+const ONBOARDING_STEP_LABEL: Record<string, string> = {
+  intake_sent_at: "Pošalji intake doc",
+  intake_returned_at: "Čekaj klijent return",
+  ai_configured_at: "Konfiguriraj Rivu",
+  shadow_test_at: "Shadow mode test",
+  live_cutover_at: "Go-live cutover",
+  first_review_at: "30-day review",
+};
+
+function fmtDateOrDash(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("hr-HR", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
 function ClientsBody({ data }: { data: Extract<RoomDataViewPayload, { ok: true; viewKey: "clients" }>["data"] }) {
+  // Pipeline rows grouped by stage for quick visual scan. Stages without
+  // any rows are hidden — at 0 paying clients, only "hot_lead" / "discovery"
+  // typically show, which is exactly what Leonardo wants on Monday morning.
+  const groupedPipeline = (
+    ["onboarding", "negotiation", "discovery", "hot_lead", "live", "lost"] as const
+  ).map((stage) => ({
+    stage,
+    rows: data.pipeline.filter((p) => p.stage === stage),
+  })).filter((g) => g.rows.length > 0);
+
   return (
     <div className="space-y-5">
       <StatRow
         items={[
-          { label: "Active", value: String(data.totals.activeCount) },
-          { label: "Onboarding", value: String(data.totals.onboardingCount) },
-          { label: "Paused", value: String(data.totals.pausedCount) },
+          { label: "Pipeline", value: String(data.totals.pipelineCount) },
+          {
+            label: "Overdue",
+            value: String(data.totals.overdueCount),
+            tone: data.totals.overdueCount > 0 ? "danger" : "muted",
+          },
+          { label: "Live", value: String(data.pipelineCounts.live) },
+          { label: "Active klijenti", value: String(data.totals.activeCount) },
           {
             label: "B2B MRR",
             value: `€${(data.totals.b2bMrrCents / 100).toFixed(0)}`,
           },
-          {
-            label: "B2C MRR",
-            value: `€${(data.totals.b2cMrrCents / 100).toFixed(0)}`,
-          },
         ]}
       />
-      <Section title={`B2B klinike (${data.b2b.length})`}>
+
+      {/* Pipeline — central nervous system. Shows every lead with stage +
+          next action + onboarding progress where applicable. */}
+      {groupedPipeline.length === 0 ? (
+        <Section title="Pipeline">
+          <Empty text="Nema leadova u aktivnom pipelinu. Pokreni Holmes 10-leadova pipeline da napuniš." />
+        </Section>
+      ) : (
+        groupedPipeline.map((group) => {
+          const meta = STAGE_LABEL[group.stage];
+          return (
+            <Section
+              key={group.stage}
+              title={`${meta.emoji} ${meta.label} (${group.rows.length})`}
+            >
+              <ul className="space-y-1.5">
+                {group.rows.map((row) => (
+                  <PipelineRowCard key={row.id} row={row} stageMeta={meta} />
+                ))}
+              </ul>
+            </Section>
+          );
+        })
+      )}
+
+      {/* Paid clients (separate from pipeline) */}
+      <Section title={`B2B klinike — plaćaju (${data.b2b.length})`}>
         {data.b2b.length === 0 ? (
           <Empty text="Još nema B2B clinic clients-a." />
         ) : (
@@ -215,6 +278,91 @@ function ClientsBody({ data }: { data: Extract<RoomDataViewPayload, { ok: true; 
         </Section>
       )}
     </div>
+  );
+}
+
+function PipelineRowCard({
+  row,
+  stageMeta,
+}: {
+  row: import("@/app/actions/roomDataView").PipelineRow;
+  stageMeta: { emoji: string; label: string; tone: string };
+}) {
+  const tier = row.tier ? row.tier : null;
+  const isOnboarding = row.stage === "onboarding";
+  const obSteps = row.onboardingProgress ?? 0;
+  const nextStepLabel = row.onboardingNextStep
+    ? ONBOARDING_STEP_LABEL[row.onboardingNextStep] ?? row.onboardingNextStep
+    : null;
+
+  return (
+    <li
+      className={`rounded-md border p-2.5 ${stageMeta.tone}`}
+    >
+      <div className="flex items-start gap-2">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-border bg-bg/40 font-mono text-[11px] font-bold">
+          {row.icpScore ?? "?"}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-1.5">
+            <span className="truncate text-sm font-medium text-text">
+              {row.name}
+            </span>
+            {tier && (
+              <span className="text-[10px] uppercase tracking-wider text-text-dim">
+                {tier}
+              </span>
+            )}
+            {row.discoveryAt && (
+              <span className="text-[10px] text-cyan-300">
+                📅 {fmtDateOrDash(row.discoveryAt)}
+              </span>
+            )}
+          </div>
+
+          {isOnboarding && (
+            <div className="mt-1.5 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1 overflow-hidden rounded-full bg-bg/60">
+                  <div
+                    className="h-1.5 bg-blue-400 transition-all"
+                    style={{ width: `${(obSteps / 6) * 100}%` }}
+                  />
+                </div>
+                <span className="font-mono text-[10px] text-text-muted">
+                  {obSteps}/6
+                </span>
+              </div>
+              {nextStepLabel && (
+                <div className="text-[11px] text-blue-200">
+                  → {nextStepLabel}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isOnboarding && row.nextAction && (
+            <div className="mt-0.5 text-[11px] text-text-muted">
+              → {row.nextAction}
+              {row.nextActionDate && (
+                <span
+                  className={`ml-1.5 ${row.isOverdue ? "font-semibold text-rose-400" : "text-text-dim"}`}
+                >
+                  ({fmtDateOrDash(row.nextActionDate)}
+                  {row.isOverdue ? " · overdue" : ""})
+                </span>
+              )}
+            </div>
+          )}
+
+          {!isOnboarding && !row.nextAction && (
+            <div className="mt-0.5 text-[10px] italic text-text-dim">
+              Bez sljedeće akcije — postaviti next_action
+            </div>
+          )}
+        </div>
+      </div>
+    </li>
   );
 }
 
@@ -688,22 +836,38 @@ function Empty({ text }: { text: string }) {
   return <p className="text-[11px] text-text-muted">{text}</p>;
 }
 
-function StatRow({ items }: { items: Array<{ label: string; value: string }> }) {
+function StatRow({
+  items,
+}: {
+  items: Array<{
+    label: string;
+    value: string;
+    tone?: "danger" | "muted" | "default";
+  }>;
+}) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {items.map((s, i) => (
-        <div
-          key={i}
-          className="rounded-md border border-border bg-bg-card px-2.5 py-1.5"
-        >
-          <div className="text-[10px] uppercase tracking-wider text-text-muted">
-            {s.label}
+      {items.map((s, i) => {
+        const valueClass =
+          s.tone === "danger"
+            ? "text-rose-300"
+            : s.tone === "muted"
+              ? "text-text-dim"
+              : "text-text";
+        return (
+          <div
+            key={i}
+            className="rounded-md border border-border bg-bg-card px-2.5 py-1.5"
+          >
+            <div className="text-[10px] uppercase tracking-wider text-text-muted">
+              {s.label}
+            </div>
+            <div className={`mt-0.5 font-mono text-sm font-bold ${valueClass}`}>
+              {s.value}
+            </div>
           </div>
-          <div className="mt-0.5 font-mono text-sm font-bold text-text">
-            {s.value}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

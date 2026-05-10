@@ -319,9 +319,9 @@ const stewardClientsView: AgentActionDef = {
   kind: "data-view",
   scope: "all",
   room: "steward",
-  title: "Svi klijenti — B2B + B2C",
+  title: "Client HQ — pipeline + onboarding",
   description:
-    "Pregled aktivnih klijenata. B2B klinike (Plima paket) + B2C coach mentor klijenti — odvojeni tabovi.",
+    "Centralni dashboard: svi leadovi sortirani po lifecycle stage-u (hot lead → discovery → negotiation → onboarding → live), sljedeća akcija + overdue alert per klijent, onboarding 6-step progress bar. Plus paid B2B + B2C klijenti i barter.",
   notionLabel: "Custom",
   icon: Users,
   estimatedSec: 0,

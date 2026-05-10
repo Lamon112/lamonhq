@@ -13,6 +13,7 @@ import {
   getClients,
   getClientsStats,
   getHQStats,
+  getLeads,
   getTasks,
   getTasksStats,
   type ClientRow,
@@ -20,7 +21,57 @@ import {
 
 // ----- types returned to the client component -----
 
+/**
+ * Lifecycle stages used by the Steward Client HQ pipeline view.
+ * Derived from leads.stage + leads.onboarding_status JSONB:
+ *
+ *   hot_lead    — has holmes_report, icp_score >= 15, stage = discovery,
+ *                 no booked discovery_at yet
+ *   discovery   — discovery_at set in future OR stage = discovery with
+ *                 recent activity
+ *   negotiation — stage in ('pricing', 'financing')
+ *   onboarding  — stage = closed_won AND onboarding_status not null AND
+ *                 live_cutover_at is null
+ *   live        — stage = closed_won AND onboarding_status.live_cutover_at
+ *   lost        — stage = closed_lost
+ */
+export type LifecycleStage =
+  | "hot_lead"
+  | "discovery"
+  | "negotiation"
+  | "onboarding"
+  | "live"
+  | "lost";
+
+export interface OnboardingStatus {
+  intake_sent_at?: string | null;
+  intake_returned_at?: string | null;
+  ai_configured_at?: string | null;
+  shadow_test_at?: string | null;
+  live_cutover_at?: string | null;
+  first_review_at?: string | null;
+  notes?: string | null;
+}
+
+export interface PipelineRow {
+  id: string;
+  name: string;
+  stage: LifecycleStage;
+  icpScore: number | null;
+  tier: string | null; // pitch_tier from holmes_report
+  nextAction: string | null;
+  nextActionDate: string | null; // ISO
+  isOverdue: boolean;
+  discoveryAt: string | null; // ISO — for booked meetings
+  // Onboarding-specific fields, only populated for stage = "onboarding" / "live"
+  onboardingProgress?: number; // 0-6 (steps completed)
+  onboardingNextStep?: string | null; // "shadow_test" / "live_cutover" / etc
+  onboardingStatus?: OnboardingStatus;
+}
+
 export interface ClientsViewData {
+  pipeline: PipelineRow[];
+  pipelineCounts: Record<LifecycleStage, number>;
   b2b: Array<{
     id: string;
     name: string;
@@ -44,6 +95,8 @@ export interface ClientsViewData {
     activeCount: number;
     onboardingCount: number;
     pausedCount: number;
+    pipelineCount: number;
+    overdueCount: number;
   };
 }
 
@@ -191,7 +244,7 @@ function churnRiskToNumber(r: ClientRow["churn_risk"]): number {
 }
 
 async function loadClients(): Promise<ClientsViewData> {
-  const list = await getClients();
+  const [clientList, leadList] = await Promise.all([getClients(), getLeads()]);
   const b2b: ClientsViewData["b2b"] = [];
   const b2c: ClientsViewData["b2c"] = [];
   const barter: ClientsViewData["barter"] = [];
@@ -201,7 +254,7 @@ async function loadClients(): Promise<ClientsViewData> {
   let onboardingCount = 0;
   let pausedCount = 0;
 
-  for (const c of list) {
+  for (const c of clientList) {
     const monthlyCents = Math.round((c.monthly_revenue ?? 0) * 100);
     const status = c.status ?? "unknown";
     if (status === "active") activeCount++;
@@ -236,7 +289,66 @@ async function loadClients(): Promise<ClientsViewData> {
     }
   }
 
+  // ----- Pipeline: derive lifecycle stage per lead -----
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const pipeline: PipelineRow[] = [];
+  const pipelineCounts: Record<LifecycleStage, number> = {
+    hot_lead: 0,
+    discovery: 0,
+    negotiation: 0,
+    onboarding: 0,
+    live: 0,
+    lost: 0,
+  };
+
+  for (const l of leadList) {
+    const stage = deriveLifecycleStage(l);
+    pipelineCounts[stage]++;
+    const ob = (l.onboarding_status as OnboardingStatus | null) ?? null;
+    const overdue =
+      !!l.next_action_date &&
+      new Date(l.next_action_date).getTime() < todayStart.getTime();
+
+    pipeline.push({
+      id: l.id,
+      name: l.name,
+      stage,
+      icpScore: l.icp_score ?? null,
+      tier: l.holmes_report?.pitch_tier ?? null,
+      nextAction: l.next_action ?? null,
+      nextActionDate: l.next_action_date ?? null,
+      isOverdue: overdue,
+      discoveryAt: l.discovery_at ?? null,
+      onboardingProgress: ob ? countOnboardingSteps(ob) : undefined,
+      onboardingNextStep: ob ? nextOnboardingStep(ob) : undefined,
+      onboardingStatus: ob ?? undefined,
+    });
+  }
+
+  // Stage order for UI grouping (most-actionable first)
+  const stageOrder: Record<LifecycleStage, number> = {
+    onboarding: 0,
+    negotiation: 1,
+    discovery: 2,
+    hot_lead: 3,
+    live: 4,
+    lost: 5,
+  };
+  pipeline.sort((a, b) => {
+    const sa = stageOrder[a.stage] ?? 99;
+    const sb = stageOrder[b.stage] ?? 99;
+    if (sa !== sb) return sa - sb;
+    if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+    return (b.icpScore ?? 0) - (a.icpScore ?? 0);
+  });
+
+  const overdueCount = pipeline.filter((p) => p.isOverdue).length;
+  const pipelineCount = pipeline.length - pipelineCounts.lost;
+
   return {
+    pipeline,
+    pipelineCounts,
     b2b,
     b2c,
     barter,
@@ -246,8 +358,49 @@ async function loadClients(): Promise<ClientsViewData> {
       activeCount,
       onboardingCount,
       pausedCount,
+      pipelineCount,
+      overdueCount,
     },
   };
+}
+
+function deriveLifecycleStage(lead: {
+  stage: string;
+  onboarding_status?: unknown;
+  icp_score?: number | null;
+  holmes_report?: unknown;
+}): LifecycleStage {
+  if (lead.stage === "closed_lost") return "lost";
+  if (lead.stage === "closed_won") {
+    const ob = lead.onboarding_status as OnboardingStatus | null;
+    if (ob?.live_cutover_at) return "live";
+    return "onboarding";
+  }
+  if (lead.stage === "pricing" || lead.stage === "financing") return "negotiation";
+  if (lead.stage === "booking") return "discovery"; // booked = scheduled discovery
+  // discovery stage — split by ICP
+  if ((lead.icp_score ?? 0) >= 15 && lead.holmes_report) return "hot_lead";
+  return "discovery";
+}
+
+const ONBOARDING_STEPS: Array<keyof OnboardingStatus> = [
+  "intake_sent_at",
+  "intake_returned_at",
+  "ai_configured_at",
+  "shadow_test_at",
+  "live_cutover_at",
+  "first_review_at",
+];
+
+function countOnboardingSteps(ob: OnboardingStatus): number {
+  return ONBOARDING_STEPS.filter((k) => !!ob[k]).length;
+}
+
+function nextOnboardingStep(ob: OnboardingStatus): string | null {
+  for (const step of ONBOARDING_STEPS) {
+    if (!ob[step]) return step;
+  }
+  return null;
 }
 
 async function loadClientStats(): Promise<ClientStatsViewData> {

@@ -418,6 +418,16 @@ export interface LeadRow {
   } | null;
   email?: string | null;
   website_url?: string | null;
+  // Migration 0016 — post-close 6-step lifecycle checklist
+  onboarding_status?: {
+    intake_sent_at?: string | null;
+    intake_returned_at?: string | null;
+    ai_configured_at?: string | null;
+    shadow_test_at?: string | null;
+    live_cutover_at?: string | null;
+    first_review_at?: string | null;
+    notes?: string | null;
+  } | null;
   created_at: string;
   updated_at: string;
 }
