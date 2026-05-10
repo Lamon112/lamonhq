@@ -262,20 +262,50 @@ export async function defendRaid(
   const outcome: "won" | "lost" = won ? "won" : "lost";
 
   // === If defense has an aiActionId, spawn agent_actions row + Inngest event ===
+  // Tries triggerAgentResearch first (uses service-role client + Inngest);
+  // if that fails (e.g. local dev w/o SUPABASE_SERVICE_ROLE_KEY), falls
+  // back to inserting the row via the user-scoped client so the UI at
+  // least gets a row id to surface in the drawer (Inngest skipped — the
+  // row will sit at status='queued' until the user retries from the
+  // drawer "re-run" button or env is configured).
   let agentActionRowId: string | undefined;
   let agentActionTitle: string | undefined;
   if (defense.aiActionId) {
+    const { getActionById } = await import("@/lib/agentActions");
+    const def = getActionById(defense.aiActionId);
+    agentActionTitle = def?.title;
     try {
       const spawn = await triggerAgentResearch(defense.aiActionId);
       if (spawn.ok && spawn.actionRowId) {
         agentActionRowId = spawn.actionRowId;
-        // Look up title from agentActions catalog (lazy import to avoid circular dep)
-        const { getActionById } = await import("@/lib/agentActions");
-        agentActionTitle = getActionById(defense.aiActionId)?.title;
+      } else {
+        throw new Error(spawn.error ?? "spawn failed");
       }
-    } catch {
-      // AI spawn failure shouldn't block raid resolution — defense outcome
-      // still applies, just no AI assist.
+    } catch (e) {
+      // Fallback: insert via user-scoped client (no Inngest dispatch)
+      try {
+        if (def) {
+          const promptValue =
+            def.prompt ??
+            `[pipeline] ${def.title}\n${JSON.stringify(def.pipelineConfig ?? {}, null, 2)}`;
+          const { data: row } = await supabase
+            .from("agent_actions")
+            .insert({
+              room: def.room,
+              action_type: def.id,
+              title: def.title,
+              prompt: promptValue,
+              status: "queued",
+              progress_text: "U redu čekanja… (lokalno: trigger Inngest ručno)",
+            })
+            .select("id")
+            .single();
+          if (row?.id) agentActionRowId = row.id as string;
+        }
+      } catch {
+        // Last-resort: silently skip AI; raid outcome still applies
+        console.error("[raids] both triggerAgentResearch + fallback insert failed:", e);
+      }
     }
   }
 
