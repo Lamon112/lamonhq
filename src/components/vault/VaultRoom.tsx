@@ -151,6 +151,12 @@ const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
     { kind: "walk", start: 0.25, cycle: 13, delay: 0, suit: "fill-rose-300", label: "Editor", scale: 0.85 },
     { kind: "walk", start: 0.7, cycle: 12, delay: 2, suit: "fill-rose-500", label: "Producer", scale: 0.85 },
   ],
+  aegis: [
+    { kind: "sit", pos: 0.18, bottom: 4, suit: "fill-violet-400", label: "Aegis @ console", scale: 0.9 },
+    { kind: "sit", pos: 0.78, bottom: 4, suit: "fill-violet-300", label: "QBR analyst", scale: 0.9 },
+    { kind: "walk", start: 0.45, cycle: 14, delay: 0, suit: "fill-violet-500", label: "Concierge", scale: 0.85 },
+    { kind: "walk", start: 0.6, cycle: 12, delay: 3, suit: "fill-fuchsia-400", label: "Retention", scale: 0.85 },
+  ],
   forge: [
     { kind: "walk", start: 0.4, cycle: 12, delay: 0, suit: "fill-amber-500", label: "Forge", scale: 0.9 },
     { kind: "sit", pos: 0.75, bottom: 4, suit: "fill-amber-700", label: "Apprentice", scale: 0.85 },

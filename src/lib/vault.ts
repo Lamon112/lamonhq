@@ -19,6 +19,7 @@ import {
   Trophy,
   Users,
   Brain,
+  Shield,
 } from "lucide-react";
 
 export type AgentId =
@@ -30,6 +31,7 @@ export type AgentId =
   | "treasury"
   | "atlas"
   | "steward"
+  | "aegis"
   | "mentat";
 
 export interface Agent {
@@ -178,6 +180,20 @@ const AGENTS: Agent[] = [
     status: "online",
     accent: "rose",
     hint: "87.1K YT · 633K TT · suradnje koje stignu.",
+  },
+  {
+    id: "aegis",
+    name: "Aegis",
+    room: "Concierge Wing",
+    role: "Klijent nurturing · QBR · churn radar · upsell",
+    icon: Shield,
+    emoji: "🛡",
+    floor: 3,
+    slot: 3,
+    unlockLevel: 1,
+    status: "online",
+    accent: "violet",
+    hint: "Steward = onboarding (T+0 → T+30). Aegis = ongoing (T+30+).",
   },
 
   // FLOOR 4 — Production (locked initially)
