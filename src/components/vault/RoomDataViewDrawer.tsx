@@ -9,13 +9,26 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-import { Loader2, X, AlertCircle } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import {
+  Loader2,
+  X,
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  Circle,
+  Play,
+} from "lucide-react";
 import {
   getRoomDataView,
   type RoomDataViewKey,
   type RoomDataViewPayload,
 } from "@/app/actions/roomDataView";
+import {
+  markOnboardingStep,
+  startOnboarding,
+} from "@/app/actions/onboarding";
 
 interface Props {
   viewKey: RoomDataViewKey | null;
@@ -281,6 +294,25 @@ function ClientsBody({ data }: { data: Extract<RoomDataViewPayload, { ok: true; 
   );
 }
 
+const ONBOARDING_STEPS_ORDERED: Array<{
+  key:
+    | "intake_sent_at"
+    | "intake_returned_at"
+    | "ai_configured_at"
+    | "shadow_test_at"
+    | "live_cutover_at"
+    | "first_review_at";
+  label: string;
+  hint: string;
+}> = [
+  { key: "intake_sent_at", label: "Pripremni brifing poslan", hint: "T+0 · pošalji intake doc klijentu" },
+  { key: "intake_returned_at", label: "Klijent vratio brifing", hint: "T+0–3 · čekamo popunjen doc" },
+  { key: "ai_configured_at", label: "Riva konfigurirana", hint: "T+3–6 · production setup, FAQ, scripta" },
+  { key: "shadow_test_at", label: "Shadow mode test", hint: "T+7 · Riva sluša, Leonardo verificira" },
+  { key: "live_cutover_at", label: "Go-live cutover", hint: "T+14 · Riva preuzima sve pozive" },
+  { key: "first_review_at", label: "30-day performance review", hint: "T+30 · prvi mjesečni call" },
+];
+
 function PipelineRowCard({
   row,
   stageMeta,
@@ -291,14 +323,60 @@ function PipelineRowCard({
   const tier = row.tier ? row.tier : null;
   const isOnboarding = row.stage === "onboarding";
   const obSteps = row.onboardingProgress ?? 0;
+  const obStatus = (row.onboardingStatus ?? {}) as Record<string, string | null>;
+  const hasStarted = isOnboarding && row.onboardingStatus !== undefined;
   const nextStepLabel = row.onboardingNextStep
     ? ONBOARDING_STEP_LABEL[row.onboardingNextStep] ?? row.onboardingNextStep
     : null;
 
+  const [expanded, setExpanded] = useState(false);
+  const [pendingStep, setPendingStep] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  // Optimistic local view of status — server revalidates on completion
+  const [localStatus, setLocalStatus] = useState(obStatus);
+  const [localStarted, setLocalStarted] = useState(hasStarted);
+
+  function toggleStep(key: string, currentDone: boolean) {
+    setPendingStep(key);
+    const nextDone = !currentDone;
+    // Optimistic
+    setLocalStatus((prev) => ({
+      ...prev,
+      [key]: nextDone ? new Date().toISOString() : null,
+    }));
+    startTransition(async () => {
+      const res = await markOnboardingStep(row.id, key, nextDone);
+      if (res.ok) {
+        setLocalStatus(res.status);
+      } else {
+        // Rollback
+        setLocalStatus((prev) => ({ ...prev, [key]: currentDone ? prev[key] : null }));
+      }
+      setPendingStep(null);
+    });
+  }
+
+  function handleStartOnboarding() {
+    setPendingStep("__start__");
+    startTransition(async () => {
+      const res = await startOnboarding(row.id);
+      if (res.ok) {
+        setLocalStatus(res.status);
+        setLocalStarted(true);
+        setExpanded(true);
+      }
+      setPendingStep(null);
+    });
+  }
+
+  const localObSteps = ONBOARDING_STEPS_ORDERED.filter(
+    (s) => !!localStatus[s.key],
+  ).length;
+  const localNextStep = ONBOARDING_STEPS_ORDERED.find((s) => !localStatus[s.key]);
+  const showExpand = isOnboarding && localStarted;
+
   return (
-    <li
-      className={`rounded-md border p-2.5 ${stageMeta.tone}`}
-    >
+    <li className={`rounded-md border p-2.5 ${stageMeta.tone}`}>
       <div className="flex items-start gap-2">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-border bg-bg/40 font-mono text-[11px] font-bold">
           {row.icpScore ?? "?"}
@@ -318,26 +396,55 @@ function PipelineRowCard({
                 📅 {fmtDateOrDash(row.discoveryAt)}
               </span>
             )}
+            {showExpand && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="ml-auto flex items-center gap-0.5 rounded border border-blue-500/40 bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-200 hover:border-blue-500"
+              >
+                {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                {localObSteps}/6
+              </button>
+            )}
           </div>
 
-          {isOnboarding && (
+          {isOnboarding && localStarted && (
             <div className="mt-1.5 space-y-1">
               <div className="flex items-center gap-1.5">
                 <div className="flex-1 overflow-hidden rounded-full bg-bg/60">
                   <div
                     className="h-1.5 bg-blue-400 transition-all"
-                    style={{ width: `${(obSteps / 6) * 100}%` }}
+                    style={{ width: `${(localObSteps / 6) * 100}%` }}
                   />
                 </div>
                 <span className="font-mono text-[10px] text-text-muted">
-                  {obSteps}/6
+                  {localObSteps}/6
                 </span>
               </div>
-              {nextStepLabel && (
+              {localNextStep && (
                 <div className="text-[11px] text-blue-200">
-                  → {nextStepLabel}
+                  → {localNextStep.label}
                 </div>
               )}
+            </div>
+          )}
+
+          {isOnboarding && !localStarted && (
+            <div className="mt-1.5">
+              <button
+                onClick={handleStartOnboarding}
+                disabled={pendingStep === "__start__"}
+                className="flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-300 hover:border-emerald-500 disabled:opacity-50"
+              >
+                {pendingStep === "__start__" ? (
+                  <Loader2 size={10} className="animate-spin" />
+                ) : (
+                  <Play size={10} />
+                )}
+                Pokreni onboarding (T+0)
+              </button>
+              <p className="mt-1 text-[10px] text-text-dim">
+                Klijent je closed_won ali još nema seed-an onboarding intake.
+              </p>
             </div>
           )}
 
@@ -362,6 +469,47 @@ function PipelineRowCard({
           )}
         </div>
       </div>
+
+      {/* Expandable 6-step checklist (onboarding stage only) */}
+      {expanded && isOnboarding && localStarted && (
+        <ul className="mt-2.5 space-y-1 border-t border-blue-500/20 pt-2">
+          {ONBOARDING_STEPS_ORDERED.map((step) => {
+            const done = !!localStatus[step.key];
+            const doneAt = localStatus[step.key];
+            const pending = pendingStep === step.key;
+            return (
+              <li key={step.key} className="flex items-start gap-2">
+                <button
+                  onClick={() => toggleStep(step.key, done)}
+                  disabled={pending}
+                  className="mt-0.5 shrink-0 disabled:opacity-50"
+                  aria-label={done ? `Undo ${step.label}` : `Mark ${step.label} done`}
+                >
+                  {pending ? (
+                    <Loader2 size={14} className="animate-spin text-blue-300" />
+                  ) : done ? (
+                    <CheckCircle2 size={14} className="text-emerald-400" />
+                  ) : (
+                    <Circle size={14} className="text-text-dim hover:text-blue-300" />
+                  )}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div
+                    className={`text-[12px] ${done ? "text-text line-through decoration-emerald-400/40" : "text-text"}`}
+                  >
+                    {step.label}
+                  </div>
+                  <div className="text-[10px] text-text-dim">
+                    {done && doneAt
+                      ? `✓ ${fmtDateOrDash(doneAt)}`
+                      : step.hint}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </li>
   );
 }
