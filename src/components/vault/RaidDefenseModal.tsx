@@ -62,9 +62,13 @@ interface Props {
   /** If set, only show raids whose target_room matches */
   filterRoom?: string | null;
   onClose: () => void;
-  /** Called when defense spawned an AI agent_actions row.
-   *  Vault uses this to open the ResearchResultDrawer with the spawn id. */
-  onAiActionSpawned?: (rowId: string) => void;
+  /** Called the MOMENT defense resolves with a spawned AI row — used
+   *  to optimistically light up the target room without waiting for
+   *  Inngest cold-start + Realtime broadcast. */
+  onAiActionSpawned?: (rowId: string, room: string, title: string) => void;
+  /** Called when user clicks the "otvori rezultat" link in the resolved
+   *  banner — Vault opens the ResearchResultDrawer pointed at this row. */
+  onAiActionOpenDrawer?: (rowId: string) => void;
 }
 
 interface ResolvedDisplay {
@@ -76,9 +80,10 @@ interface ResolvedDisplay {
   cashDelta: number;
   agentActionRowId?: string;
   agentActionTitle?: string;
+  agentActionRoom?: string;
 }
 
-export function RaidDefenseModal({ open, raids, filterRoom, onClose, onAiActionSpawned }: Props) {
+export function RaidDefenseModal({ open, raids, filterRoom, onClose, onAiActionSpawned, onAiActionOpenDrawer }: Props) {
   const filtered = useMemo(() => {
     if (!filterRoom) return raids;
     return raids.filter((r) => r.target_room === filterRoom);
@@ -120,7 +125,12 @@ export function RaidDefenseModal({ open, raids, filterRoom, onClose, onAiActionS
             </p>
           )}
           {filtered.map((r) => (
-            <RaidCard key={r.id} raid={r} onAiActionSpawned={onAiActionSpawned} />
+            <RaidCard
+              key={r.id}
+              raid={r}
+              onAiActionSpawned={onAiActionSpawned}
+              onAiActionOpenDrawer={onAiActionOpenDrawer}
+            />
           ))}
         </div>
       </div>
@@ -131,9 +141,11 @@ export function RaidDefenseModal({ open, raids, filterRoom, onClose, onAiActionS
 function RaidCard({
   raid,
   onAiActionSpawned,
+  onAiActionOpenDrawer,
 }: {
   raid: ActiveRaid;
-  onAiActionSpawned?: (rowId: string) => void;
+  onAiActionSpawned?: (rowId: string, room: string, title: string) => void;
+  onAiActionOpenDrawer?: (rowId: string) => void;
 }) {
   const arche = RAID_ARCHETYPES[raid.raid_type as RaidType];
   const sev = SEVERITY_COLOR[raid.severity];
@@ -168,9 +180,17 @@ function RaidCard({
         playSfx("defense_lose");
         if (data.cashDelta < 0) setTimeout(() => playSfx("cash_loss"), 350);
       }
-      // AI executor SFX (separate, slightly later)
-      if (data.agentActionRowId) {
+      // AI executor SFX + IMMEDIATE optimistic room glow trigger
+      if (data.agentActionRowId && data.agentActionRoom) {
         setTimeout(() => playSfx("agent_start"), 800);
+        // Fire spawn callback right away so target room lights up
+        // before Inngest cold-start + Realtime broadcast catches up
+        // (otherwise 10-20s delay on Vercel).
+        onAiActionSpawned?.(
+          data.agentActionRowId,
+          data.agentActionRoom,
+          data.agentActionTitle ?? "AI radi…",
+        );
       }
     });
   }
@@ -272,7 +292,7 @@ function RaidCard({
             key="resolved"
             data={resolved}
             arche={arche}
-            onAiActionSpawned={onAiActionSpawned}
+            onAiActionOpenDrawer={onAiActionOpenDrawer}
           />
         )}
       </AnimatePresence>
@@ -287,11 +307,11 @@ function RaidCard({
 function ResolvedSummary({
   data,
   arche,
-  onAiActionSpawned,
+  onAiActionOpenDrawer,
 }: {
   data: ResolvedDisplay;
   arche: RaidArchetype;
-  onAiActionSpawned?: (rowId: string) => void;
+  onAiActionOpenDrawer?: (rowId: string) => void;
 }) {
   const won = data.outcome === "won";
   return (
@@ -354,7 +374,7 @@ function ResolvedSummary({
             </div>
           </div>
           <button
-            onClick={() => onAiActionSpawned?.(data.agentActionRowId!)}
+            onClick={() => onAiActionOpenDrawer?.(data.agentActionRowId!)}
             className="flex items-center gap-1 rounded border border-amber-500/60 bg-amber-500/20 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-amber-100 transition-colors hover:bg-amber-500/30"
           >
             <Loader2 size={10} className="animate-spin" />

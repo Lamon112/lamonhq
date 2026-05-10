@@ -332,9 +332,23 @@ export function Vault({}: VaultProps) {
         raids={raids}
         filterRoom={raidFilterRoom}
         onClose={() => setRaidModalOpen(false)}
-        onAiActionSpawned={(rowId) => {
-          // Close the raid modal + open the existing research result drawer
-          // pointed at the spawned agent_actions row.
+        onAiActionSpawned={(rowId, room, title) => {
+          // OPTIMISTIC: light up the target room IMMEDIATELY without
+          // waiting for Inngest cold-start + agent_actions Realtime
+          // broadcast (which can take 10-20s on Vercel cold start).
+          // The Realtime sub will overwrite this with real progress
+          // text the moment Inngest picks up the event.
+          setActive((prev) => ({
+            ...prev,
+            [room as AgentId]: {
+              actionRowId: rowId,
+              room: room as AgentId,
+              progress: `Pokrećem: ${title}`,
+              status: "queued",
+            },
+          }));
+        }}
+        onAiActionOpenDrawer={(rowId) => {
           setRaidModalOpen(false);
           setDrawerActionId(rowId);
         }}

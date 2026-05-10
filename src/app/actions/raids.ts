@@ -231,6 +231,10 @@ export interface DefendRaidResultData {
   agentActionRowId?: string;
   /** Title of the spawned AI action (for the link label). */
   agentActionTitle?: string;
+  /** Room that owns the AI action — UI uses this to light up the room
+   *  optimistically without waiting for Inngest cold-start + first DB
+   *  status update + Realtime broadcast (~10-20s on Vercel). */
+  agentActionRoom?: string;
 }
 
 export async function defendRaid(
@@ -270,10 +274,12 @@ export async function defendRaid(
   // drawer "re-run" button or env is configured).
   let agentActionRowId: string | undefined;
   let agentActionTitle: string | undefined;
+  let agentActionRoom: string | undefined;
   if (defense.aiActionId) {
     const { getActionById } = await import("@/lib/agentActions");
     const def = getActionById(defense.aiActionId);
     agentActionTitle = def?.title;
+    agentActionRoom = def?.room;
     try {
       const spawn = await triggerAgentResearch(defense.aiActionId);
       if (spawn.ok && spawn.actionRowId) {
@@ -400,6 +406,7 @@ export async function defendRaid(
       cashDelta,
       agentActionRowId,
       agentActionTitle,
+      agentActionRoom,
     },
   };
 }
