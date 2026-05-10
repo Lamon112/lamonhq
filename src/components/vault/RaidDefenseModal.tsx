@@ -28,6 +28,8 @@ import {
   Scroll,
   Sparkles,
   X,
+  Bot,
+  Loader2,
 } from "lucide-react";
 import {
   RAID_ARCHETYPES,
@@ -60,6 +62,9 @@ interface Props {
   /** If set, only show raids whose target_room matches */
   filterRoom?: string | null;
   onClose: () => void;
+  /** Called when defense spawned an AI agent_actions row.
+   *  Vault uses this to open the ResearchResultDrawer with the spawn id. */
+  onAiActionSpawned?: (rowId: string) => void;
 }
 
 interface ResolvedDisplay {
@@ -69,9 +74,11 @@ interface ResolvedDisplay {
   penaltyLabel: string;
   xpDelta: number;
   cashDelta: number;
+  agentActionRowId?: string;
+  agentActionTitle?: string;
 }
 
-export function RaidDefenseModal({ open, raids, filterRoom, onClose }: Props) {
+export function RaidDefenseModal({ open, raids, filterRoom, onClose, onAiActionSpawned }: Props) {
   const filtered = useMemo(() => {
     if (!filterRoom) return raids;
     return raids.filter((r) => r.target_room === filterRoom);
@@ -113,7 +120,7 @@ export function RaidDefenseModal({ open, raids, filterRoom, onClose }: Props) {
             </p>
           )}
           {filtered.map((r) => (
-            <RaidCard key={r.id} raid={r} />
+            <RaidCard key={r.id} raid={r} onAiActionSpawned={onAiActionSpawned} />
           ))}
         </div>
       </div>
@@ -121,7 +128,13 @@ export function RaidDefenseModal({ open, raids, filterRoom, onClose }: Props) {
   );
 }
 
-function RaidCard({ raid }: { raid: ActiveRaid }) {
+function RaidCard({
+  raid,
+  onAiActionSpawned,
+}: {
+  raid: ActiveRaid;
+  onAiActionSpawned?: (rowId: string) => void;
+}) {
   const arche = RAID_ARCHETYPES[raid.raid_type as RaidType];
   const sev = SEVERITY_COLOR[raid.severity];
   const [resolved, setResolved] = useState<ResolvedDisplay | null>(null);
@@ -154,6 +167,10 @@ function RaidCard({ raid }: { raid: ActiveRaid }) {
       } else {
         playSfx("defense_lose");
         if (data.cashDelta < 0) setTimeout(() => playSfx("cash_loss"), 350);
+      }
+      // AI executor SFX (separate, slightly later)
+      if (data.agentActionRowId) {
+        setTimeout(() => playSfx("agent_start"), 800);
       }
     });
   }
@@ -250,7 +267,14 @@ function RaidCard({ raid }: { raid: ActiveRaid }) {
             })}
           </motion.div>
         )}
-        {resolved && <ResolvedSummary key="resolved" data={resolved} arche={arche} />}
+        {resolved && (
+          <ResolvedSummary
+            key="resolved"
+            data={resolved}
+            arche={arche}
+            onAiActionSpawned={onAiActionSpawned}
+          />
+        )}
       </AnimatePresence>
 
       {error && (
@@ -263,9 +287,11 @@ function RaidCard({ raid }: { raid: ActiveRaid }) {
 function ResolvedSummary({
   data,
   arche,
+  onAiActionSpawned,
 }: {
   data: ResolvedDisplay;
   arche: RaidArchetype;
+  onAiActionSpawned?: (rowId: string) => void;
 }) {
   const won = data.outcome === "won";
   return (
@@ -305,6 +331,37 @@ function ResolvedSummary({
           </span>
         )}
       </div>
+
+      {/* AI executor link — appears if defense spawned a real agent_actions row */}
+      {data.agentActionRowId && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-3 flex items-center justify-between rounded-md border border-amber-500/50 bg-amber-950/30 px-3 py-2"
+        >
+          <div className="flex items-center gap-2">
+            <Bot size={14} className="text-amber-300" />
+            <div className="flex flex-col leading-tight">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-amber-300">
+                AI radi u pozadini
+              </span>
+              {data.agentActionTitle && (
+                <span className="text-[11px] text-amber-200/90">
+                  {data.agentActionTitle}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => onAiActionSpawned?.(data.agentActionRowId!)}
+            className="flex items-center gap-1 rounded border border-amber-500/60 bg-amber-500/20 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-amber-100 transition-colors hover:bg-amber-500/30"
+          >
+            <Loader2 size={10} className="animate-spin" />
+            otvori rezultat
+          </button>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

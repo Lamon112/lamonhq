@@ -332,6 +332,12 @@ export function Vault({}: VaultProps) {
         raids={raids}
         filterRoom={raidFilterRoom}
         onClose={() => setRaidModalOpen(false)}
+        onAiActionSpawned={(rowId) => {
+          // Close the raid modal + open the existing research result drawer
+          // pointed at the spawned agent_actions row.
+          setRaidModalOpen(false);
+          setDrawerActionId(rowId);
+        }}
       />
 
       {/* Inline styles for vault textures (kept here so the global stylesheet

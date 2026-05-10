@@ -34,6 +34,13 @@ import {
   Activity,
   TrendingUp,
   ShieldAlert,
+  Phone,
+  Mail,
+  Smile,
+  Ban,
+  Scroll,
+  Zap,
+  Wallet,
 } from "lucide-react";
 
 /**
@@ -738,20 +745,676 @@ TAGS: churn, retention, risk-radar, rescue`,
 };
 
 // =====================================================================
+// RAID DEFENSE ACTIONS — triggered when player picks a defense in
+// RaidDefenseModal. Each maps to a defense.aiActionId in src/lib/raids.ts.
+// All are kind="research" so they ride the existing agentResearch
+// Inngest pipeline (Sonnet 4.6 + optional web_search + Notion mirror).
+// =====================================================================
+
+const holmesCounterDmBait: AgentActionDef = {
+  id: "holmes.counter_dm_bait",
+  kind: "research",
+  scope: "b2b",
+  room: "holmes",
+  title: "Counter-DM bait — honeypot lead list",
+  description:
+    "Konkurent te scout-ao. Generira fake 'pipeline list' (8-12 honeypot leadova) koje preko DM-a 'slučajno' otkriješ — rasipaš njihovo vrijeme + dezinformiraš.",
+  notionLabel: "Custom",
+  icon: Crosshair,
+  estimatedSec: 60,
+  estimatedCostEur: 0.04,
+  systemPrompt: `Ti si Holmes — tactical intel agent. Generiraš counter-intelligence assets za zaštitu Lamon Agency outreach pipeline-a.`,
+  prompt: `Counter-Scout raid je u tijeku. Generiraj HONEYPOT LEAD LIST koju ćemo "slučajno" pustiti preko DM-ova/email-a da konkurent vidi. Cilj: rasipa njihovo vrijeme + dezinformira o našem stvarnom pipeline-u.
+
+Format:
+
+# Honeypot Lead List — [datum]
+
+## Leadovi (8-12 fake unosa, vjerodostojni ali izmišljeni)
+| Klinika (fake) | Grad | Owner | Status | Last touch |
+|---|---|---|---|---|
+| ... | ... | "Dr. ..." | "Pre-discovery, replied" | "2026-05-..." |
+
+Smjernice:
+- Imena klinika realna ali NE postoje (kombiniraj generic + landmark, npr. "Dental Studio Maksimir", "Smile Clinic Tuškanac")
+- Owner = realistična HR doktor imena (Dr. Petar X, Dr. Marija Y)
+- Status = mix early-stage (cold, warm, replied, discovery scheduled)
+- 1-2 oznake "VIP — €3K/mj proposal sent" da konkurent panicira
+
+## Distribution plan
+- Plant via koji kanal (LinkedIn DM, Apollo email export "leak", Notion shared workspace dropped)
+- Kako učiniti vjerodostojnim (timing, izvor)
+
+## Risk mitigation
+- Što ako pravi prospect vidi listu? (svi su fake, prepoznatljivi po nepostojanju)
+
+TAGS: counter-intel, honeypot, op-sec`,
+};
+
+const commsChurnRescueCall: AgentActionDef = {
+  id: "comms.churn_rescue_call",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "Churn rescue — osobni poziv vlasniku",
+  description:
+    "Klijent pokazuje churn signale. AI piše 3-section call script: opening hook, top 3 talking points specifični za klijenta, soft re-commit close.",
+  notionLabel: "Custom",
+  icon: Phone,
+  estimatedSec: 75,
+  estimatedCostEur: 0.05,
+  systemPrompt: `Ti si Comms agent — pišeš call script-ove za Leonarda u Lamon-ovom personalnom glasu (warm, direktan, hrvatski formalno "Vi"). Cilj: spasiti klijenta bez popust pristupa.`,
+  prompt: `Klijent pokazuje churn signale (booking volume pao, missed escalations, last touch >14 dana). Generiraj OSOBNI POZIV SCRIPT za vlasnika klinike. Kratko, sadržajno, ne pitchy.
+
+Format:
+
+# Rescue Call — [klijent]
+
+## Kontekst (Leonardo čita prije poziva, 30 sec)
+- Što se dogodilo (signal flag)
+- Što vlasnik vjerojatno misli
+- Što NE smije Leonardo reći
+
+## Opening (prvih 30 sec)
+"Dr. [X], javljam vam se jer sam primijetio [konkretan signal]. Htio sam pitati direktno — kako stvari izgledaju s vaše strane?"
+
+## Top 3 Talking Points
+1. [Konkretan win iz zadnjeg mjeseca koji su možda zaboravili — broj poziva spasenih, booking conversion improvement]
+2. [Honest acknowledgment što ne radi — ne hide, vlasnik to već zna]
+3. [Sljedećih 30 dana plan — 1-2 konkretne stvari koje ćemo promijeniti]
+
+## Close (assumptive re-commit)
+"Predlažem da ovaj tjedan napravimo X. Slažete li se?"
+
+## Anti-objections
+- "Razmišljamo pauzirati" → ...
+- "Drugi vendor je nudio jeftinije" → ...
+- "Kolega/ica je nezadovoljna" → ...
+
+## Po pozivu (debrief Leonardo zapisuje)
+- Što je pravi razlog churn-a?
+- Da li je save hot/warm/cold?
+
+TAGS: churn, rescue, retention`,
+};
+
+const commsChurnDiscountEmail: AgentActionDef = {
+  id: "comms.churn_discount_email",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "Churn rescue — discount koncesija email",
+  description:
+    "Drafta empathetic email klijentu sa −€50/mj 3-mjesečnom koncesijom. Frame-a kao 'partnership investment', ne kao popust.",
+  notionLabel: "Custom",
+  icon: Mail,
+  estimatedSec: 60,
+  estimatedCostEur: 0.04,
+  systemPrompt: `Ti si Comms agent — drafta retention email-ove za Lamon Agency. Glas: warm, partnerski, ne defenzivan, hrvatski formalno "Vi". Discount je strateška investicija u dugogodišnji odnos, ne ustupak.`,
+  prompt: `Drafta DISCOUNT KONCESIJA EMAIL klijentu (vlasnik klinike) koji pokazuje churn signale. Nudimo −€50/mj na 3 mjeseca. Frame: ovo je naša investicija u njihov uspjeh, ne popust.
+
+Format:
+
+# Email draft — [klijent]
+**Subject:** [Tri opcije — A, B, C — od kojih Leonardo bira]
+**To:** [vlasnik]
+**From:** Leonardo Lamon <leonardo@lamon.hr>
+
+[Email tijelo, 150-200 riječi MAX, struktura:]
+- Otvaranje (1 rečenica): osobno + acknowledgment što vidim
+- Što sam vidio (2-3 rečenice): konkretni signali, bez floweri
+- Naša odgovornost (1-2 rečenice): što sam mogao učiniti bolje
+- Prijedlog (3-4 rečenice): −€50/mj sljedeća 3 mjeseca + jedna konkretna stvar koju mijenjamo (npr. tjedna check-in poziva, custom report)
+- Close: "Hoćemo li nazvati ovaj tjedan? Predlažem [konkretan dan/sat]."
+
+## Anti-pattern checklist (Leonardo provjeri prije slanja)
+- [ ] Ne ispričava se previše (max 1 rečenica)
+- [ ] Ne nudi popust kao prvi potez (frame je investicija)
+- [ ] Ne pita "kako ste?" (premalo direktno za situaciju)
+- [ ] Ima konkretan next step (poziv, ne nastavak email-a)
+
+## Follow-up plan
+- Ako odgovori za 24h: ...
+- Ako ne odgovori 48h: ...
+- Ako odbije discount: ...
+
+TAGS: churn, retention, email-draft`,
+};
+
+const commsChurnLoyaltyGift: AgentActionDef = {
+  id: "comms.churn_loyalty_gift",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "Churn rescue — loyalty gift + ručno pismo",
+  description:
+    "Lista 3 gift opcije (€20-€40 budget) prikladne za HR doktora-vlasnika + draft handwritten letter (10-15 rečenica) koji ide uz gift.",
+  notionLabel: "Custom",
+  icon: Sparkles,
+  estimatedSec: 60,
+  estimatedCostEur: 0.04,
+  systemPrompt: `Ti si Comms agent — kustos personal touch gestova. HR business culture (vlasnik dental klinike, 40-55, vjerojatno muški, voli kvalitetu, cijeni gesture preko cijene).`,
+  prompt: `Drafta LOYALTY GIFT PACKAGE za klijenta koji pokazuje churn signale. Budget €20-€40. Mora biti memorable, ne generic.
+
+Format:
+
+# Loyalty Gift — [klijent]
+
+## Gift opcije (Leonardo bira 1)
+
+### A) Premium opcija (€35-40)
+- [Što] · [Gdje kupiti u Zagrebu] · [Zašto baš ovo za vlasnika klinike]
+
+### B) Mid opcija (€25-30)
+- ...
+
+### C) Budget opcija (€18-22)
+- ...
+
+Smjernice za izbor:
+- Ne generic vino (svatko ga šalje)
+- Specifično lokalno (HR proizvod, Zagreb shop)
+- Konekcija na zubarsku/health niche (premium toothbrush set, organic tea, espresso beans od artisan roastery)
+
+## Handwritten Letter Draft
+
+[10-15 rečenica, hrvatski, formalno "Vi", glasom Leonarda Lamona. Struktura:]
+- Otvaranje s konkretnim podsjetnikom (zajednički razgovor, prvi sastanak)
+- Acknowledgment: što sam naučio od njih u zadnjih X mjeseci
+- Konkretan win koji je njihova klinika ostvarila zahvaljujući suradnji
+- "Ovaj mali znak…" (intro gift)
+- Close: "Drago mi je što gradimo ovaj odnos. — Leonardo"
+
+## Delivery checklist
+- Pakiraj sam, ne online (njihov adresant ne treba znati)
+- Ručno potpiši (penmenship matters)
+- Pošalji ranom srijedom (stigne četvrtak/petak — pozitivan kraj tjedna)
+
+TAGS: retention, personal-touch, loyalty`,
+};
+
+const commsSarcasticPitchReply: AgentActionDef = {
+  id: "comms.sarcastic_pitch_reply",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "Vendor swarm — sarkastičan pitch reply",
+  description:
+    "SaaS cold pitch ti je u inbox-u. AI generira 3 sarkastična ali profesionalno-britka odgovora (kratka, witty, anglo-style) koje Leonardo paste-a.",
+  notionLabel: "Custom",
+  icon: Smile,
+  estimatedSec: 30,
+  estimatedCostEur: 0.02,
+  systemPrompt: `Ti si Comms agent — meister of the pleasantly-savage email reply. Glas: sharp, brief, dosadno-ne-pomaže-im. Cilj: vendor odustaje + možda postane fan tvog stila.`,
+  prompt: `Vendor swarm raid: SaaS/agency cold pitch je stigao. Drafta 3 SARKASTIČNA REPLY OPCIJE (Leonardo bira 1). Engleski jer su pitcheri obično USA SaaS.
+
+Format:
+
+# Sarcastic Reply Drafts
+
+## Opcija A — "The Polite Roast" (mid spice)
+[3-5 rečenica. Acknowledge their pitch, point out the irony specific to what they sent, decline gracefully but with bite.]
+
+## Opcija B — "The Mirror" (high spice)
+[Quote their own marketing-speak back at them with mild absurdism. 4-6 rečenica.]
+
+## Opcija C — "The Question" (subtle, philosophical)
+[1-2 questions that make them realize their email was bad. No insult, just clarity.]
+
+## Smjernice za sve 3 opcije
+- Ne fail-safe ("nije nam relevantno") — to je bezobrazno
+- Ne ad-hominem (ne napadaj njih osobno, samo metodu)
+- Otvori vrata za buduce ako se predomjene ("ako ikada vidite koju nišu konkretno mojoj agenciji…")
+- Sign-off uvijek "— Leonardo"
+
+## Risk note
+Ako pošiljatelj dođe iz velikog konkurenta (npr. Vapi, ElevenLabs sales rep) — koristi opciju C (najsigurnija).
+
+TAGS: comms, vendor-swarm, sarcasm-with-class`,
+};
+
+const commsVendorFilterSetup: AgentActionDef = {
+  id: "comms.vendor_filter_setup",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "Vendor swarm — Gmail auto-filter setup",
+  description:
+    "Generira točan setup za Gmail filter koji blokira tipične SaaS/agency cold pitche (CSV format pravila + step-by-step Gmail UI walkthrough).",
+  notionLabel: "Custom",
+  icon: Ban,
+  estimatedSec: 45,
+  estimatedCostEur: 0.03,
+  systemPrompt: `Ti si Comms agent — operativni op-sec helper. Generiraš konkretne Gmail filter rules (ne savjete, ne "pokušaj X"). Sve mora biti copy-paste ready.`,
+  prompt: `Vendor swarm raid. Generiraj GMAIL FILTER SETUP koji uklanja 90% SaaS/agency cold pitch-eva s lamonorganization@gmail.com inbox-a.
+
+Format:
+
+# Gmail Auto-Filter Setup — Vendor Swarm Defense
+
+## Rule Set (5-7 pravila, by priority)
+
+### Pravilo 1: Auto-archive cold SaaS pitch
+**Search criteria** (paste in Gmail "Has the words"):
+\`\`\`
+{from:(*@*.io) from:(*@hubspot.com) from:(*@apollo.io) from:(noreply@*) "scale your agency" OR "10x your" OR "growth hack" OR "book a demo" OR "quick chat" -from:(@apollo.io to:lamonorganization)}
+\`\`\`
+**Action:** Skip Inbox + Apply label "Cold Pitch" + Mark as read
+
+### Pravilo 2-7: ...
+
+## Setup walkthrough (Gmail web UI)
+1. Otvori gmail.com → kliknite ⚙ → All settings → Filters tab
+2. ...
+
+## Whitelist exceptions (NE smiješ blokirati)
+- @anthropic.com, @openai.com, @vercel.com, @supabase.io (alat vendori koje koristimo)
+- @apollo.io (jer plaćamo plan)
+- klijenti — list specifičnih domena
+
+## Maintenance
+- Weekly review "Cold Pitch" label za 30s, restore false positives
+- Mjesečno: prošlo arhiv + delete >90 dana
+
+TAGS: ops, gmail, automation`,
+};
+
+const atlasReviewPublicResponse: AgentActionDef = {
+  id: "atlas.review_public_response",
+  kind: "research",
+  scope: "b2b",
+  room: "atlas",
+  title: "Bad review — javni odgovor",
+  description:
+    "Bad-review goblin: Atlas drafta empathetic, profesionalan public response na 1★ recenziju. 2-3 verzije (kratak/srednji/dug), uvijek bez defenzivnosti.",
+  notionLabel: "Custom",
+  icon: Scroll,
+  estimatedSec: 45,
+  estimatedCostEur: 0.03,
+  systemPrompt: `Ti si Atlas — brand reputation agent. Glas: kalmer, ne-defenzivan, profesionalno-topao. Klijent vidi tvoj odgovor i misli "wow ovo je odrasla osoba".`,
+  prompt: `Bad-review raid. Drafta JAVNI ODGOVOR na 1★ recenziju ("AI je hladan i nikad ne daje cijene, gubitak vremena"). Drafta 3 verzije.
+
+Format:
+
+# Public Response Drafts — 1★ recenzija
+
+## Verzija A — Kratka (60-80 riječi)
+[Jednostavna empatija + acknowledgment + invite na private follow-up. Bez objašnjavanja zašto AI ne daje cijene.]
+
+## Verzija B — Srednja (120-150 riječi)
+[Empatija + konkretno objašnjenje zašto cijena ovisi o pregledu (medical-legal reason) + invite na konzultaciju.]
+
+## Verzija C — Duga (200-250 riječi)
+[Empatija + edukativan kontekst (zašto premium klinika ne daje cijene preko poziva) + konkretan invite + ime osobe za kontakt.]
+
+## Smjernice za sve verzije
+- Otvori s "Hvala vam što ste podijelili svoje iskustvo"
+- NE počinji s "Razumijemo vašu frustraciju" (cliché)
+- NE pravdaj AI (uvijek smo "naš tim" ili "naša klinika")
+- Završi s konkretnim sljedećim korakom (broj telefona, ime, kalendar link)
+
+## Tone-of-voice samples (CRO premium klinika 2026)
+- "Naš pristup je..." ne "naš sistem je..."
+- "Konzultacija s doktorom" ne "pregled"
+- "Investicija u zdravlje" ne "trošak"
+
+## Po objavi
+- Snimi screenshot odgovora
+- Spremi za "social proof" template (drugima pokaži kako reagiraš na kritike)
+
+TAGS: brand, reviews, public-response`,
+};
+
+const atlasReviewDmOutreach: AgentActionDef = {
+  id: "atlas.review_dm_outreach",
+  kind: "research",
+  scope: "b2b",
+  room: "atlas",
+  title: "Bad review — privatni DM reviewer-u",
+  description:
+    "Drafta privatni DM/email reviewer-u (ako je identifiable) — empatičan, nudi konzultaciju, traži priliku da popravimo iskustvo. Cilj: voluntary review removal.",
+  notionLabel: "Custom",
+  icon: Mail,
+  estimatedSec: 45,
+  estimatedCostEur: 0.03,
+  systemPrompt: `Ti si Atlas — brand recovery agent. Pišeš human-to-human poruke koje izlaze iz brand defaults (ne-pita-za-removal, samo-poprava-iskustva-i-removal-followuje-prirodno).`,
+  prompt: `Bad-review raid. Reviewer je identifiable (npr. javni Google profil). Drafta PRIVATNI DM koji nudi recovery iskustvo.
+
+Format:
+
+# Private DM/Email Draft — [reviewer name placeholder]
+**Channel:** Google Maps message / LinkedIn / email (ovisi o platformi)
+**To:** [reviewer]
+**From:** Leonardo Lamon (NE klinika owner — više osobno)
+
+[Poruka, 80-120 riječi, struktura:]
+- Self-intro: "Vidio sam vašu recenziju" (NE "primijetio")
+- Acknowledgment: konkretan prošli iskustvo bez excuse
+- Ponuda: "Volio bih vas pozvati na 15-min besplatnu konzultaciju s [konkretan doktor] da bismo razgovarali o tome što ste tražili"
+- Soft framing: "Recenzija ostaje vaša — bez očekivanja da je mijenjate. Samo želim da imate priliku doživiti drugačiji susret."
+- Close: konkretan kalendar link
+
+## Smjernice
+- NIKAD ne pitaj za removal direktno (toxic + protiv Google ToS)
+- Ako oni sami ponude promijeniti recenziju → "Hvala, samo ako se osjećate tako"
+- Sign-off: "— Leonardo Lamon, suosnivač Lamon Agency"
+
+## Anti-pattern checklist
+- [ ] Ne defenzivan ton
+- [ ] Ne pravdanje AI agenta
+- [ ] Ne "hvala što ste recenzirali" (insulting nakon 1★)
+- [ ] Konkretna osoba se javlja, ne klinika
+
+## Backup plan ako reviewer ignorira (7 dana)
+- Plan B: Atlas drafta drugi, kraći ping
+- Plan C: ako i dalje ignorira → focus na drown_in_good_reviews
+
+TAGS: brand, reviews, dm-outreach`,
+};
+
+const stewardReview5StarRequest: AgentActionDef = {
+  id: "steward.review_5star_request",
+  kind: "research",
+  scope: "b2b",
+  room: "steward",
+  title: "Bad review — drown in 5★ batch request",
+  description:
+    "Generira email/SMS template + lista 5 happy klijenata za batch send tražeći Google review. Cilj: vratiti prosjek na 4.8+ kroz volume.",
+  notionLabel: "Custom",
+  icon: Sparkles,
+  estimatedSec: 60,
+  estimatedCostEur: 0.04,
+  systemPrompt: `Ti si Steward agent — manager klijent retention-a. Pišeš review request poruke koje su tako personal i jednostavne da klijenti stvarno odgovore.`,
+  prompt: `Bad-review raid: trebamo "drown in 5★" — pingnuti 5-7 happy klijenata da ostave Google review. Generiraj template + listu kandidata.
+
+Format:
+
+# 5★ Review Batch Push
+
+## Email/SMS Template (CRO, klijent-friendly)
+**Subject (email):** Imate li 60 sekundi?
+**SMS varijanta (160 chars):** ...
+**Email body (80-100 riječi):**
+- Otvori s konkretnim podsjetnikom (njihov treatment, datum, doktor)
+- Ask: "Ako imate 60 sekundi, link je ovdje: [Google review link]"
+- Reason: "Nedavno smo dobili kritičnu recenziju i trudimo se da budući pacijenti vide cjelovitu sliku"
+- Sign-off: "Hvala unaprijed, — Leonardo"
+
+## Direktan link template
+- Google: https://search.google.com/local/writereview?placeid=[PLACE_ID_PLACEHOLDER]
+- (Leonardo zamjeni s pravim Place ID-em iz Google Business Profile)
+
+## Kandidati za batch (5-7 happy klijenata, kriteriji)
+| Klijent | Zadnji pozitivan signal | Kanal | Spomenuti specific |
+|---|---|---|---|
+| [Klijent A] | "Dr X je odličan — dijete je oduševljeno" | SMS | dr X + dijete |
+| ... | ... | ... | ... |
+
+(Trenutno 0 plaćenih klijenata — daj template + plan kad prvi 5 paying klijenata bude live.)
+
+## Timing
+- Pošalji utorak/srijeda 19h-21h (najveći open rate)
+- Razmakni po 1 klijent / 30 min (ne baci sve odjednom — Google detektira batch)
+- Cilj: 3-5 novih 5★ unutar 48h → prosjek vraćen
+
+## Anti-pattern
+- NE: "Bili biste tako ljubazni…" (pretjerano formalno)
+- NE: "Nedavno smo imali problem…" (siguran turn-off)
+- NE: tjedan dana follow-up ako nisu odgovorili (zaboravi i probaj sljedeći mjesec)
+
+TAGS: brand, reviews, retention, batch-outreach`,
+};
+
+const jarvisOutageFailoverRunbook: AgentActionDef = {
+  id: "jarvis.outage_failover_runbook",
+  kind: "research",
+  scope: "b2b",
+  room: "jarvis",
+  title: "Outage — failover runbook (Vapi → mobitel)",
+  description:
+    "Vapi/Supabase down. Generira step-by-step runbook za prebacivanje incoming poziva s Vapi broja na Leonardov mobitel preko Twilio fallback (call forwarding).",
+  notionLabel: "Custom",
+  icon: Zap,
+  estimatedSec: 60,
+  estimatedCostEur: 0.04,
+  systemPrompt: `Ti si Jarvis — mission-critical ops agent. Pišeš runbook-ove kao SRE: točan, nuneričan, no fluff. Korisnik je u panici, mora reagirati za 5 minuta.`,
+  prompt: `Outage Beast raid: Vapi/Supabase health drop, active calls failing. Generiraj FAILOVER RUNBOOK (forward na Leonardov mobitel) — step-by-step.
+
+Format:
+
+# Outage Failover Runbook — [Service]
+
+## Trigger condition
+Service: [Vapi / Supabase / ElevenLabs] (ovisno o context-u raid-a)
+Status: [degraded / down]
+
+## Pre-checks (30 sec)
+1. Provjeri https://status.vapi.ai (ili relevantni status page)
+2. Provjeri Telegram alerts (Jarvis bot) za prethodne pingove
+3. Procijeni: incident < 5 min ILI > 5 min?
+
+## Failover steps (3-5 min total)
+**Step 1:** Otvori Vapi Dashboard → Phone Numbers → tvoj demo broj
+**Step 2:** Klikni "Edit" → polje "Fallback destination"
+**Step 3:** Postavi na "Forward to phone number" → Leonardov mobitel: +385 91 XXX XXXX
+**Step 4:** Save → test call iz drugog telefona da provjeriš
+**Step 5:** Pošalji proactive client notification (vidi action: comms.outage_proactive_notify)
+
+## Vapi Twilio fallback config (advanced)
+- TwiML XML template za custom forwarding script:
+\`\`\`xml
+<Response>
+  <Say voice="alice" language="hr-HR">Trenutni AI sustav nije dostupan, prebacujem vas na ljudski tim.</Say>
+  <Dial>+385 91 XXX XXXX</Dial>
+</Response>
+\`\`\`
+
+## Recovery (kad service vrati health)
+1. Vrati fallback na "AI Assistant" u Vapi Dashboard
+2. Testiraj 2 demo poziva
+3. Update Telegram channel s post-mortem
+
+## Post-mortem template
+- Što je puklo, kada, koliko trajalo
+- Koliko poziva propušteno (Vapi logs)
+- Koliko klijenata javljeno proaktivno
+- Što popravljamo da se ne ponovi (preventive action)
+
+TAGS: ops, outage, failover, sre`,
+};
+
+const commsOutageProactiveNotify: AgentActionDef = {
+  id: "comms.outage_proactive_notify",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "Outage — proactive client notify",
+  description:
+    "Outage je živ. Drafta hitan email/SMS svim aktivnim klijentima: što se dogodilo, što radimo, kada očekujemo recovery, kontakt za hitne slučajeve.",
+  notionLabel: "Custom",
+  icon: Mail,
+  estimatedSec: 45,
+  estimatedCostEur: 0.03,
+  systemPrompt: `Ti si Comms agent — incident communicator. Glas: smiren, faktualni, no excuses, no panic. Klijent treba osjetiti "ovi ljudi to imaju pod kontrolom čak i kada nešto pukne".`,
+  prompt: `Outage Beast raid: Vapi/Supabase down, Riva degraded. Drafta HITAN PROACTIVE NOTIFICATION svim aktivnim klijentima.
+
+Format:
+
+# Outage Notification — [Service Name] [Date]
+
+## Email draft (140-180 riječi)
+**Subject:** [3 opcije: A "Quick update on [Service]" / B "Trenutno tehnički incident — pod kontrolom" / C "[Klinika], javljam se proaktivno"]
+**To:** Svi aktivni klijenti (BCC, ne CC)
+**From:** Leonardo Lamon <leonardo@lamon.hr>
+
+[Tijelo:]
+- Otvaranje (1-2 rečenice): "Javljam vam se proaktivno — [service] ima trenutno tehničke probleme koje utječu na Rivu."
+- Što se dogodilo (1-2 rečenice): faktualno, ne tehnički žargon
+- Što radimo (2-3 rečenice): konkretno (failover aktiviran, pozivi se forward-aju, monitor)
+- Što vi trebate raditi (1 rečenica): "Ništa — sustav radi, samo s blagim delay-om" ILI konkretne instrukcije
+- Kada očekujemo recovery (1 rečenica): timeframe (npr. "u sljedećih 30-60 min" ako znamo)
+- Hitan kontakt: Leonardo +385 91 XXX, dostupan ovaj sat
+- Sign-off: "Update slijedi čim recovery potvrđen — Leonardo"
+
+## SMS varijanta (160 chars max)
+"Lamon: [Service] tehnički incident, Riva degraded ali pozivi forward-aju se na nas. ETA recovery 30 min. Hitno: 091 XXX XXX. — Leonardo"
+
+## Distribution
+- Email: bcc svim aktivnim klijentima
+- SMS: samo onima koji su pristali na SMS (proveri integration prefs)
+- Telegram (ako klijent koristi): ad-hoc message
+
+## Post-recovery follow-up
+- Ako recovery <30 min: jedan "✓ Sve radi" SMS
+- Ako recovery >30 min: post-mortem email + besplatan kredit (npr. -10% next month)
+
+TAGS: ops, incident-comms, transparency`,
+};
+
+const aegisGdprDossier: AgentActionDef = {
+  id: "aegis.gdpr_dossier",
+  kind: "research",
+  scope: "b2b",
+  room: "aegis",
+  title: "GDPR probe — compliance dossier (web_search)",
+  description:
+    "AZOP probe stigao. Aegis koristi web_search da pull-a najnoviji AZOP requirements, generira full compliance dossier: consent flow text, DPA template, retention policy, breach response plan.",
+  notionLabel: "Custom",
+  icon: Scroll,
+  estimatedSec: 240,
+  estimatedCostEur: 0.18,
+  systemPrompt: `Ti si Aegis — compliance & risk officer. Tvoj output mora biti spreman za AZOP submission, ne za internal use. Točnost > brzina. Citiraj zakon (HR + EU GDPR Art X) gdje primjenjivo.`,
+  prompt: `GDPR Probe raid: AZOP traži dokaze da Riva voice flow ima pravilan consent + retention. Generiraj FULL COMPLIANCE DOSSIER za submission.
+
+Pretraži web (max 5 calls) za:
+- Najnovija AZOP guidance za AI/voice processing health-related podataka (2025-2026)
+- Croatian Zakon o zaštiti pacijenata + GDPR Art 9 (special category data)
+- Vapi + ElevenLabs + Anthropic data residency disclosures (gdje se procesiraju podatci)
+
+Format:
+
+# GDPR Compliance Dossier — Lamon Agency / Riva Voice AI
+
+## 1. Executive Summary (½ stranice)
+- Što je Riva, koje podatke procesira, gdje
+- 3 ključne compliance kontrole
+- Risk score (low/medium/high)
+
+## 2. Lawful Basis (Art 6 + Art 9)
+- Tvrdnja: koja je lawful basis za processing (Art 6(1)(b) ugovor + Art 9(2)(h) medical care)
+- Dokaz: gdje je dokumentirano (DPA s klinikom)
+
+## 3. Consent Flow (sub-sekcija)
+- **Trenutni Riva script CRO:** [draft 2-3 rečenice na početku poziva, "Poziv se snima radi kvalitete i sigurnosti, slažete li se? Ako ne — prebacit ću vas na recepcionarku."]
+- **Proof of consent:** kako se snima (audio + transcript timestamp)
+- **Withdrawal:** kako pacijent može povući consent
+
+## 4. Data Map (gdje podaci putuju)
+| Field | Source | Storage | Retention | Processor |
+|---|---|---|---|---|
+| Glasovna snimka | Pacijent | Vapi (US/EU) | 30 dana | Vapi LLC |
+| Transcript | OpenAI gpt-4o-transcribe | Anthropic (EU) | 30 dana | Anthropic, Inc. |
+| Booking podaci (ime, broj, tretman) | Riva | Klinika EasyBusy / Calendly | 2 godine | Klinika data controller |
+
+## 5. DPA Template (klinika ↔ Lamon)
+[Standard EU DPA bullet points, prilagođen za AI voice processor]
+
+## 6. Retention Policy
+- Glasovne snimke: 30 dana auto-delete
+- Transcript: 30 dana auto-delete
+- Booking podaci: 2 godine (Zakon o zaštiti pacijenata Art X)
+
+## 7. Breach Response Plan
+- Detection (within 24h)
+- Notification AZOP (within 72h, GDPR Art 33)
+- Notification affected pacijenti (Art 34, ako visok risk)
+
+## 8. Data Subject Rights Procedure
+- Access request (Art 15) — process + max 30 dana
+- Erasure (Art 17) — kako brišemo iz Vapi/Anthropic
+- Portability (Art 20) — JSON export
+
+## 9. Vendor / Processor agreements
+- Vapi: link na njihov DPA
+- Anthropic: link na njihov DPA
+- ElevenLabs: link na njihov DPA
+
+## 10. Submission Cover Letter (1 stranica)
+[Drafta formalan CRO odgovor AZOP-u: "U odgovoru na vaš upit od [datum], dostavljam dossier o GDPR usklađenosti naše AI voice usluge…"]
+
+## 11. AZOP Citations (provjerene)
+[Lista konkretnih AZOP guidances + članaka GDPR / HR Zakona — sve s URL izvorima iz web search-a]
+
+TAGS: gdpr, compliance, azop, dossier`,
+};
+
+const commsGdprLawyerEngagement: AgentActionDef = {
+  id: "comms.gdpr_lawyer_engagement",
+  kind: "research",
+  scope: "b2b",
+  room: "comms",
+  title: "GDPR probe — lawyer engagement email",
+  description:
+    "Drafta email za HR lawyera (data privacy) s case summary, expected scope of work, budget €200, deadline 72h. Lista 3 preporučene HR firme.",
+  notionLabel: "Custom",
+  icon: Wallet,
+  estimatedSec: 60,
+  estimatedCostEur: 0.04,
+  systemPrompt: `Ti si Comms agent — pišeš profesionalne business inquiries. Glas: kompetentan, koncizan, daje punu sliku za fast quote.`,
+  prompt: `GDPR Probe raid: angažiramo HR lawyera (data privacy specialty) da odgovori na AZOP probe. Drafta engagement email + lista preporučenih firmi.
+
+Format:
+
+# Lawyer Engagement Email + Vendor Shortlist
+
+## Email Draft
+**Subject:** Hitna konzultacija — AZOP GDPR probe (AI voice processor)
+**To:** [lawyer]
+**From:** Leonardo Lamon <leonardo@lamon.hr>
+**Body (200-250 riječi):**
+- Kontekst (3 rečenice): Lamon Agency, Riva = AI voice za dental klinike, AZOP poslao spot-check
+- Konkretan problem: AZOP traži [X], rok 72h
+- Što tražim: prepare dossier + submission letter, max 4h work
+- Budget: €200 (firm cap, prihvaćam fixed-fee)
+- Timeline: response danas, dossier u 48h, submission u 72h
+- Materijali: imam draft dossier (Aegis-generated), tražim review + legal polish
+- Ako interes: "Predlažem 30-min discovery call ovaj sat — [Calendly link]"
+
+## Recommended HR Firms (top 3 za data privacy, 2025-2026)
+[Pretraži web za top hrvatski data-privacy lawyere/firms — Zagreb-based, GDPR specialty]
+| Firma | Kontakt | Specialty | Indikativna cijena | Note |
+|---|---|---|---|---|
+| ... | ... | ... | ... | ... |
+
+## Backup plan
+- Ako prvi lawyer ne odgovori za 4h: pošalji 2. + 3. paralelno
+- Ako budget ovrijedi €200: vrati se na aegis.gdpr_dossier (sam compile-aj)
+
+TAGS: legal, gdpr, vendor-engagement`,
+};
+
+// =====================================================================
 // Action catalog — keyed by room
 // =====================================================================
 export const ACTION_CATALOG: Record<AgentId, AgentActionDef[]> = {
   nova: [novaDeepBizImprovement, novaAiAutomatableBiz],
-  holmes: [holmes10LeadsPipeline],
+  holmes: [holmes10LeadsPipeline, holmesCounterDmBait],
   mentat: [mentatCouncil],
-  steward: [stewardClientsView, stewardClientStatsView, stewardOnboardingKit],
+  steward: [stewardClientsView, stewardClientStatsView, stewardOnboardingKit, stewardReview5StarRequest],
   treasury: [treasuryRevenueView],
-  jarvis: [jarvisTasksView],
-  atlas: [atlasBookingView],
-  aegis: [aegisHealthPulse, aegisQbrBrief, aegisChurnRadar],
+  jarvis: [jarvisTasksView, jarvisOutageFailoverRunbook],
+  atlas: [atlasBookingView, atlasReviewPublicResponse, atlasReviewDmOutreach],
+  aegis: [aegisHealthPulse, aegisQbrBrief, aegisChurnRadar, aegisGdprDossier],
   forge: [],
   comms: [
     commsRoiCalculator,
+    commsChurnRescueCall,
+    commsChurnDiscountEmail,
+    commsChurnLoyaltyGift,
+    commsSarcasticPitchReply,
+    commsVendorFilterSetup,
+    commsOutageProactiveNotify,
+    commsGdprLawyerEngagement,
     {
       id: "comms.meeting_brief",
       kind: "research",

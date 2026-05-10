@@ -20,6 +20,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { appendCashTxn } from "@/lib/cashLedger";
 import { pushTelegramNotification } from "@/app/actions/telegram";
+import { triggerAgentResearch } from "@/app/actions/agentResearch";
 import {
   RAID_TYPES_LIST,
   raidArchetype,
@@ -216,16 +217,26 @@ function pick<T>(arr: T[]): T {
 // Defend
 // =====================================================================
 
-export async function defendRaid(
-  raidId: string,
-  defenseId: string,
-): Promise<Result<{
+export interface DefendRaidResultData {
   outcome: "won" | "lost";
   rewardLabel: string;
   penaltyLabel: string;
   xpDelta: number;
   cashDelta: number;
-}>> {
+  /**
+   * If the chosen defense had an `aiActionId`, this is the agent_actions
+   * row id spawned in the background. UI surfaces it as "AI radi…" with
+   * a link that opens the existing ResearchResultDrawer.
+   */
+  agentActionRowId?: string;
+  /** Title of the spawned AI action (for the link label). */
+  agentActionTitle?: string;
+}
+
+export async function defendRaid(
+  raidId: string,
+  defenseId: string,
+): Promise<Result<DefendRaidResultData>> {
   const supabase = await createClient();
   const userId = await resolveOwnerUserId(supabase);
   if (!userId) return { ok: false, error: "no owner user found" };
@@ -249,6 +260,24 @@ export async function defendRaid(
 
   const won = rollDefense(defense.winChance);
   const outcome: "won" | "lost" = won ? "won" : "lost";
+
+  // === If defense has an aiActionId, spawn agent_actions row + Inngest event ===
+  let agentActionRowId: string | undefined;
+  let agentActionTitle: string | undefined;
+  if (defense.aiActionId) {
+    try {
+      const spawn = await triggerAgentResearch(defense.aiActionId);
+      if (spawn.ok && spawn.actionRowId) {
+        agentActionRowId = spawn.actionRowId;
+        // Look up title from agentActions catalog (lazy import to avoid circular dep)
+        const { getActionById } = await import("@/lib/agentActions");
+        agentActionTitle = getActionById(defense.aiActionId)?.title;
+      }
+    } catch {
+      // AI spawn failure shouldn't block raid resolution — defense outcome
+      // still applies, just no AI assist.
+    }
+  }
 
   // Cash side-effects: defense cost is paid up-front regardless of outcome
   let cashDelta = 0;
@@ -339,6 +368,8 @@ export async function defendRaid(
       penaltyLabel: defense.penaltyLabel,
       xpDelta,
       cashDelta,
+      agentActionRowId,
+      agentActionTitle,
     },
   };
 }

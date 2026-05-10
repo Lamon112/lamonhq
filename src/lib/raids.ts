@@ -48,6 +48,14 @@ export interface RaidDefense {
   /** Numeric MRR/cash impact if any (negative = cost). Applied via cash_ledger. */
   cashOnWin?: number;
   cashOnLose?: number;
+  /**
+   * Agent action that AI runs in background when this defense is chosen.
+   * Matches an entry in src/lib/agentActions.ts ACTION_CATALOG. Null/
+   * undefined = manual/op-sec defense, no AI work spawned. The defendRaid
+   * server action inserts an agent_actions row + sends Inngest event;
+   * the UI surfaces a "AI radi…" link to the running result drawer.
+   */
+  aiActionId?: string;
 }
 
 export interface RaidArchetype {
@@ -105,6 +113,7 @@ const COUNTER_SCOUT: RaidArchetype = {
       rewardLabel: "+5 hot leadova ukradeno iz njihovog funnel-a.",
       penaltyLabel: "Bait failao — otkriveni i 1 hot lead burned.",
       xpOnWin: 80,
+      aiActionId: "holmes.counter_dm_bait",
     },
     {
       id: "ignore_scout",
@@ -145,6 +154,7 @@ const CHURN_WRAITH: RaidArchetype = {
       rewardLabel: "Klijent ostao, +trust badge.",
       penaltyLabel: "Vlasnik nije imao vremena, situacija eskalira.",
       xpOnWin: 100,
+      aiActionId: "comms.churn_rescue_call",
     },
     {
       id: "discount_concession",
@@ -158,6 +168,7 @@ const CHURN_WRAITH: RaidArchetype = {
       xpOnWin: 60,
       cashOnWin: -150,
       cashOnLose: -150,
+      aiActionId: "comms.churn_discount_email",
     },
     {
       id: "loyalty_gift",
@@ -169,6 +180,7 @@ const CHURN_WRAITH: RaidArchetype = {
       rewardLabel: "Klijent oduševljen, +referral potencijal.",
       penaltyLabel: "Gift stigao prekasno, klijent već u procesu otkaza.",
       xpOnWin: 80,
+      aiActionId: "comms.churn_loyalty_gift",
     },
     {
       id: "ignore_churn",
@@ -219,6 +231,7 @@ const VENDOR_SWARM: RaidArchetype = {
       penaltyLabel: "10 min potrošeno bez rezultata.",
       xpOnWin: 50,
       cashOnWin: 500,
+      aiActionId: "comms.sarcastic_pitch_reply",
     },
     {
       id: "auto_filter_rule",
@@ -230,6 +243,7 @@ const VENDOR_SWARM: RaidArchetype = {
       rewardLabel: "Filter radi. Sljedeća 2 swarma auto-blokirana.",
       penaltyLabel: "Filter previše agresivan — propustio si Apollo notifikaciju.",
       xpOnWin: 60,
+      aiActionId: "comms.vendor_filter_setup",
     },
     {
       id: "ignore_swarm",
@@ -269,6 +283,7 @@ const BAD_REVIEW: RaidArchetype = {
       rewardLabel: "+5 brand reputation, drugi prospect-i vide profesionalan response.",
       penaltyLabel: "Reviewer je odgovorio gore — thread otišao u krivom smjeru.",
       xpOnWin: 70,
+      aiActionId: "atlas.review_public_response",
     },
     {
       id: "personal_dm",
@@ -280,6 +295,7 @@ const BAD_REVIEW: RaidArchetype = {
       rewardLabel: "Reviewer je uklonio recenziju, problem solved.",
       penaltyLabel: "Reviewer je javno screenshotao tvoj DM. Damage doubled.",
       xpOnWin: 80,
+      aiActionId: "atlas.review_dm_outreach",
     },
     {
       id: "drown_in_good_reviews",
@@ -291,6 +307,7 @@ const BAD_REVIEW: RaidArchetype = {
       rewardLabel: "5 novih 5★ recenzija, prosjek vraćen na 4.8.",
       penaltyLabel: "Samo 1 klijent reagirao, prosjek još pao.",
       xpOnWin: 50,
+      aiActionId: "steward.review_5star_request",
     },
     {
       id: "ignore_review",
@@ -330,6 +347,7 @@ const OUTAGE_BEAST: RaidArchetype = {
       rewardLabel: "Pozivi forward-ani na mobitel, klijenti misle da je sve normalno.",
       penaltyLabel: "Forwarding setup pogriješio — još više call drop-ova.",
       xpOnWin: 120,
+      aiActionId: "jarvis.outage_failover_runbook",
     },
     {
       id: "notify_clients_proactive",
@@ -341,6 +359,7 @@ const OUTAGE_BEAST: RaidArchetype = {
       rewardLabel: "Klijenti pohvalili transparentnost, +trust badge.",
       penaltyLabel: "Klijent #1 je shvatio kao incompetenciju.",
       xpOnWin: 100,
+      aiActionId: "comms.outage_proactive_notify",
     },
     {
       id: "ignore_outage",
@@ -380,6 +399,7 @@ const GDPR_PROBE: RaidArchetype = {
       rewardLabel: "Dossier prihvaćen, GDPR badge stalan, future probes auto-resolve.",
       penaltyLabel: "Dossier nepotpun, AZOP traži dodatne dokumente.",
       xpOnWin: 150,
+      aiActionId: "aegis.gdpr_dossier",
     },
     {
       id: "engage_lawyer",
@@ -391,6 +411,7 @@ const GDPR_PROBE: RaidArchetype = {
       rewardLabel: "Lawyer riješio, AZOP zatvorila probe.",
       penaltyLabel: "Lawyer je propustio detalj, escalation na sljedeći level.",
       xpOnWin: 60,
+      aiActionId: "comms.gdpr_lawyer_engagement",
     },
     {
       id: "ignore_gdpr",
