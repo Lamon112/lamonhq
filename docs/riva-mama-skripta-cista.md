@@ -128,4 +128,30 @@ Naš tim doktora i sestara čeka vas u ordinaciji. Ja samo pomažem oko zakaziva
 
 ---
 
-Sad pričaj prirodno o nečemu što voliš, oko 5 minuta. Bilo što — recept koji voliš pripremati, prošli vikend, putovanje koje pamtiš, omiljena knjiga ili film. Slobodno improviziraj, kao da pričaš s prijateljicom. Ne forsiraj "lijep" govor — neka bude prirodno, sa svim pauzama i smijehom kao u običnom razgovoru.
+Eto, sad ću ti ispričati kako pravim sarmu, jer to je nešto što stvarno volim raditi, i mislim da znam kako se to ispravno radi.
+
+Znaš, kod nas se sarma uvijek pravila za blagdane, za Božić, za Uskrs, ili kad bi došli gosti. Sjećam se moje bake, ona je radila sarmu od jutra. Cijelu kuhinju bi mirisala. Mi djeca smo se vrtjeli oko nje, čekali kad će biti gotovo. Ona je uvijek govorila — sarma se ne kuha, sarma se njeguje. I imala je pravo.
+
+Dakle, prvo što treba je dobar kiseli kupus. Ja kupujem cijele glavice, nikad listove, jer kad sam glavu ispereš, listovi su prirodno složeni i lakše se odvajaju. Skineš najprije onaj vanjski list, pa onda jedan po jedan. Najbolji listovi su oni srednji, ne preveliki ne premali. Tvrdi dio, žilu, malo izrežeš nožem da se lakše smota.
+
+Za nadjev, ja koristim mješavinu mljevenog mesa. Pola junetine, pola svinjetine. Neki stavljaju samo svinjetinu, ali meni je junetina dala bolji okus, više dubine. Plus, nije masno. Riža treba biti dobro oprana, da se izvuče sav škrob. Ja stavljam možda jedan dio riže na tri dijela mesa, ne više. Sarma s previše riže postane suha.
+
+Dodaš jedno jaje, da sve poveže. Sitno isjeckani luk, dobro popržen na masti dok ne bude zlatan. Ne bijel, zlatan. Čak malo karameliziran, to je tajna. Sol, papar, malo mljevene paprike, slatke i ljute, mješavinu. Po želji česnjak, ja stavljam dva, tri češnja. I peršin sitno sjeckan na kraju, ali samo malo, da ne dominira.
+
+Sve to pomiješaš rukama. Da, rukama, ne kuhačom. Ruke ti najbolje govore kad je nadjev pravilan. Treba biti vlažan ali kompaktan. Ako se previše prilijepi za ruke, dodaš malo riže. Ako je presuh, dodaš jaje ili malo vode od kupusa.
+
+E sad smotanje. To je vještina. Ja stavim list ispred sebe, žila prema dolje. Nadjev stavim oko dvije žlice na dno lista, blizu mene. Pa onda preklopim donji dio lista preko nadjeva, pa lijevu i desnu stranu unutra, kao paket, i smotam dalje od sebe. Mora biti čvrsto, ali ne pretvrdnuto, jer se riža mora širiti.
+
+Kod nas se sarma kuha u velikom loncu, na dnu uvijek koža od slanine. To daje okus, mast, sve. Onda red sarme, ravnomjerno složen. Pa malo kupusa. Pa opet sarma. Pa kupus. I tako dok ne dođeš do vrha. Na vrhu opet kupus, i komad slanine ili dimljenog rebra. To je obavezno za pravu domaću sarmu.
+
+Zalije se vodom, samo toliko da pokrije sve. Ne previše. Soli ne treba puno jer slanina i kupus već daju sol. Zakuha se na jakoj vatri, pa kad zavri, smanji se na najmanje. I onda se kuha tri sata, minimum. Ja je ostavim četiri. Kuhinja miriše cijeli dan. Susjedi pitaju što kuham.
+
+Nakon dva sata, ako želiš, možeš dodati zaprška. Mast, brašno, malo paprike. Mućka se i polako se ulije u sarmu. Ali ja to ne radim uvijek, ovisno o raspoloženju.
+
+Što se služenja tiče, sarma je najbolja drugi dan. Prvi dan je dobra, ali drugi dan je savršena. Okusi se slegnu, postane gušća, dublja. Mi smo doma uvijek imali pravilo da kad pravimo sarmu, onda za dva dana, ne za jedan obrok.
+
+Servira se s kuhanim krumpirom, ili s palentom, kako tko voli. Ja volim s palentom. I kruh, dobar domaći kruh, da pokupimo umak. Vino crveno, naravno, ako je hladnije vrijeme. Ljeti može i pivo, neki vole, ja ne. Sarma traži vino.
+
+Eto, to je moj recept. Nije ništa posebno, ali to je moj način. Svaka tetka ima svoj, svaka mama svoj, i sve su sarme dobre na svoj način. Glavno je da se radi s pažnjom i da ima vremena. Sarma ne voli žurbu.
+
+Hvala što si me slušao. Ispričavam se ako sam predugo pričala, ali kad počnem o sarmi, ne mogu stati.
