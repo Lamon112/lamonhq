@@ -23,6 +23,7 @@ import { Dweller, SitterDweller } from "./Dweller";
 import { RoomFurniture } from "./RoomFurniture";
 import { RaidIncomingBadge } from "./RaidIncomingBadge";
 import { RaidVisual } from "./RaidVisual";
+import { RoomAiWorking } from "./RoomAiWorking";
 
 const ACCENT_FRAME: Record<Agent["accent"], string> = {
   amber: "border-amber-600/70",
@@ -367,6 +368,11 @@ export function VaultRoom({
         <RaidVisual raids={raids} seed={agent.slot} />
       )}
 
+      {/* === AI-WORKING DRAMATIC OVERLAY === */}
+      {!isLocked && isResearching && (
+        <RoomAiWorking agentName={agent.name} progress={researchProgress ?? null} />
+      )}
+
       {/* === LAYER 5: Dwellers (walking + sitting) === */}
       {dwellers.map((d, i) => {
         if (d.kind === "sit") {
@@ -488,40 +494,7 @@ export function VaultRoom({
         />
       )}
 
-      {/* === RESEARCHING overlay — animated banner with live progress text === */}
-      {isResearching && (
-        <>
-          {/* Faster CRT data sweep when researching */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-50 vault-research-sweep"
-            style={{
-              background:
-                "linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
-              backgroundSize: "100% 30%",
-            }}
-          />
-          {/* Progress banner — top edge inside the room */}
-          <div className="absolute left-1/2 top-7 z-30 -translate-x-1/2 max-w-[90%]">
-            <div
-              className={
-                "flex items-center gap-2 rounded-md border bg-black/80 px-2 py-1 backdrop-blur-md shadow-lg vault-research-banner " +
-                (accentFrame.replace("/70", "/80"))
-              }
-            >
-              <span className="relative flex h-2 w-2">
-                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${accentText.replace("text-", "bg-")}`} />
-                <span className={`relative inline-flex h-2 w-2 rounded-full ${accentText.replace("text-", "bg-")}`} />
-              </span>
-              <span className={`font-mono text-[9px] uppercase tracking-wider ${accentText}`}>
-                researching
-              </span>
-              <span className="font-mono text-[9px] text-text-dim truncate max-w-[180px]">
-                {researchProgress}
-              </span>
-            </div>
-          </div>
-        </>
-      )}
+      {/* RESEARCHING overlay was here — replaced by <RoomAiWorking /> above. */}
     </motion.div>
   );
 }
