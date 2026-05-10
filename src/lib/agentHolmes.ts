@@ -61,6 +61,11 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
 1. **Striktni JSON** — bez markdown fence-a, bez dodatnog teksta, samo JSON objekt.
 2. **Bez halucinacija** — ako neki podatak nije u evidence-u, vraćaj null ili prazan string. NEMOJ izmišljati ime, godine, fakultet itd.
+2b. **years_experience — UVIJEK pokušaj derivirati**. Ovo je kritično za Leonarda jer vodi pitch personalizaciju. Tri sekvencijalne metode:
+    (a) Direktna izjava: "X godina iskustva", "od XXXX godine radi", "preko X godina prakse" → koristi taj broj.
+    (b) Godina diplomiranja: "diplomirao 20XX", "MD 20XX", "graduated 19XX" → vrati (2026 - godina_diplomiranja).
+    (c) Godina osnivanja klinike kao floor: ako nema doktorske godine ali "klinika osnovana 20XX" i vlasnik je founder → vrati (2026 - godina_osnivanja).
+    Samo ako sva 3 ne daju ništa → null. Ne ostavljaj null lijeno — pretraži bio, title, education, web, LinkedIn experience.
 3. **personal_angles** — minimalno 2 stvari u svakom polju. Izvuci iz BIO-a, IG bio-a, LinkedIn headline-a, recent posts-a, publicity rezultata.
 4. **best_angle.summary** — 1 rečenica taktički iskoristiv "zašto OVAJ vlasnik baš OVAJ angle". MORA referencirati pitch tier (npr. "Viralni TT (5.8M views) — pitchaj AI gatekeeper, ne content strategy").
 5. **opening_hook** — PRVA rečenica V8 outreach-a. MORA biti tier-prilagođena. Za veteran: spomeni njihov konkretan viralni hit ili brojku. Za starter: industry stat.

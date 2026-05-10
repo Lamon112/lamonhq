@@ -162,9 +162,10 @@ export function HolmesLeadDetail({
                 <p className="mt-1 text-[11px] text-text-dim">{r.owner.bio}</p>
               )}
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-text-dim">
-                {r.owner.years_experience != null && (
-                  <span>📅 {r.owner.years_experience}+ god</span>
-                )}
+                {(() => {
+                  const yrs = resolveOwnerYears(r);
+                  return yrs != null ? <span>📅 {yrs}+ god iskustva</span> : null;
+                })()}
                 {r.owner.education?.length > 0 && (
                   <span>🎓 {r.owner.education.join(", ")}</span>
                 )}
@@ -468,15 +469,65 @@ function fmt(n: number): string {
   return n.toString();
 }
 
+/**
+ * Best-effort years-of-experience for the owner. Returns the explicit
+ * `years_experience` if Holmes filled it, otherwise scans bio / title /
+ * personal_angles text for HR/EN cues:
+ *   - "X godina iskustva" / "X+ years"
+ *   - "od XXXX" / "since YYYY"
+ *   - "diplomirao XXXX" / "graduated YYYY"
+ * If a year is found, returns currentYear - year. Returns null if nothing
+ * lands — the badge stays hidden in that case rather than guessing.
+ */
+function resolveOwnerYears(
+  report: NonNullable<LeadRow["holmes_report"]>,
+): number | null {
+  const explicit = report.owner?.years_experience;
+  if (typeof explicit === "number" && explicit > 0) return explicit;
+
+  const haystackParts = [
+    report.owner?.bio ?? "",
+    report.owner?.title ?? "",
+    ...(report.owner?.education ?? []),
+    ...(report.personal_angles?.recent_activity ?? []),
+    ...(report.personal_angles?.interests ?? []),
+    report.team?.structure_note ?? "",
+  ]
+    .filter(Boolean)
+    .join(" \n ");
+
+  if (!haystackParts.trim()) return null;
+
+  // 1. Direct "N godina/year(s)" mention
+  const directHr = haystackParts.match(/(\d{1,2})\s*\+?\s*godin[ae]\s*iskustva/i);
+  if (directHr) return Number(directHr[1]);
+  const directEn = haystackParts.match(/(\d{1,2})\s*\+?\s*years?\s+(?:of\s+)?experience/i);
+  if (directEn) return Number(directEn[1]);
+
+  // 2. "od/since/od godine YYYY" or "diplomirao/graduated YYYY"
+  const yearMatch = haystackParts.match(
+    /(?:od|since|od\s+godine|diplomirao|diplomirala|graduated|established|otvorena|founded)[\s.,a-z]*?(19[7-9]\d|20[0-2]\d)/i,
+  );
+  if (yearMatch) {
+    const year = Number(yearMatch[1]);
+    const now = new Date().getFullYear();
+    const yrs = now - year;
+    if (yrs >= 1 && yrs <= 60) return yrs;
+  }
+
+  return null;
+}
+
 function TeamTab({ report }: { report: NonNullable<LeadRow["holmes_report"]> }) {
   const team = report.team;
   const rec = report.recommended_contact;
   const owner = report.owner;
-  // Derive an "age signal" for the owner so we can surface it next to
-  // the name wherever the owner appears (recommended_contact card, team
-  // member list). Holmes stores `years_experience` (career years) — that
-  // proxies "doctor's age cohort" tightly enough for Leonardo's pitch.
-  const ownerYears = owner?.years_experience ?? null;
+  // years_experience is the primary signal but Holmes leaves it null
+  // unless explicitly stated. Fall back to scanning the bio + title +
+  // personal_angles for graduation-year / "od XXXX" / "X godina iskustva"
+  // patterns so the badge shows whenever the data is *anywhere* in the
+  // dossier — not only when Holmes happened to fill the dedicated field.
+  const ownerYears = resolveOwnerYears(report);
   const ownerNorm = (owner?.name ?? "").trim().toLowerCase();
   const isOwner = (name?: string | null) =>
     !!name && !!ownerNorm && name.trim().toLowerCase() === ownerNorm;
