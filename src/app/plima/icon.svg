@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="55%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+    <linearGradient id="gb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bae6fd"/>
+      <stop offset="55%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark navy rounded background for contrast at small sizes -->
+  <rect width="32" height="32" rx="6" fill="#0c1f3d"/>
+  <!-- Wave 1 (top, lightest, smallest) -->
+  <path d="M 5 11 Q 11 8, 16 11 T 27 11"
+        stroke="url(#gb)" stroke-width="2"
+        stroke-linecap="round" fill="none" opacity="0.85"/>
+  <!-- Wave 2 (middle) -->
+  <path d="M 4 17 Q 11 13, 16 17 T 28 17"
+        stroke="url(#g)" stroke-width="2.4"
+        stroke-linecap="round" fill="none"/>
+  <!-- Wave 3 (bottom, biggest crest) -->
+  <path d="M 3 24 Q 11 16, 16 24 T 29 24"
+        stroke="url(#g)" stroke-width="2.8"
+        stroke-linecap="round" fill="none"/>
+</svg>
