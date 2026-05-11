@@ -1,6 +1,10 @@
-# /public/plima/ — video assets za /plima landing
+# /public/plima/ — assets za /plima landing
 
-Drop these 2 files here when video editing complete:
+**Status 2026-05-11:** Video je sad hostan na YouTube
+(https://youtu.be/DM8ftVskWNE) i embed-an kao lazy iframe. Lokalni
+MP4 NIJE potreban. Ovaj folder sada drži samo poster SVG.
+
+Original local-mp4 instructions (deprecated, keep for future):
 
 ## intro.mp4 (REQUIRED)
 

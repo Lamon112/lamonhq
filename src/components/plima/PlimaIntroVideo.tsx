@@ -3,15 +3,13 @@
 /**
  * Premium intro video block for /plima.
  *
- * - HTML5 native <video> (no YouTube branding, full creative control)
- * - Click-to-play poster (user opt-in, premium signal)
- * - Custom controls
- * - Collapsible transcript below (SEO + accessibility — full text indexed)
- * - CTA below transcript ties to Calendly booking
+ * - Lazy YouTube embed pattern: shows custom Plima-branded SVG poster
+ *   until user clicks Play, then swaps in YouTube iframe with autoplay.
+ *   Best of both worlds — premium poster visual + YouTube's CDN/hosting.
+ * - CTA below player ties to Calendly booking.
  *
- * Files expected at:
- *   /public/plima/intro.mp4         (master 1080p mp4, h.264, ~85-100s)
- *   /public/plima/intro-poster.jpg  (poster frame, 1920×1080)
+ * YouTube video: https://youtu.be/DM8ftVskWNE
+ * Custom poster: /public/plima/intro-poster.svg
  */
 
 import { useState } from "react";
@@ -21,8 +19,10 @@ interface Props {
   bookingHref: string;
 }
 
+const YT_VIDEO_ID = "DM8ftVskWNE";
+
 export function PlimaIntroVideo({ bookingHref }: Props) {
-  const [hasStarted, setHasStarted] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
 
   return (
     <section className="relative border-y border-cyan-500/15 bg-gradient-to-b from-[#020617] via-[#01101f] to-[#020617]">
@@ -47,27 +47,41 @@ export function PlimaIntroVideo({ bookingHref }: Props) {
         <div className="relative mx-auto max-w-4xl">
           <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-transparent to-cyan-500/10 blur-2xl" />
           <div className="relative overflow-hidden rounded-xl border-2 border-cyan-500/40 shadow-[0_0_60px_rgba(6,182,212,0.25)]">
-            <video
-              className="aspect-video w-full bg-black"
-              controls
-              preload="metadata"
-              poster="/plima/intro-poster.svg"
-              onPlay={() => setHasStarted(true)}
-            >
-              <source src="/plima/intro.mp4" type="video/mp4" />
-              Vaš preglednik ne podržava HTML5 video. Možete preuzeti video
-              <a href="/plima/intro.mp4" className="text-cyan-300 underline ml-1">
-                ovdje
-              </a>
-              .
-            </video>
-
-            {/* Play overlay hint — only before first play */}
-            {!hasStarted && (
-              <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-xs font-medium text-cyan-100 backdrop-blur-sm shadow-md">
-                <Play size={10} className="mr-1 inline" fill="currentColor" />
-                ~3 minute · upalite zvuk
-              </div>
+            {!showVideo ? (
+              // === Custom poster click-to-play (lazy YouTube) ===
+              <button
+                onClick={() => setShowVideo(true)}
+                className="group relative block aspect-video w-full overflow-hidden bg-black"
+                aria-label="Pokreni Plima intro video (3 minute)"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/plima/intro-poster.svg"
+                  alt="Plima — premium partner za rast privatnih klinika · intro video"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+                {/* Hover gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/10 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                {/* Big play button overlay (in addition to poster's own play icon, this is hover-state UX hint) */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cyan-500 shadow-[0_0_40px_rgba(6,182,212,0.8)] transition-all group-hover:scale-110 group-hover:bg-cyan-400">
+                    <Play size={36} fill="#0c1f3d" className="ml-1" />
+                  </div>
+                </div>
+                {/* Bottom hint */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-xs font-medium text-cyan-100 backdrop-blur-sm shadow-md">
+                  ~3 minute · upalite zvuk
+                </div>
+              </button>
+            ) : (
+              // === YouTube iframe (loads only after click) ===
+              <iframe
+                className="aspect-video w-full"
+                src={`https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1&color=white`}
+                title="Plima — premium partner za rast privatnih klinika"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
             )}
           </div>
         </div>
@@ -79,6 +93,8 @@ export function PlimaIntroVideo({ bookingHref }: Props) {
           </p>
           <a
             href={bookingHref}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 px-6 py-3 font-semibold text-slate-950 shadow-[0_0_30px_rgba(6,182,212,0.45)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)]"
           >
             <Calendar size={16} />
@@ -92,7 +108,6 @@ export function PlimaIntroVideo({ bookingHref }: Props) {
             Bez obveze · ja sam vam ravno u lice ako nismo fit
           </p>
         </div>
-
       </div>
     </section>
   );
