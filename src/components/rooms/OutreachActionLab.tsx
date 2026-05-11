@@ -34,8 +34,13 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
-import { addOutreach } from "@/app/actions/outreach";
+import {
+  addOutreach,
+  refreshOutreachDraftsWithCurrentRules,
+} from "@/app/actions/outreach";
 import { sendViaGmail, getGmailStatus, type GmailStatus } from "@/app/actions/gmail";
 import { cleanPremiumLanguage } from "@/lib/premiumLanguage";
 import type { LeadRow } from "@/lib/queries";
@@ -88,8 +93,17 @@ const CHANNELS: ChannelMeta[] = [
     styleHints: [
       "Subject je 60% bitke — testirati: ROI angle vs Observation angle",
       "120-150 riječi tijelo — manje = ne čita, više = TL;DR",
-      "Premium lang: 'investicija' ne 'cijena' · 'preporučam' ne 'odgovara li vam' (vidi Brend · 09)",
       "Šalji uto/sri 10-12h CET (peak open rate za doktore)",
+      "── 9 Premium Swaps (Brend · 09) — primijeniti SVE ──",
+      "①  Lead don't Ask: 'evo što preporučam' ne 'odgovara li vam'",
+      "②  Investment not Price: 'investicija' ne 'cijena'",
+      "③  Specialist: 'specijaliziran sam za' ne 'samo radim'",
+      "④  The Standard: ton 'ovako se radi u kategoriji' ne 'molim razmotrite'",
+      "⑤  Outcome not Tenure: 'izgradio Plimu oko ovog ishoda' ne '10 godina iskustva'",
+      "⑥  Packages-first: 'provedem kroz pakete' ne 'koji budget'",
+      "⑦  Gratitude not Apology: 'hvala na strpljenju' ne 'oprostite na kašnjenju'",
+      "⑧  Availability: 'provjerit ću dostupnost' ne 'pokušat ću ubaciti'",
+      "⑨  Imply don't Claim: 'Plima je standard' ne 'najbolja agencija'",
     ],
     emptyHint:
       "Email je default — ako je 0, znači Holmes nije ekstraktirao kontakte. Pokreni Holmes Bulk Investigation u Bureau-u.",
@@ -106,7 +120,7 @@ const CHANNELS: ChannelMeta[] = [
     styleHints: [
       "Pripremi 30-sek opening prije nego nazoveš (Holmes ima script ispod)",
       "Idealno vrijeme: 11-13h ili 17-18h (između pacijenata)",
-      "Premium lang: 'specijaliziran sam za...' ne 'samo radim...' · 'provjerit ću dostupnost' ne 'pokušat ću ubaciti'",
+      "Premium 9 swaps (Brend · 09): 'specijaliziran za' · 'investicija' · 'evo što preporučam' · 'provedem kroz pakete' · 'provjerit ću dostupnost'",
       "Ako voicemail: NE ostavi pitch — ostavi 8-sek 'Leonardo iz Lamon agency, javim se opet' message",
     ],
     emptyHint:
@@ -204,6 +218,28 @@ export function OutreachActionLab({ initialList }: Props) {
   const activeLeads = byChannel[activeChannel];
   const activeMeta = CHANNELS.find((c) => c.id === activeChannel)!;
 
+  // Brend · 09 refresh state — bulk-regenerate all active drafts with the
+  // latest 9-premium-swaps prompt. Disabled while running so users can't
+  // double-fire (each lead = 1 Anthropic call).
+  const [refreshing, startRefresh] = useTransition();
+  const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
+  const handleRefreshAll = () => {
+    setRefreshMsg(null);
+    startRefresh(async () => {
+      const res = await refreshOutreachDraftsWithCurrentRules();
+      if (!res.ok) {
+        setRefreshMsg(`❌ ${res.error ?? "Greška"}`);
+        return;
+      }
+      setRefreshMsg(
+        `✨ Osvježeno ${res.refreshed} drafts po Brend · 09 pravilima (${res.skipped} preskočeno)`,
+      );
+      // Refresh the page so new drafts pull through; revalidatePath on
+      // server already invalidated cache, this just forces a re-render.
+      setTimeout(() => window.location.reload(), 1200);
+    });
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* ── Channel tabs ── */}
@@ -243,7 +279,7 @@ export function OutreachActionLab({ initialList }: Props) {
       </div>
 
       {/* ── Active channel header ── */}
-      <div className="mt-4 mb-3 flex items-center justify-between">
+      <div className="mt-4 mb-3 flex items-start justify-between gap-3">
         <div>
           <h3 className={"text-lg font-semibold " + activeMeta.accent}>
             {activeMeta.label} · {activeLeads.length} lead
@@ -254,7 +290,32 @@ export function OutreachActionLab({ initialList }: Props) {
             <span className="text-text-dim">Send</span> ili{" "}
             <span className="text-text-dim">Open</span> po lead-u
           </p>
+          {refreshMsg && (
+            <p className="mt-1 text-[11px] text-cyan-300">{refreshMsg}</p>
+          )}
         </div>
+        <button
+          type="button"
+          onClick={handleRefreshAll}
+          disabled={refreshing}
+          title="Regeneriraj sve active drafts s trenutnim Brend · 09 (9 premium swap) pravilima — jedan AI call po leadu"
+          className={
+            "flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all " +
+            (refreshing
+              ? "cursor-wait border-cyan-400/30 bg-cyan-500/5 text-cyan-300/60"
+              : "border-cyan-400/40 bg-cyan-500/10 text-cyan-200 hover:border-cyan-400/70 hover:bg-cyan-500/20")
+          }
+        >
+          <RefreshCw
+            size={12}
+            className={refreshing ? "animate-spin" : undefined}
+          />
+          <span>
+            {refreshing
+              ? "Refreshing…"
+              : "Osvježi sve drafts (Brend · 09)"}
+          </span>
+        </button>
       </div>
 
       {/* ── Channel philosophy reminder ── */}

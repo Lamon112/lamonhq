@@ -489,6 +489,153 @@ export async function regenerateDraftWithOwner(
   return { ok: true };
 }
 
+/**
+ * Refresh outreach drafts for ALL active leads in Outreach Lab using the
+ * current SYSTEM_PROMPT_V2 (which embeds the 9 Premium Positioning Swaps
+ * per Brend · 09). Targets leads with a `holmes_report` whose stage is
+ * not closed, and overwrites `holmes_report.outreach_draft` +
+ * `holmes_report.channel_drafts.email` (or per-channel if primary set).
+ *
+ * Why this exists: when the brand voice / outreach rules evolve, we want
+ * a one-click way to bring all existing drafts up to spec without having
+ * to re-run a full Holmes investigation per lead.
+ *
+ * Returns { ok, refreshed, skipped, error? } so the UI can show a toast.
+ */
+export interface RefreshOutreachDraftsResult {
+  ok: boolean;
+  refreshed: number;
+  skipped: number;
+  error?: string;
+}
+
+export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOutreachDraftsResult> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    return { ok: false, refreshed: 0, skipped: 0, error: "Niste prijavljeni" };
+  }
+  const userId = userData.user.id;
+
+  // Pull all active-stage leads that have a holmes_report (these are the
+  // leads visible in Outreach Lab tabs).
+  const { data: leads, error: leadsErr } = await supabase
+    .from("leads")
+    .select(
+      "id, name, niche, notes, email, icp_score, holmes_report, person_enrichment, stage",
+    )
+    .eq("user_id", userId)
+    .not("holmes_report", "is", null)
+    .not("stage", "in", "(closed_won,closed_lost)")
+    .order("icp_score", { ascending: false });
+
+  if (leadsErr)
+    return {
+      ok: false,
+      refreshed: 0,
+      skipped: 0,
+      error: leadsErr.message,
+    };
+
+  const list = leads ?? [];
+  if (list.length === 0) return { ok: true, refreshed: 0, skipped: 0 };
+
+  let refreshed = 0;
+  let skipped = 0;
+
+  for (const lead of list) {
+    const report = lead.holmes_report as Record<string, unknown> | null;
+    if (!report) {
+      skipped++;
+      continue;
+    }
+
+    const enrichment = lead.person_enrichment as
+      | { owner?: { name?: string; title?: string | null } | null }
+      | null;
+    const owner = enrichment?.owner ?? null;
+
+    const orgChannels = extractChannels(
+      lead.notes as string | null,
+      lead.email as string | null,
+    );
+    const platform = pickBestPlatformForLead(
+      lead as HotLeadCandidate,
+      orgChannels,
+    );
+    const hook = extractHook(lead.notes as string | null);
+
+    const ownerCtx = owner?.name
+      ? {
+          name: owner.name,
+          firstName: owner.name.split(/\s+/)[0],
+          title: owner.title ?? null,
+        }
+      : undefined;
+
+    const res = await draftOutreach({
+      leadName: lead.name as string,
+      platform,
+      niche: (lead.niche as string | null) ?? undefined,
+      hook,
+      owner: ownerCtx,
+    });
+    if (!res.ok || !res.draft) {
+      skipped++;
+      continue;
+    }
+
+    let finalDraft = res.draft;
+    if (platform === "linkedin" || platform === "instagram") {
+      const shortened = await shortenForChannel(
+        res.draft,
+        platform,
+        owner?.name ?? (lead.name as string),
+      );
+      if (shortened.ok && shortened.draft) finalDraft = shortened.draft;
+    }
+
+    // Update the holmes_report blob in-place: keep all other fields,
+    // overwrite outreach_draft + channel_drafts.<platform>.
+    const channelDrafts =
+      (report.channel_drafts as Record<string, string | null> | undefined) ??
+      {};
+    const updatedReport = {
+      ...report,
+      outreach_draft: finalDraft,
+      channel_drafts: {
+        ...channelDrafts,
+        [platform === "other" ? "email" : platform]: finalDraft,
+      },
+      // mark when last refreshed so we can show "refreshed 2 min ago" in UI
+      last_refreshed_at: new Date().toISOString(),
+      last_refreshed_prompt_version: "v9",
+    };
+
+    const { error: updErr } = await supabase
+      .from("leads")
+      .update({ holmes_report: updatedReport })
+      .eq("id", lead.id);
+
+    if (updErr) {
+      skipped++;
+      continue;
+    }
+    refreshed++;
+  }
+
+  void logActivity(userId, {
+    type: "outreach_sent",
+    title: `Refreshed ${refreshed} outreach drafts (Brend · 09)`,
+    summary: `Re-generated drafts s 9 premium swap pravila. Skipped: ${skipped}.`,
+    hqRoom: "outreach",
+    tags: ["refresh", "brend-09"],
+  });
+
+  revalidatePath("/");
+  return { ok: true, refreshed, skipped };
+}
+
 export async function editPendingDraft(
   draftId: string,
   newText: string,
