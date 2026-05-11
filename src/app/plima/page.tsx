@@ -14,20 +14,20 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Plima — premium growth partner za privatne klinike",
+  title: "Plima — premium partner za rast privatnih klinika",
   description:
-    "Fractional rastinski tim (operativa + marketing + brand + PR) za privatne klinike u Hrvatskoj. Riva AI asistentica + scripting + branding + marketing + PR. Od €797/mj.",
+    "Vanjski tim za rast (operativa + marketing + brend + odnosi s javnošću) za privatne klinike u Hrvatskoj. Riva AI asistentica + skripte + brendiranje + marketing + PR. Od €797 mjesečno.",
   openGraph: {
-    title: "Plima — premium growth partner za privatne klinike",
+    title: "Plima — premium partner za rast privatnih klinika",
     description:
-      "Zamjena za 5 zaposlenika za €1.497/mj. Riva AI 24/7 + brand + marketing + PR.",
+      "Zamjena za 5 zaposlenika za €1.497 mjesečno. Riva AI 24 sata dnevno + brend + marketing + PR.",
     type: "website",
     locale: "hr_HR",
   },
 };
 
 const BOOKING_HREF =
-  "mailto:lamonorganization@gmail.com?subject=Plima%20discovery%20call&body=Pozdrav%20Leonardo%2C%0A%0AŽelio%20bih%20dogovoriti%2015-min%20discovery%20poziv%20o%20Plima%20paketu.%0A%0AKlinika%3A%20%0AGrad%3A%20%0AKoji%20tier%20me%20najviše%20zanima%3A%20Mreža%20%2F%20Voice%20%2F%20Premium%0A%0AHvala%21";
+  "mailto:leonardo@lamon.io?subject=Plima%20%E2%80%94%20uvodni%20razgovor&body=Pozdrav%20Leonardo%2C%0A%0A%C5%BDelio%20bih%20dogovoriti%2015-minutni%20uvodni%20razgovor%20o%20Plima%20paketu.%0A%0AKlinika%3A%20%0AGrad%3A%20%0AKoji%20paket%20me%20najvi%C5%A1e%20zanima%3A%20Mre%C5%BEa%20%2F%20Voice%20%2F%20Premium%0A%0AHvala%21";
 
 const PILLARS = [
   {
@@ -36,53 +36,53 @@ const PILLARS = [
     icon: PhoneCall,
     accent: "cyan",
     bullets: [
-      "Diže telefon 24/7 (Voice/Premium)",
-      "Odgovara DM, WhatsApp, IG, email — svi tier-ovi",
-      "HR / EN / DE / IT, booking + reminders, eskalacija",
+      "Diže telefon 24/7 (paketi Voice i Premium)",
+      "Odgovara na poruke (DM, WhatsApp, Instagram, e-mail) — svi paketi",
+      "Hrvatski, engleski, njemački, talijanski · rezervacije + podsjetnici · eskalacija na živu osobu",
     ],
   },
   {
     n: 2,
-    title: "Scripting & sales enablement",
+    title: "Skripte i prodajna podrška",
     icon: Mic,
     accent: "amber",
     bullets: [
-      "Optimizirani call scripts za booking conversion",
-      "FAQ baza koja vodi prema rezervaciji",
-      "Doktor-pacijent sales scripts za high-value cases",
+      "Optimizirane skripte za pozive (fokus na pretvorbu poziva u rezervaciju)",
+      "Baza čestih pitanja koja vodi pacijenta prema rezervaciji",
+      "Skripte za razgovor doktor–pacijent kod tretmana visoke vrijednosti",
     ],
   },
   {
     n: 3,
-    title: "Branding & visual identity",
+    title: "Brendiranje i vizualni identitet",
     icon: Sparkles,
     accent: "rose",
     bullets: [
-      "Brand audit + voice guidelines",
-      "Visual consistency (web, print, social, recepcija)",
-      "Photography direction (što snimiti, kako)",
+      "Brend audit + smjernice za ton komunikacije",
+      "Vizualna konzistencija (web, tisak, društvene mreže, recepcija)",
+      "Smjernice za fotografiju (što snimiti i kako)",
     ],
   },
   {
     n: 4,
-    title: "Marketing & lead generation",
+    title: "Marketing i privlačenje pacijenata",
     icon: TrendingUp,
     accent: "emerald",
     bullets: [
-      "Google Ads + Meta paid (premium tretmani)",
-      "SEO za high-intent ključne riječi",
-      "Email nurture za pacijente koji su zvali ali nisu rezervirali",
+      "Google Ads + Meta plaćene kampanje (premium tretmani)",
+      "SEO za ključne riječi visoke kupovne namjere",
+      "Sekvenca podsjetnika e-mailom za pacijente koji su zvali ali nisu rezervirali",
     ],
   },
   {
     n: 5,
-    title: "PR & pozicioniranje",
+    title: "Odnosi s javnošću i pozicioniranje",
     icon: Megaphone,
     accent: "violet",
     bullets: [
-      "LinkedIn thought leadership za vlasnika",
-      "Industry placement + speaking opportunities",
-      "Crisis communication (review handling)",
+      "Stručni LinkedIn sadržaj za vlasnika klinike",
+      "Plasman u stručnim medijima + nastupi na konferencijama",
+      "Komunikacija u kriznim situacijama (negativne recenzije, reputacijski rizik)",
     ],
   },
 ] as const;
@@ -110,59 +110,59 @@ interface TierFeature {
 }
 
 const TIER_MATRIX: TierFeature[] = [
-  { label: "Riva — text (DM/WA/IG/email)", values: [true, true, true] },
-  { label: "Riva — voice (telefon)", values: [false, true, true] },
-  { label: "Riva — custom voice cloning", values: [false, false, true] },
-  { label: "Booking integracija", values: [true, true, true] },
-  { label: "Multi-lokacija support", values: [false, false, true] },
-  { label: "24/7 monitoring + dedicated WA grupa", values: [false, false, true] },
-  { label: "Scripting — Riva FAQ + eskalacija", values: [true, true, true] },
-  { label: "Scripting — doktor-pacijent sales scripts", values: [false, true, true] },
-  { label: "Brand voice guidelines", values: [true, true, true] },
-  { label: "Brand audit + visual review", values: [false, true, true] },
-  { label: "Photography direction", values: [false, false, true] },
-  { label: "SEO ključne riječi", values: [false, "3 KW", "10 KW"] },
-  { label: "Google/Meta Ads management", values: [false, false, "do €1.500 ad spend uklj."] },
-  { label: "Email nurture sekvenca", values: [false, "basic", "full"] },
-  { label: "LinkedIn thought leadership posts", values: [false, "2/mj", "4/mj"] },
-  { label: "Industry placement effort", values: [false, false, "1 piece/Q"] },
-  { label: "Speaking opportunity outreach", values: [false, false, true] },
-  { label: "Performance review s Leonardom", values: [false, "mjesečno", "tjedno"] },
-  { label: "Quarterly strategy session", values: [false, true, true] },
-  { label: "WhatsApp support response", values: ["48h", "24h", "4h"] },
+  { label: "Riva — pisana (DM, WhatsApp, Instagram, e-mail)", values: [true, true, true] },
+  { label: "Riva — glasovna (telefon)", values: [false, true, true] },
+  { label: "Riva — kloniran glas po želji klinike", values: [false, false, true] },
+  { label: "Integracija s rezervacijskim sustavom", values: [true, true, true] },
+  { label: "Podrška za više lokacija", values: [false, false, true] },
+  { label: "24/7 nadzor + dedicirana WhatsApp grupa", values: [false, false, true] },
+  { label: "Skripte — pitanja, odgovori, eskalacija", values: [true, true, true] },
+  { label: "Skripte — razgovor doktor–pacijent (visokovrijedni tretmani)", values: [false, true, true] },
+  { label: "Smjernice za ton komunikacije (brend voice)", values: [true, true, true] },
+  { label: "Brend audit + pregled vizualnog identiteta", values: [false, true, true] },
+  { label: "Smjernice za fotografiju", values: [false, false, true] },
+  { label: "SEO ključne riječi", values: [false, "3 ključne riječi", "10 ključnih riječi"] },
+  { label: "Vođenje Google/Meta kampanja", values: [false, false, "uključeno do €1.500 budžeta"] },
+  { label: "Sekvenca podsjetnika e-mailom", values: [false, "osnovna", "potpuna"] },
+  { label: "Stručni LinkedIn sadržaj (objave/mj.)", values: [false, "2", "4"] },
+  { label: "Plasman u stručnim medijima", values: [false, false, "1 prilog/kvartal"] },
+  { label: "Dogovaranje nastupa na konferencijama", values: [false, false, true] },
+  { label: "Pregled rezultata s Leonardom", values: [false, "mjesečno", "tjedno"] },
+  { label: "Tromjesečna strateška sesija", values: [false, true, true] },
+  { label: "Vrijeme odgovora na WhatsApp", values: ["48 h", "24 h", "4 h"] },
 ];
 
 const TIMELINE = [
-  { day: "T+0", what: "Klijent vraća pripremni brifing (intake doc)" },
-  { day: "T+1–3", what: "Brand audit + scripting konfiguracija + Riva setup" },
-  { day: "T+4–6", what: "Internal test (20 scenarija s Rivom)" },
-  { day: "T+7", what: "Shadow mode — Riva sluša ali ne odgovara" },
-  { day: "T+8–10", what: "Tweaks + final scripting iterations" },
-  { day: "T+11–13", what: "Brand voice doc + first month marketing plan" },
-  { day: "T+14", what: "Go-live + 24h aktivni monitoring" },
-  { day: "T+30", what: "Prvi mjesečni performance review" },
+  { day: "1. dan", what: "Klijent vraća popunjen pripremni brifing (intake dokument)" },
+  { day: "2–4. dan", what: "Brend audit + konfiguracija skripti + postavljanje Rive" },
+  { day: "5–7. dan", what: "Interni test (20 scenarija s Rivom u kontroliranom okruženju)" },
+  { day: "8. dan", what: "Tihi režim — Riva sluša ali ne odgovara, mi verificiramo" },
+  { day: "9–11. dan", what: "Doradba i finalne iteracije skripti" },
+  { day: "12–14. dan", what: "Dokument tona komunikacije + marketinški plan za prvi mjesec" },
+  { day: "15. dan", what: "Pokretanje uživo + 24-satni aktivni nadzor" },
+  { day: "31. dan", what: "Prvi mjesečni pregled rezultata" },
 ];
 
 const NOT_INCLUDED = [
   {
-    title: "Ad spend (Google/Meta budget)",
+    title: "Budžet za oglase (Google/Meta)",
     detail:
-      "Klijent plaća svoj ad budget direktno. Lamon samo upravlja kampanjama.",
+      "Klijent plaća svoj oglašivački budžet izravno platformi. Lamon vodi i optimizira kampanje.",
   },
   {
     title: "Profesionalna fotografija",
     detail:
-      "Lamon daje direction (što snimiti, kako, gdje). Klijent angažira fotografa.",
+      "Lamon daje smjernice (što snimiti, kako, gdje). Klijent angažira fotografa.",
   },
   {
-    title: "Medical-legal compliance review",
+    title: "Pravna provjera medicinskih marketinških materijala",
     detail:
-      "Provjera da marketing materijali ne krše HALMED/AZOP/komora pravila ide kroz klijentova odvjetnika za zdravstveno pravo (~€50-100 po review-u). Lamon nije odvjetnik.",
+      "Provjera da marketinški materijali ne krše HALMED/AZOP/komorska pravila ide preko klijentova odvjetnika za zdravstveno pravo (~€50–100 po pregledu). Lamon nije odvjetnik.",
   },
   {
-    title: "Pojedinačne pacijent kampanje",
+    title: "Pojedinačne kampanje za jednokratne događaje",
     detail:
-      "Npr. 'promocija za Bjeli Petak' — add-on €497/event uz mjesečni paket.",
+      "Npr. „promocija za Crni petak\" — dodatak €497 po događaju uz mjesečni paket.",
   },
 ];
 
@@ -214,13 +214,13 @@ export default function PlimaLandingPage() {
               href="#timeline"
               className="hidden text-sm text-slate-300 hover:text-white sm:inline"
             >
-              Setup
+              Tijek
             </a>
             <a
               href={BOOKING_HREF}
               className="rounded-md border border-cyan-400/60 bg-cyan-500/15 px-3 py-1.5 text-sm font-medium text-cyan-100 transition-all hover:scale-[1.03] hover:bg-cyan-500/25"
             >
-              Discovery poziv →
+              Dogovori razgovor →
             </a>
           </nav>
         </div>
@@ -235,7 +235,7 @@ export default function PlimaLandingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
               </span>
-              Premium growth partner · privatne klinike · Hrvatska
+              Premium partner za rast · privatne klinike · Hrvatska
             </div>
             <h1 className="text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
               Plima ne prodaje AI alat.{" "}
@@ -244,10 +244,10 @@ export default function PlimaLandingPage() {
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-slate-300 sm:text-xl">
-              Fractional rastinski tim — operativa + marketing + brand + PR — za
-              cijenu ispod jednog part-time hire-a. Riva AI asistentica diže
-              svaki poziv 24/7, mi gradimo brand i acquisition dok se vi bavite
-              pacijentima.
+              Vanjski tim za rast — operativa + marketing + brend + odnosi s
+              javnošću — za cijenu ispod jedne nepunoradno zaposlene osobe.
+              Riva AI asistentica diže svaki poziv 24 sata dnevno, mi gradimo
+              brend i privlačimo nove pacijente dok se vi bavite postojećima.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <a
@@ -255,7 +255,7 @@ export default function PlimaLandingPage() {
                 className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 px-6 py-3 font-semibold text-slate-950 shadow-[0_0_30px_rgba(6,182,212,0.45)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(6,182,212,0.7)]"
               >
                 <Calendar size={18} />
-                Dogovori 15-min discovery poziv
+                Dogovori 15-minutni uvodni razgovor
                 <ArrowRight
                   size={16}
                   className="transition-transform group-hover:translate-x-1"
@@ -271,13 +271,13 @@ export default function PlimaLandingPage() {
 
             {/* Hero proof points */}
             <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Stat label="MJESEČNO OD" value="€797" sub="Mreža tier" />
+              <Stat label="MJESEČNO OD" value="€797" sub="paket Mreža" />
               <Stat
-                label="SETUP TIMELINE"
+                label="VRIJEME POSTAVLJANJA"
                 value="14 dana"
-                sub="T+0 → live"
+                sub="od potpisa do pokretanja uživo"
               />
-              <Stat label="JEZICI" value="HR EN DE IT" sub="Riva multi-lang" />
+              <Stat label="JEZICI" value="HR EN DE IT" sub="Riva — sva 4 jezika" />
             </div>
           </div>
         </div>
@@ -292,8 +292,8 @@ export default function PlimaLandingPage() {
           <blockquote className="mx-auto max-w-4xl text-center text-2xl leading-relaxed text-slate-100 sm:text-3xl sm:leading-relaxed">
             Za istu funkcionalnost morali biste zaposliti{" "}
             <span className="font-semibold text-cyan-300">5 ljudi</span> —
-            recepcionarku 24/7, marketing managera, brand dizajnera,
-            copywritera/PR osobu i analitičara.
+            recepcionarku 24 sata dnevno, voditelja marketinga, brend
+            dizajnera, copywritera (osobu za odnose s javnošću) i analitičara.
             <br />
             <br />
             U Hrvatskoj to je{" "}
@@ -377,10 +377,11 @@ export default function PlimaLandingPage() {
               Cijene
             </p>
             <h2 className="text-3xl font-bold text-white sm:text-4xl">
-              3 tier-a — od test pristupa do full growth partner
+              3 paketa — od probnog pristupa do potpunog partnera za rast
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-400">
-              Svi tier-ovi imaju 14-dnevni setup. Annual prepay popust −10%.
+              Svi paketi imaju 14-dnevno postavljanje. Godišnja pretplata —
+              popust 10%.
             </p>
           </div>
 
@@ -390,31 +391,31 @@ export default function PlimaLandingPage() {
               name="Plima Mreža"
               setupPrice="€997"
               monthly="€797"
-              icp="Solo praksa, < 100 poziva/mj, jaki social. Test pristup."
-              tagline='"Test pristup — Riva odgovara svaku poruku, vi vidite kako se booking conversion mijenja."'
+              icp="Samostalna praksa, manje od 100 poziva mjesečno, jak nastup na društvenim mrežama. Probni pristup."
+              tagline='„Probni pristup — Riva odgovara na svaku poruku, vi vidite kako se mijenja stopa pretvorbe poziva u rezervacije."'
               accent="from-slate-700/40 to-slate-900/40 border-slate-500/40"
               accentText="text-slate-300"
-              cta="Krenuti s test paketom →"
+              cta="Krenuti s probnim paketom →"
               href={BOOKING_HREF}
             />
             <TierCard
               name="Plima Voice"
               setupPrice="€1.997"
               monthly="€1.497"
-              icp="Premium klinike, 100-300 poziva/mj. Default ponuda za 80% ICP-a."
-              tagline='"Cijeli operativni motor + brand + organic growth pillar. Riva diže svaki poziv, mi gradimo brand."'
+              icp="Premium klinike, 100–300 poziva mjesečno. Standardni paket za 80 % naših klijenata."
+              tagline='„Kompletan operativni stroj + brend + organski rast. Riva diže svaki poziv, mi gradimo brend."'
               accent="from-cyan-500/25 to-cyan-700/15 border-cyan-400/70"
               accentText="text-cyan-200"
               featured
-              cta="Discovery poziv za Voice →"
+              cta="Dogovori razgovor za Voice →"
               href={BOOKING_HREF}
             />
             <TierCard
               name="Plima Premium"
               setupPrice="€2.997"
               monthly="€2.497"
-              icp="Multi-lokacijske premium grupe. Full growth partner."
-              tagline='"Full growth partner. Voice + paid + multi-loc + custom voice + tjedni strategijski poziv."'
+              icp="Premium grupe s više lokacija. Potpuni partner za rast."
+              tagline='„Potpuni partner za rast. Voice + plaćeni mediji + više lokacija + kloniran glas + tjedni strateški poziv."'
               accent="from-amber-500/15 to-amber-800/10 border-amber-400/50"
               accentText="text-amber-200"
               cta="Razgovarajmo o Premiumu →"
@@ -474,8 +475,8 @@ export default function PlimaLandingPage() {
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-500">
-            * Annual prepay (Voice godišnje €16.166 vs €17.964 mjesečno) — −10%
-            popust.
+            * Godišnja pretplata (Voice godišnje €16.166 umjesto €17.964 kod
+            mjesečnog plaćanja) — popust 10 %.
           </p>
         </div>
       </section>
@@ -484,10 +485,10 @@ export default function PlimaLandingPage() {
       <section id="timeline" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <p className="mb-2 text-xs font-mono uppercase tracking-[0.3em] text-cyan-400/80">
-            Setup timeline
+            Tijek postavljanja
           </p>
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
-            Od potpisa do go-live u 14 dana
+            Od potpisa do pokretanja uživo u 14 dana
           </h2>
         </div>
         <div className="relative mx-auto max-w-4xl">
@@ -555,8 +556,9 @@ export default function PlimaLandingPage() {
             Spremni vidjeti kako bi izgledalo za vašu kliniku?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-slate-300">
-            15 minuta. Bez obaveze. Pokažem vam koji tier paše vašoj klinici, koji
-            su realni rezultati prvog mjeseca i kada možete krenuti.
+            15 minuta. Bez obaveze. Pokažem vam koji paket odgovara vašoj
+            klinici, kakvi su realni rezultati prvog mjeseca i kada možete
+            krenuti.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <a
@@ -564,18 +566,18 @@ export default function PlimaLandingPage() {
               className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 px-7 py-3.5 font-semibold text-slate-950 shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(6,182,212,0.8)]"
             >
               <Calendar size={18} />
-              Dogovori discovery poziv
+              Dogovori uvodni razgovor
               <ArrowRight
                 size={16}
                 className="transition-transform group-hover:translate-x-1"
               />
             </a>
             <a
-              href="mailto:lamonorganization@gmail.com"
+              href="mailto:leonardo@lamon.io"
               className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/40 bg-cyan-500/5 px-6 py-3.5 font-medium text-cyan-100 transition-colors hover:bg-cyan-500/15"
             >
               <Mail size={16} />
-              ili pošalji email
+              ili pošalji e-mail
             </a>
           </div>
         </div>
@@ -640,7 +642,7 @@ function TierCard({
     >
       {featured && (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-950 shadow-md">
-          Default ponuda
+          Standardni paket
         </span>
       )}
       <h3 className={"mb-2 text-xl font-bold " + accentText}>{name}</h3>
@@ -649,10 +651,10 @@ function TierCard({
         <span className="text-sm text-slate-400">/mj</span>
       </div>
       <p className="mb-5 text-xs text-slate-400">
-        Setup {setupPrice} · jednokratno
+        Postavljanje {setupPrice} · jednokratno
       </p>
       <p className={"mb-3 text-xs uppercase tracking-wider " + accentText}>
-        ICP
+        Za koga
       </p>
       <p className="mb-5 text-sm leading-snug text-slate-200">{icp}</p>
       <p className="mb-7 flex-1 text-sm italic leading-relaxed text-slate-300">
