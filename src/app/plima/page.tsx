@@ -27,8 +27,13 @@ export const metadata: Metadata = {
   },
 };
 
-const BOOKING_HREF =
-  "mailto:leonardo@lamon.io?subject=Plima%20%E2%80%94%20uvodni%20razgovor&body=Pozdrav%20Leonardo%2C%0A%0A%C5%BDelio%20bih%20dogovoriti%2015-minutni%20uvodni%20razgovor%20o%20Plima%20paketu.%0A%0AKlinika%3A%20%0AGrad%3A%20%0AKoji%20paket%20me%20najvi%C5%A1e%20zanima%3A%20Mre%C5%BEa%20%2F%20Voice%20%2F%20Premium%0A%0AHvala%21";
+/**
+ * Primary CTA — B2B Calendly link za premium klinike.
+ * TODO: replace with dedicated b2b event type when created (npr.
+ * calendly.com/teamlamon6/plima-b2b-30min). Trenutno koristi generic
+ * 30min event.
+ */
+const BOOKING_HREF = "https://calendly.com/teamlamon6/30min";
 
 const PILLARS = [
   {
