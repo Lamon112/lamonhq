@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { addOutreach } from "@/app/actions/outreach";
 import { sendViaGmail, getGmailStatus, type GmailStatus } from "@/app/actions/gmail";
+import { cleanPremiumLanguage } from "@/lib/premiumLanguage";
 import type { LeadRow } from "@/lib/queries";
 
 type Channel = "instagram" | "linkedin" | "email" | "phone" | "whatsapp";
@@ -324,11 +325,17 @@ function LeadActionCard({
 }: {
   lead: LeadRow;
   channel: Channel;
-  channelMeta: (typeof CHANNELS)[number];
+  channelMeta: ChannelMeta;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showFullDraft, setShowFullDraft] = useState(false);
-  const [draft, setDraft] = useState(() => initialDraft(lead, channel));
+  // Initial draft is auto-cleaned via premium positioning language swaps.
+  // Stash the swap metadata for the UI badge.
+  const initialResult = useMemo(() => {
+    const raw = initialDraft(lead, channel);
+    return cleanPremiumLanguage(raw);
+  }, [lead, channel]);
+  const [draft, setDraft] = useState(initialResult.cleaned);
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
@@ -531,10 +538,18 @@ function LeadActionCard({
 
               {/* Draft message */}
               <div>
-                <div className="mb-1 flex items-center justify-between">
+                <div className="mb-1 flex items-center justify-between gap-2">
                   <p className={"text-[10px] font-mono uppercase tracking-wider " + channelMeta.accent}>
                     {channel === "phone" ? "Calling script" : "Pre-drafted poruka"}
                   </p>
+                  {initialResult.swapCount > 0 && (
+                    <span
+                      className="flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-amber-200"
+                      title={initialResult.reasons.join(" · ")}
+                    >
+                      ✨ Premium-cleaned · {initialResult.swapCount} swap{initialResult.swapCount === 1 ? "" : "s"}
+                    </span>
+                  )}
                   <button
                     onClick={() => setShowFullDraft((v) => !v)}
                     className="flex items-center gap-1 text-[10px] text-text-muted hover:text-text"
@@ -733,8 +748,9 @@ function getChannelActionLabel(channel: Channel): string {
 
 function emailSubject(lead: LeadRow): string {
   const angle = lead.holmes_report?.best_angle?.summary;
-  if (angle && angle.length < 60) return angle;
-  return `${lead.name} — kratko pitanje`;
+  const raw = angle && angle.length < 60 ? angle : `${lead.name} — kratko pitanje`;
+  // Apply premium language cleaning to subject too
+  return cleanPremiumLanguage(raw).cleaned;
 }
 
 function getCity(lead: LeadRow): string | null {
