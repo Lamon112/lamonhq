@@ -87,7 +87,7 @@ const CHANNELS: ChannelMeta[] = [
     styleHints: [
       "Subject je 60% bitke — testirati: ROI angle vs Observation angle",
       "120-150 riječi tijelo — manje = ne čita, više = TL;DR",
-      "1 P.S. line s konkretnim brojem (često najčitaniji dio)",
+      "Premium lang: 'investicija' ne 'cijena' · 'preporučam' ne 'odgovara li vam' (vidi Brend · 09)",
       "Šalji uto/sri 10-12h CET (peak open rate za doktore)",
     ],
     emptyHint:
@@ -105,7 +105,7 @@ const CHANNELS: ChannelMeta[] = [
     styleHints: [
       "Pripremi 30-sek opening prije nego nazoveš (Holmes ima script ispod)",
       "Idealno vrijeme: 11-13h ili 17-18h (između pacijenata)",
-      "Ako odgovori asistentica: traži vrijeme za vlasnika, ne improviziraj pitch",
+      "Premium lang: 'specijaliziran sam za...' ne 'samo radim...' · 'provjerit ću dostupnost' ne 'pokušat ću ubaciti'",
       "Ako voicemail: NE ostavi pitch — ostavi 8-sek 'Leonardo iz Lamon agency, javim se opet' message",
     ],
     emptyHint:
@@ -142,7 +142,7 @@ const CHANNELS: ChannelMeta[] = [
       "Connect request s personalised note (max 300 char)",
       "Pričekaj accept prije nego pošalješ DM (ako pošalješ odmah = block)",
       "Engage 2-3 njegova posta tjedan prije DM-a (warm-up algorithm)",
-      "Format: 4-part struktura — observation → pain Q → bridge → assumptive CTA",
+      "Premium lang: 'izgradio sam Plimu oko ovog ishoda' ne 'radim ovo X godina' (vidi Brend · 09 swap #5)",
     ],
     emptyHint:
       "Croatian dental owners imaju slab LinkedIn presence — Holmes rijetko ekstraktira personal LI. 3 ukupno na 55 leadova je realnost. Fokusiraj LI na office managers + 2nd-gen owners.",
