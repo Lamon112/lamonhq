@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PlimaLogo } from "@/components/plima/PlimaLogo";
+import { PlimaIntroVideo } from "@/components/plima/PlimaIntroVideo";
 import {
   PhoneCall,
   Megaphone,
@@ -282,6 +283,9 @@ export default function PlimaLandingPage() {
           </div>
         </div>
       </section>
+
+      {/* INTRO VIDEO — placed right after hero so engaged visitors can dive deep */}
+      <PlimaIntroVideo bookingHref={BOOKING_HREF} />
 
       {/* THE 5-EMPLOYEES PITCH — big quote block */}
       <section className="border-y border-cyan-500/10 bg-gradient-to-b from-cyan-950/30 via-[#021024] to-[#021024]">
