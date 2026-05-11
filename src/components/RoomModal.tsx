@@ -23,7 +23,7 @@ import type {
   WeeklyReportRow,
   ReportsStats,
 } from "@/lib/queries";
-import { OutreachPanel } from "./rooms/OutreachPanel";
+import { OutreachActionLab } from "./rooms/OutreachActionLab";
 import { ClientsPanel } from "./rooms/ClientsPanel";
 import { LeadScorerPanel } from "./rooms/LeadScorerPanel";
 import { DiscoveryPanel } from "./rooms/DiscoveryPanel";
@@ -132,7 +132,6 @@ export function RoomModal({
 function RoomBody({
   room,
   data,
-  onSendAnimation,
   onWonAnimation,
 }: {
   room: Room;
@@ -142,13 +141,7 @@ function RoomBody({
 }) {
   switch (room.id) {
     case "outreach":
-      return (
-        <OutreachPanel
-          initialList={data.outreach.list}
-          initialStats={data.outreach.stats}
-          onSendAnimation={onSendAnimation}
-        />
-      );
+      return <OutreachActionLab initialList={data.leads.list} />;
     case "clients":
       return (
         <ClientsPanel
