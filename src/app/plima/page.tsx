@@ -169,6 +169,11 @@ const TIMELINE = [
 
 const NOT_INCLUDED = [
   {
+    title: "CEZIH / EHR / e-recept funkcionalnosti",
+    detail:
+      "Plima je pre-clinical layer — sjedi PRIJE vaših medicinskih sustava. Riva qualifies pacijenta i predaje strukturirani intake u vaš postojeći CEZIH-integrirani EHR (Stomalux, Medicus, eOrdinacija, MedicusOne). Vaš sustav ostaje netaknut; Plima ga ne mijenja niti zamjenjuje.",
+  },
+  {
     title: "Budžet za oglase (Google/Meta)",
     detail:
       "Klijent plaća svoj oglašivački budžet izravno platformi. Lamon vodi i optimizira kampanje.",
@@ -272,6 +277,15 @@ export default function PlimaLandingPage() {
               javnošću — za cijenu ispod jedne nepunoradno zaposlene osobe.
               Riva AI asistentica diže svaki poziv 24 sata dnevno, mi gradimo
               brend i privlačimo nove pacijente dok se vi bavite postojećima.
+            </p>
+            <p className="mt-4 max-w-2xl text-sm text-slate-400 sm:text-base">
+              <span className="font-medium text-cyan-300">
+                Pre-clinical layer.
+              </span>{" "}
+              Plima sjedi prije vašeg postojećeg CEZIH-integriranog sustava
+              (Stomalux, Medicus, eOrdinacija…) — Riva qualified pacijent
+              ulazi u vaš EHR s već popunjenim intake-om. Vaš sustav ostaje
+              netaknut.
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <a
