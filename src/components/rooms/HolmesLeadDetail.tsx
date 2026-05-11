@@ -29,6 +29,17 @@ export type HolmesDetailTab =
   | "angle"
   | "publicity";
 
+type ChannelKey = "instagram" | "linkedin" | "email" | "phone" | "whatsapp" | "other";
+
+const REACH_META: Record<ChannelKey, { label: string; icon: string; text: string; colorRoot: string }> = {
+  instagram: { label: "Instagram", icon: "📷", text: "text-pink-300", colorRoot: "pink-400" },
+  linkedin: { label: "LinkedIn", icon: "💼", text: "text-sky-300", colorRoot: "sky-400" },
+  email: { label: "Email", icon: "✉", text: "text-cyan-300", colorRoot: "cyan-400" },
+  phone: { label: "Phone", icon: "☎", text: "text-amber-300", colorRoot: "amber-400" },
+  whatsapp: { label: "WhatsApp", icon: "💬", text: "text-emerald-300", colorRoot: "emerald-400" },
+  other: { label: "Other", icon: "•", text: "text-stone-300", colorRoot: "stone-400" },
+};
+
 const TIER_LABEL: Record<string, { emoji: string; label: string; color: string }> = {
   veteran: { emoji: "🚀", label: "Veteran", color: "text-purple-300" },
   intermediate: { emoji: "📈", label: "Intermediate", color: "text-amber-300" },
@@ -177,32 +188,65 @@ export function HolmesLeadDetail({
 
             {r.reachability?.length > 0 && (
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-text-muted">
-                  📡 Najbolji kanali (po confidence)
+                <div className="mb-2 text-[10px] uppercase tracking-wider text-text-muted">
+                  📡 Najbolji kanali — zašto ovim redom
                 </div>
-                <ul className="mt-1 space-y-1">
+                <div className="space-y-2">
                   {[...r.reachability]
                     .sort((a, b) => b.confidence - a.confidence)
                     .slice(0, 5)
-                    .map((rch, i) => (
-                      <li key={i} className="flex items-baseline gap-2">
-                        <span className="text-[11px] font-medium text-amber-200">
-                          {Math.round(rch.confidence * 100)}%
-                        </span>
-                        <a
-                          href={rch.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-text underline-offset-2 hover:underline"
+                    .map((rch, i) => {
+                      const isPrimary = i === 0;
+                      const meta = REACH_META[rch.channel as ChannelKey] ?? REACH_META.other;
+                      const confidencePct = Math.round(rch.confidence * 100);
+                      return (
+                        <div
+                          key={i}
+                          className={
+                            "rounded-md border-l-2 px-3 py-2 " +
+                            (isPrimary
+                              ? `border-l-amber-400 bg-amber-500/10`
+                              : `border-l-${meta.colorRoot} bg-bg-elevated/30`)
+                          }
                         >
-                          {rch.channel}
-                        </a>
-                        <span className="text-[10px] text-text-dim">
-                          {rch.reasoning}
-                        </span>
-                      </li>
-                    ))}
-                </ul>
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className={"text-[11px] font-bold " + meta.text}>
+                              {meta.icon} {meta.label}
+                            </span>
+                            <span className={
+                              "rounded px-1.5 py-0.5 font-mono text-[9px] font-bold " +
+                              (confidencePct >= 70
+                                ? "bg-emerald-500/20 text-emerald-200"
+                                : confidencePct >= 40
+                                  ? "bg-amber-500/20 text-amber-200"
+                                  : "bg-rose-500/20 text-rose-200")
+                            }>
+                              {confidencePct}%
+                            </span>
+                            {isPrimary && (
+                              <span className="rounded bg-amber-400/30 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-100">
+                                PRIMARY
+                              </span>
+                            )}
+                            {rch.url && (
+                              <a
+                                href={rch.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="ml-auto text-[10px] text-text-muted underline-offset-2 hover:text-text hover:underline"
+                              >
+                                otvori →
+                              </a>
+                            )}
+                          </div>
+                          <p className="text-[11px] leading-snug text-text-dim">
+                            <span className="font-medium text-text">Zašto:</span>{" "}
+                            {rch.reasoning || "(Holmes nije dao razlog)"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                </div>
               </div>
             )}
           </motion.div>

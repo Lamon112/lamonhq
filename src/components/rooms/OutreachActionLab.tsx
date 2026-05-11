@@ -41,14 +41,22 @@ import type { LeadRow } from "@/lib/queries";
 
 type Channel = "instagram" | "linkedin" | "email" | "phone" | "whatsapp";
 
-const CHANNELS: Array<{
+interface ChannelMeta {
   id: Channel;
   label: string;
   icon: typeof AtSign;
   accent: string;
   bg: string;
   ring: string;
-}> = [
+  /** Why we contact via this channel — Leonardov mental podsjetnik */
+  philosophy: string;
+  /** Tactical style notes — kako pisati / kako zvučati */
+  styleHints: string[];
+  /** What 0-count usually means for this channel */
+  emptyHint: string;
+}
+
+const CHANNELS: ChannelMeta[] = [
   {
     id: "instagram",
     label: "Instagram",
@@ -56,6 +64,16 @@ const CHANNELS: Array<{
     accent: "text-pink-300",
     bg: "from-pink-500/15 to-rose-700/10 border-pink-400/40",
     ring: "ring-pink-400/40",
+    philosophy:
+      "IG je vizualni first-touch — vlasnik klinike provjerava DM 2-3× dnevno između pacijenata. Niska barijera, brz odgovor, zero formalnost.",
+    styleHints: [
+      "Otvori s reference na specifičan post (vidio sam vašu zadnju objavu o…)",
+      "Kratko (≤80 riječi), 1 pitanje, 1 CTA",
+      "Bez linkova u prvoj poruci (IG ih kažnjava)",
+      "Voice-note opcija ako je warm — daje human feel",
+    ],
+    emptyHint:
+      "Holmes je rijetko ekstraktirao @handle za klinike u HR — većina klinika nema personal IG vlasnika. Provjeri Detective Bureau ako misliš da bi netko trebao biti tu.",
   },
   {
     id: "email",
@@ -64,6 +82,16 @@ const CHANNELS: Array<{
     accent: "text-cyan-300",
     bg: "from-cyan-500/15 to-blue-700/10 border-cyan-400/40",
     ring: "ring-cyan-400/40",
+    philosophy:
+      "Email = profesionalni first-contact, dulja forma OK, daje vlasniku vremena za promišljanje. Default kad ne znaš primary kanal.",
+    styleHints: [
+      "Subject je 60% bitke — testirati: ROI angle vs Observation angle",
+      "120-150 riječi tijelo — manje = ne čita, više = TL;DR",
+      "1 P.S. line s konkretnim brojem (često najčitaniji dio)",
+      "Šalji uto/sri 10-12h CET (peak open rate za doktore)",
+    ],
+    emptyHint:
+      "Email je default — ako je 0, znači Holmes nije ekstraktirao kontakte. Pokreni Holmes Bulk Investigation u Bureau-u.",
   },
   {
     id: "phone",
@@ -72,6 +100,16 @@ const CHANNELS: Array<{
     accent: "text-amber-300",
     bg: "from-amber-500/15 to-orange-700/10 border-amber-400/40",
     ring: "ring-amber-400/40",
+    philosophy:
+      "Telefon = highest signal-to-noise. Nazoveš kad imaš jaku reason (warm intro, urgent angle, ili sve drugo failao). Najmanji volumen, najveći konverzija.",
+    styleHints: [
+      "Pripremi 30-sek opening prije nego nazoveš (Holmes ima script ispod)",
+      "Idealno vrijeme: 11-13h ili 17-18h (između pacijenata)",
+      "Ako odgovori asistentica: traži vrijeme za vlasnika, ne improviziraj pitch",
+      "Ako voicemail: NE ostavi pitch — ostavi 8-sek 'Leonardo iz Lamon agency, javim se opet' message",
+    ],
+    emptyHint:
+      "Telefon je za handle-with-care leadove (warm intro ili top-tier ICP). 0 znači ili Holmes nije imao broj ili svi koji ga imaju su bolje pristupiti drugim kanalom.",
   },
   {
     id: "whatsapp",
@@ -80,6 +118,16 @@ const CHANNELS: Array<{
     accent: "text-emerald-300",
     bg: "from-emerald-500/15 to-green-700/10 border-emerald-400/40",
     ring: "ring-emerald-400/40",
+    philosophy:
+      "WhatsApp = warm channel. Koristiš samo ako te poznaje (referral, prošli kontakt, mutual connection). NIKAD cold WA — bezobrazno + spam-flag.",
+    styleHints: [
+      "Opener: 'Bok [Ime], javljam se preko [izvor — kolega/event/...]'",
+      "Kratko + prijateljski + curiosity gap (per Leonardov warm-DM stil)",
+      "Meka CTA: 'imaš minutu?' umjesto '15 min poziv'",
+      "Voice note OK ako warm — graditi ton",
+    ],
+    emptyHint:
+      "WA je samo za warm leadove (Apex Špehar style). Cold WA-anje = spam. 0 je očekivano osim za referrals + osobne kontakte.",
   },
   {
     id: "linkedin",
@@ -88,6 +136,16 @@ const CHANNELS: Array<{
     accent: "text-sky-300",
     bg: "from-sky-500/15 to-blue-700/10 border-sky-400/40",
     ring: "ring-sky-400/40",
+    philosophy:
+      "LinkedIn = B2B authority kanal. Vlasnik provjerava 1-2× tjedno. Najduži response cycle (3-7 dana) ali najveći trust signal kad odgovori.",
+    styleHints: [
+      "Connect request s personalised note (max 300 char)",
+      "Pričekaj accept prije nego pošalješ DM (ako pošalješ odmah = block)",
+      "Engage 2-3 njegova posta tjedan prije DM-a (warm-up algorithm)",
+      "Format: 4-part struktura — observation → pain Q → bridge → assumptive CTA",
+    ],
+    emptyHint:
+      "Croatian dental owners imaju slab LinkedIn presence — Holmes rijetko ekstraktira personal LI. 3 ukupno na 55 leadova je realnost. Fokusiraj LI na office managers + 2nd-gen owners.",
   },
 ];
 
@@ -198,14 +256,47 @@ export function OutreachActionLab({ initialList }: Props) {
         </div>
       </div>
 
+      {/* ── Channel philosophy reminder ── */}
+      <div
+        className={
+          "mb-4 rounded-lg border bg-gradient-to-br p-3 backdrop-blur-sm " +
+          activeMeta.bg
+        }
+      >
+        <div className="mb-2 flex items-start gap-2">
+          <span className={"mt-0.5 text-[11px] font-bold uppercase tracking-wider " + activeMeta.accent}>
+            ▸ Zašto {activeMeta.label}
+          </span>
+          <p className="flex-1 text-xs leading-relaxed text-text">
+            {activeMeta.philosophy}
+          </p>
+        </div>
+        <div className="border-t border-white/5 pt-2">
+          <p className={"mb-1 text-[10px] font-mono uppercase tracking-wider " + activeMeta.accent}>
+            Style hints
+          </p>
+          <ul className="space-y-0.5 text-[11px] text-text-dim">
+            {activeMeta.styleHints.map((hint, i) => (
+              <li key={i} className="flex items-start gap-1.5">
+                <span className={activeMeta.accent + " mt-0.5"}>·</span>
+                <span>{hint}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
       {/* ── Lead cards ── */}
       <div className="flex-1 space-y-3 overflow-y-auto pb-4">
         {activeLeads.length === 0 ? (
-          <div className="rounded-md border border-dashed border-border bg-bg-card/40 px-6 py-12 text-center text-sm text-text-muted">
-            Nema lead-ova u {activeMeta.label} kanalu trenutno.
-            <br />
-            Otvori Detective Bureau (Holmes) za nove leadove ili promijeni
-            channel iznad.
+          <div className="rounded-lg border border-dashed border-border bg-bg-card/40 px-6 py-8 text-center text-sm">
+            <p className="mb-3 text-text">
+              Nema lead-ova kojima je <span className={activeMeta.accent}>{activeMeta.label}</span>{" "}
+              primary kanal trenutno.
+            </p>
+            <p className="mx-auto max-w-md text-xs leading-relaxed text-text-muted">
+              {activeMeta.emptyHint}
+            </p>
           </div>
         ) : (
           activeLeads.map((lead) => (
