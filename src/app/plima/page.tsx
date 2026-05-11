@@ -28,12 +28,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * Primary CTA — B2B Calendly link za premium klinike.
- * TODO: replace with dedicated b2b event type when created (npr.
- * calendly.com/teamlamon6/plima-b2b-30min). Trenutno koristi generic
- * 30min event.
+ * Primary CTA — B2B Calendly event "Plima — uvodni razgovor (klinike)".
+ * 30 min, 4 meetings/day cap, 15 min buffers, 6 required invitee questions
+ * (klinika, lokacije, niche, volume, operativni problem, paket interesa).
  */
-const BOOKING_HREF = "https://calendly.com/teamlamon6/30min";
+const BOOKING_HREF =
+  "https://calendly.com/teamlamon6/plima-uvodni-razgovor-klinike";
 
 const PILLARS = [
   {
