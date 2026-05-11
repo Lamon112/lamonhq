@@ -18,12 +18,30 @@ export const metadata: Metadata = {
   title: "Plima — premium partner za rast privatnih klinika",
   description:
     "Vanjski tim za rast (operativa + marketing + brend + odnosi s javnošću) za privatne klinike u Hrvatskoj. Riva AI asistentica + skripte + brendiranje + marketing + PR. Od €797 mjesečno.",
+  // Explicit icons override — Next.js auto-icon convention was getting
+  // shadowed by root src/app/favicon.ico. Force the Plima wave SVG by URL.
+  icons: {
+    icon: [
+      { url: "/plima/icon.svg", type: "image/svg+xml" },
+      { url: "/plima/icon.svg", sizes: "any" },
+    ],
+    shortcut: "/plima/icon.svg",
+    apple: "/plima/icon.svg",
+  },
   openGraph: {
     title: "Plima — premium partner za rast privatnih klinika",
     description:
       "Zamjena za 5 zaposlenika za €1.497 mjesečno. Riva AI 24 sata dnevno + brend + marketing + PR.",
     type: "website",
     locale: "hr_HR",
+    images: [{ url: "/plima/intro-poster.svg", width: 1920, height: 1080 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Plima — premium partner za rast privatnih klinika",
+    description:
+      "Zamjena za 5 zaposlenika za €1.497 mjesečno. Riva AI 24 sata dnevno.",
+    images: ["/plima/intro-poster.svg"],
   },
 };
 
