@@ -405,9 +405,19 @@ function LeadActionCard({
   const [showFullDraft, setShowFullDraft] = useState(false);
   // Initial draft is auto-cleaned via premium positioning language swaps.
   // Stash the swap metadata for the UI badge.
+  //
+  // Also strip a leading "Subject: …" line from the body. The AI emits
+  // one inline and we extract it for the actual email Subject header in
+  // sendEmail / emailSubject. Keeping it in the body would (a) show as
+  // literal "Subject: X" text to recipients and (b) confuse Leonardo
+  // looking at the draft preview.
   const initialResult = useMemo(() => {
     const raw = initialDraft(lead, channel);
-    return cleanPremiumLanguage(raw);
+    // Only strip Subject for email channel — other channels (IG, LI,
+    // WA, phone) don't have separate subject headers.
+    const bodyOnly =
+      channel === "email" ? splitSubjectFromBody(raw).body : raw;
+    return cleanPremiumLanguage(bodyOnly);
   }, [lead, channel]);
   const [draft, setDraft] = useState(initialResult.cleaned);
   // Sent state is local-only — the moment Mark sent inserts an outreach
@@ -471,11 +481,18 @@ function LeadActionCard({
       if (!s.connected) return; // user must connect Gmail in /integrations
     }
     if (!contactValue) return;
+    // Parse leading "Subject: …" line from draft body — AI sometimes
+    // emits the subject inside the body. If found, use it as the actual
+    // email Subject header AND strip it from the body so the recipient
+    // doesn't see "Subject: …" as the first body line.
+    const split = splitSubjectFromBody(draft);
+    const finalSubject = split.subject ?? emailSubject(lead);
+    const finalBody = split.body;
     startTransition(async () => {
       const res = await sendViaGmail({
         to: contactValue,
-        subject: emailSubject(lead),
-        body: draft,
+        subject: finalSubject,
+        body: finalBody,
       });
       if (res.ok) {
         // Log the outreach event separately
@@ -483,7 +500,7 @@ function LeadActionCard({
           leadName: lead.name,
           leadId: lead.id,
           platform: "email",
-          message: draft,
+          message: finalBody,
         });
         setSent(true);
       }
@@ -828,10 +845,48 @@ function getChannelActionLabel(channel: Channel): string {
 }
 
 function emailSubject(lead: LeadRow): string {
+  // Prefer the AI-authored subject if it's at the top of the draft body
+  // (e.g. "Subject: Videntis ima sadržaj — nedostaje sustav…"). Otherwise
+  // fall back to a Holmes best_angle.summary if short, else generic.
+  const draft =
+    lead.holmes_report?.channel_drafts?.email ??
+    lead.holmes_report?.outreach_draft ??
+    "";
+  const fromDraft = splitSubjectFromBody(draft).subject;
+  if (fromDraft) return cleanPremiumLanguage(fromDraft).cleaned;
   const angle = lead.holmes_report?.best_angle?.summary;
-  const raw = angle && angle.length < 60 ? angle : `${lead.name} — kratko pitanje`;
-  // Apply premium language cleaning to subject too
+  const raw =
+    angle && angle.length < 60 ? angle : `${lead.name} — kratko pitanje`;
   return cleanPremiumLanguage(raw).cleaned;
+}
+
+/**
+ * Detects a leading "Subject: …" line in a draft body and splits it off.
+ * Returns the parsed subject + cleaned body (with the line removed).
+ *
+ * The AI sometimes emits a `Subject: …` line at the very top of the
+ * draft. If we don't extract it, the recipient sees "Subject: X" as
+ * literal text in the email body, while the actual email Subject header
+ * stays as a generic fallback ("X — kratko pitanje"). This is the bug
+ * Leonardo flagged after the Videntis send.
+ */
+function splitSubjectFromBody(raw: string): {
+  subject: string | null;
+  body: string;
+} {
+  if (!raw) return { subject: null, body: raw };
+  const lines = raw.split(/\r?\n/);
+  const first = lines[0]?.trim() ?? "";
+  // Match: "Subject:", "SUBJECT:", optional bold markers etc.
+  const m = first.match(/^\**\s*subject\s*:\s*(.+?)\s*\**$/i);
+  if (!m) return { subject: null, body: raw };
+  const subject = m[1].trim();
+  if (!subject) return { subject: null, body: raw };
+  // Drop the Subject line + any blank line right after it
+  let cut = 1;
+  while (cut < lines.length && lines[cut].trim() === "") cut++;
+  const body = lines.slice(cut).join("\n").trimStart();
+  return { subject, body };
 }
 
 function getCity(lead: LeadRow): string | null {

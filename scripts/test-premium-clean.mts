@@ -296,8 +296,83 @@ const cases: Case[] = [
   },
 ];
 
-let failed = 0;
-let passed = 0;
+// ── Subject splitter tests (mirrors splitSubjectFromBody in OutreachActionLab.tsx) ──
+
+function splitSubjectFromBody(raw: string): {
+  subject: string | null;
+  body: string;
+} {
+  if (!raw) return { subject: null, body: raw };
+  const lines = raw.split(/\r?\n/);
+  const first = lines[0]?.trim() ?? "";
+  const m = first.match(/^\**\s*subject\s*:\s*(.+?)\s*\**$/i);
+  if (!m) return { subject: null, body: raw };
+  const subject = m[1].trim();
+  if (!subject) return { subject: null, body: raw };
+  let cut = 1;
+  while (cut < lines.length && lines[cut].trim() === "") cut++;
+  const body = lines.slice(cut).join("\n").trimStart();
+  return { subject, body };
+}
+
+interface SubjectCase {
+  input: string;
+  expectedSubject: string | null;
+  bodyStartsWith: string;
+}
+
+const subjectCases: SubjectCase[] = [
+  {
+    input:
+      "Subject: Videntis ima sadržaj — nedostaje sustav koji ga pretvara u termine\n\nPoštovani\n\nKlinika s 654 Instagram objava...",
+    expectedSubject:
+      "Videntis ima sadržaj — nedostaje sustav koji ga pretvara u termine",
+    bodyStartsWith: "Poštovani",
+  },
+  {
+    input:
+      "SUBJECT: Videntis — kratko pitanje\n\nDr. Pollak, pozdrav 🤝\n\nVidio sam...",
+    expectedSubject: "Videntis — kratko pitanje",
+    bodyStartsWith: "Dr. Pollak",
+  },
+  {
+    input: "Tina, pozdrav 🤝\n\nVodeći laser centar u Rijeci…",
+    expectedSubject: null,
+    bodyStartsWith: "Tina, pozdrav",
+  },
+];
+
+console.log("");
+console.log("─".repeat(72));
+console.log("splitSubjectFromBody — subject header extraction");
+console.log("─".repeat(72));
+
+let subjectFailed = 0;
+let subjectPassed = 0;
+for (const c of subjectCases) {
+  const result = splitSubjectFromBody(c.input);
+  const subjectOk = result.subject === c.expectedSubject;
+  const bodyOk = result.body.startsWith(c.bodyStartsWith);
+  const ok = subjectOk && bodyOk;
+  if (ok) subjectPassed++;
+  else subjectFailed++;
+  console.log("");
+  console.log(ok ? "✅ PASS" : "❌ FAIL");
+  console.log(`  IN  (first line): ${c.input.split("\n")[0]}`);
+  console.log(`  SUBJECT: ${result.subject ?? "<null>"}`);
+  console.log(`  BODY starts: ${result.body.slice(0, 50)}...`);
+  if (!subjectOk)
+    console.log(`  ❌ expected subject: "${c.expectedSubject}"`);
+  if (!bodyOk)
+    console.log(`  ❌ expected body to start with: "${c.bodyStartsWith}"`);
+}
+console.log("");
+console.log("─".repeat(72));
+console.log(`Subject splitter: ${subjectPassed} passed, ${subjectFailed} failed`);
+console.log("─".repeat(72));
+
+let failed = subjectFailed;
+let passed = subjectPassed;
 console.log("─".repeat(72));
 console.log("cleanPremiumLanguage — English→Croatian swap verification");
 console.log("─".repeat(72));

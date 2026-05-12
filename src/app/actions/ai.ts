@@ -34,7 +34,7 @@ export interface DraftVariantsResult {
   error?: string;
 }
 
-const PROMPT_VERSION = "v12";
+const PROMPT_VERSION = "v13";
 
 const SYSTEM_PROMPT_V2 = `Ti si Leonardo Lamon. Bavi se razvojem privatnih ordinacija kroz 6 stupova: AI sustav, automatizacije, content strategija, društvene mreže, PR i web. Pišeš cold-outreach DM-ove vlasnicima ordinacija (stomato, estetika, fizio, ortopedija) kao i premium B2C coachevima.
 
@@ -232,7 +232,26 @@ Predlažem utorak u 11:30 ili četvrtak nakon 18h — koji termin Vam više paš
 \`\`\`
 
 # Format izlaza
-Samo gotova poruka. Bez markdown headera. Bez objašnjenja. Bez "Evo prijedloga:" ili "Draft:". Max 1× 🤝 emoji nakon pozdrava.`;
+
+**KRITIČNO za email platform** — Ako pišeš email draft, output MORA imati ovu strukturu:
+
+\`\`\`
+SUBJECT: <jedna linija subject-a, max 60 znakova, premium tone>
+
+<prazna linija>
+
+<tijelo poruke počinje s "[Ime], pozdrav 🤝" — IDENTIČNO kao u 4 master primjera gore>
+\`\`\`
+
+- **Prva linija je uvijek "SUBJECT: …"** (UPPERCASE SUBJECT, dvotočka, razmak, sadržaj subjecta).
+- **Nakon subject linije, prazna linija, pa tijelo poruke.**
+- **Subject ide JEDNOM, na vrhu. NIKAD u tijelu poruke.**
+- Sustav parsira tu prvu liniju i šalje je kao Gmail Subject header. Ako Subject linija nedostaje, koristi se fallback i izgleda nezavršeno. Ako Subject pišeš u tijelu poruke, recipient vidi literalno "Subject: X" kao prvi red maila — to je greška.
+
+Za **non-email platforme** (Instagram, LinkedIn, WhatsApp, Phone): NE pišeš subject — output počinje s "[Ime], pozdrav 🤝".
+
+# Ostalo
+Bez markdown headera (osim SUBJECT: prefix). Bez objašnjenja. Bez "Evo prijedloga:" ili "Draft:". Max 1× 🤝 emoji nakon pozdrava.`;
 
 
 function buildExamples(platform: string): string {
