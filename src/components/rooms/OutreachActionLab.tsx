@@ -168,18 +168,27 @@ interface Props {
   initialList: LeadRow[];
 }
 
+type ViewMode = "queue" | "sent";
+
+const SENT_STAGES = new Set(["pricing", "financing", "booking"]);
+
 export function OutreachActionLab({ initialList }: Props) {
-  // Filter to leads not yet closed + with Holmes report
-  const allLeads = useMemo(
-    () =>
-      initialList.filter(
-        (l) =>
-          l.stage !== "closed_won" &&
-          l.stage !== "closed_lost" &&
-          l.holmes_report,
-      ),
-    [initialList],
-  );
+  // ── Queue / Sent toggle ──
+  // Default landing = "queue" — leads that still need a first outreach
+  // (stage="discovery", holmes-investigated). "sent" view shows leads
+  // we've already touched (stage moved to pricing/financing/booking)
+  // grouped by the same channel UI so Leonardo can browse what he sent
+  // without leaving the room. Closed deals (won/lost) live in the
+  // Closing Room instead — different mental context.
+  const [viewMode, setViewMode] = useState<ViewMode>("queue");
+
+  const allLeads = useMemo(() => {
+    const matchStage =
+      viewMode === "queue"
+        ? (s: string) => s === "discovery"
+        : (s: string) => SENT_STAGES.has(s);
+    return initialList.filter((l) => matchStage(l.stage) && l.holmes_report);
+  }, [initialList, viewMode]);
 
   // Group by primary channel (fallback: derive from reachability or available channels)
   const byChannel = useMemo(() => {
@@ -194,12 +203,22 @@ export function OutreachActionLab({ initialList }: Props) {
       const ch = inferPrimaryChannel(lead);
       if (ch) map[ch].push(lead);
     }
-    // Sort each by ICP score descending
+    // Sort: queue by ICP score desc, sent by most recently touched
+    // (updated_at proxies that — leads bumped to pricing get a fresh
+    // updated_at via the stage update).
     for (const ch of Object.keys(map) as Channel[]) {
-      map[ch].sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0));
+      if (viewMode === "queue") {
+        map[ch].sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0));
+      } else {
+        map[ch].sort((a, b) => {
+          const av = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+          const bv = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+          return bv - av;
+        });
+      }
     }
     return map;
-  }, [allLeads]);
+  }, [allLeads, viewMode]);
 
   // Pick default tab = channel with most leads
   const defaultChannel: Channel = useMemo(() => {
@@ -240,8 +259,76 @@ export function OutreachActionLab({ initialList }: Props) {
     });
   };
 
+  // Counts for the queue/sent toggle pills — sum across all channels for
+  // each mode so the user can see at a glance how big each side is.
+  const queueTotalCount = useMemo(
+    () =>
+      initialList.filter(
+        (l) => l.stage === "discovery" && l.holmes_report,
+      ).length,
+    [initialList],
+  );
+  const sentTotalCount = useMemo(
+    () =>
+      initialList.filter(
+        (l) => SENT_STAGES.has(l.stage) && l.holmes_report,
+      ).length,
+    [initialList],
+  );
+
   return (
     <div className="flex h-full flex-col">
+      {/* ── Queue / Sent toggle (sticky on top of channel tabs) ── */}
+      <div className="mb-3 flex items-center gap-2">
+        <button
+          onClick={() => setViewMode("queue")}
+          className={
+            "flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all " +
+            (viewMode === "queue"
+              ? "border border-cyan-400/50 bg-cyan-500/15 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+              : "border border-border bg-bg-card text-text-muted hover:border-border-strong hover:text-text")
+          }
+        >
+          📥 U redu
+          <span
+            className={
+              "rounded-full px-1.5 text-[10px] font-bold " +
+              (viewMode === "queue"
+                ? "bg-black/40 text-white"
+                : "bg-bg-elevated text-text-dim")
+            }
+          >
+            {queueTotalCount}
+          </span>
+        </button>
+        <button
+          onClick={() => setViewMode("sent")}
+          className={
+            "flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all " +
+            (viewMode === "sent"
+              ? "border border-emerald-400/50 bg-emerald-500/15 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.25)]"
+              : "border border-border bg-bg-card text-text-muted hover:border-border-strong hover:text-text")
+          }
+        >
+          📤 Poslano
+          <span
+            className={
+              "rounded-full px-1.5 text-[10px] font-bold " +
+              (viewMode === "sent"
+                ? "bg-black/40 text-white"
+                : "bg-bg-elevated text-text-dim")
+            }
+          >
+            {sentTotalCount}
+          </span>
+        </button>
+        <span className="ml-2 text-[11px] text-text-dim">
+          {viewMode === "queue"
+            ? "Leadovi koji čekaju prvi outreach"
+            : "Leadovi kojima si već poslao — kronološki"}
+        </span>
+      </div>
+
       {/* ── Channel tabs ── */}
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
         {CHANNELS.map((ch) => {
