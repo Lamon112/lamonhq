@@ -542,6 +542,13 @@ function LeadActionCard({
               .filter(Boolean)
               .join(" · ")}
           </p>
+          {/* Subject preview on Mail channel rows — visible without
+              expanding, so Leonardo can scan subjects across the queue. */}
+          {channel === "email" && (
+            <p className="mt-0.5 truncate text-[11px] italic text-cyan-200/80">
+              ✉ {splitSubjectFromBody(draft).subject ?? emailSubject(lead)}
+            </p>
+          )}
         </div>
         {sent ? (
           <span className="flex items-center gap-1 rounded border border-success/40 bg-success/10 px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-success">
@@ -631,6 +638,21 @@ function LeadActionCard({
                 <div className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/40 px-3 py-2 font-mono text-xs">
                   <span className="text-text-muted">{channel}</span>
                   <span className="truncate text-text">{contactValue}</span>
+                </div>
+              )}
+
+              {/* Email subject preview — only for email channel. Shows
+                  what the actual Gmail Subject header will be when sent
+                  (parsed from leading "Subject:" line in AI draft, or
+                  falls back to emailSubject(lead) heuristic). */}
+              {channel === "email" && (
+                <div className="rounded-md border border-cyan-400/30 bg-cyan-500/5 px-3 py-2">
+                  <p className={"mb-1 text-[10px] font-mono uppercase tracking-wider " + channelMeta.accent}>
+                    Email subject
+                  </p>
+                  <p className="font-medium text-sm text-cyan-100">
+                    {splitSubjectFromBody(draft).subject ?? emailSubject(lead)}
+                  </p>
                 </div>
               )}
 

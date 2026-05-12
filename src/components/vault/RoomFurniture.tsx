@@ -61,6 +61,10 @@ export function RoomFurniture({ agentId }: { agentId: AgentId }) {
       return <MentatFurniture />;
     case "forge":
       return <ForgeFurniture />;
+    case "aegis":
+      return <AegisFurniture />;
+    case "strateg":
+      return <StrategFurniture />;
     default:
       return null;
   }
@@ -1639,6 +1643,395 @@ function ForgeFurniture() {
             "repeating-linear-gradient(90deg, rgba(0,0,0,0.5) 0 1px, transparent 1px 8px)",
         }}
       />
+    </>
+  );
+}
+
+/* =================================================================== */
+/* AEGIS — Concierge Wing                                               */
+/* Theme: premium violet/fuchsia retention HQ — calm, polished, "we    */
+/* take care of you" energy. Aegis = QBR + churn radar + upsell.        */
+/* HERO 1: marble-pattern back wall with "CONCIERGE" plaque + gold trim*/
+/* HERO 2: client portrait gallery (3 active client frames)             */
+/* HERO 3: large QBR calendar dashboard                                 */
+/* HERO 4: tea/coffee service station + plush armchair                  */
+/* =================================================================== */
+function AegisFurniture() {
+  return (
+    <>
+      {/* === Marble back wall === */}
+      <div
+        className="absolute left-0 right-0 top-0 h-[6rem] bg-gradient-to-b from-violet-950 via-stone-900 to-violet-950"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgba(167,139,250,0.08) 0 50%, transparent 50% 100%), repeating-linear-gradient(45deg, rgba(167,139,250,0.04) 0 8px, transparent 8px 24px)",
+        }}
+      />
+      {/* Gold trim molding along top */}
+      <div className="absolute left-0 right-0 top-[5.9rem] h-px bg-gradient-to-r from-transparent via-amber-400/70 to-transparent shadow-[0_0_3px_rgba(251,191,36,0.6)]" />
+      <div className="absolute left-0 right-0 top-[5.7rem] h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+
+      {/* "CONCIERGE" plaque — center top, ornate */}
+      <div className="absolute left-1/2 top-1 z-30 -translate-x-1/2 rounded-sm border-2 border-amber-500/70 bg-gradient-to-b from-violet-900 to-violet-950 px-2 py-px shadow-[0_2px_4px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,191,36,0.4)]">
+        <span className="block font-mono text-[5px] font-bold uppercase leading-none tracking-[0.3em] text-amber-200">
+          ◆ CONCIERGE ◆
+        </span>
+        <span className="block text-center font-mono text-[4px] font-bold uppercase leading-none tracking-[0.2em] text-amber-400/70">
+          retention · QBR · upsell
+        </span>
+      </div>
+
+      {/* === Client portrait gallery wall — upper left === */}
+      {[0, 1, 2].map((i) => {
+        const inits = ["DI", "BW", "+"][i];
+        const tones = [
+          "border-emerald-400 from-emerald-600 to-emerald-900 text-emerald-100",
+          "border-cyan-400 from-cyan-600 to-cyan-900 text-cyan-100",
+          "border-stone-500 from-stone-700 to-stone-900 text-stone-400",
+        ][i];
+        return (
+          <div
+            key={i}
+            className={`absolute top-[1.4rem] flex h-4 w-3 items-center justify-center rounded-sm border-2 bg-gradient-to-br shadow-[0_2px_3px_rgba(0,0,0,0.5)] ${tones}`}
+            style={{ left: `${4 + i * 4}%` }}
+          >
+            {/* Ornate gold frame */}
+            <div className="absolute inset-0 rounded-sm ring-1 ring-amber-500/60" />
+            <div className="absolute -top-px -left-px h-px w-px bg-amber-300" />
+            <div className="absolute -bottom-px -right-px h-px w-px bg-amber-300" />
+            <span className="font-mono text-[5px] font-bold leading-none">
+              {inits}
+            </span>
+          </div>
+        );
+      })}
+      {/* Gallery label */}
+      <div className="absolute left-[5%] top-[3.4rem] font-mono text-[4px] uppercase leading-none tracking-[0.2em] text-violet-300/80">
+        Aktivni klijenti
+      </div>
+
+      {/* === Large QBR calendar dashboard — center === */}
+      <div className="absolute left-[28%] top-[1.6rem] h-7 w-[44%] rounded-sm border border-violet-500/70 bg-stone-950/80 shadow-[inset_0_0_4px_rgba(167,139,250,0.4),0_2px_4px_rgba(0,0,0,0.5)]">
+        {/* Header */}
+        <div className="border-b border-violet-700/60 bg-violet-950/80 px-1 py-px font-mono text-[4px] font-bold leading-none tracking-wider text-violet-200">
+          ▼ QBR · Q4 2026
+        </div>
+        {/* Calendar grid 5x4 */}
+        <div className="grid grid-cols-5 gap-px p-px">
+          {Array.from({ length: 20 }).map((_, i) => {
+            // Highlight a few cells as "QBR scheduled"
+            const isQbr = i === 2 || i === 9 || i === 16;
+            const isToday = i === 7;
+            return (
+              <div
+                key={i}
+                className={
+                  "h-1 rounded-[1px] " +
+                  (isQbr
+                    ? "bg-emerald-500/80 shadow-[0_0_2px_rgba(16,185,129,0.8)]"
+                    : isToday
+                      ? "bg-amber-400/90 shadow-[0_0_2px_rgba(251,191,36,0.9)]"
+                      : "bg-violet-800/40")
+                }
+              />
+            );
+          })}
+        </div>
+        {/* Legend strip */}
+        <div className="absolute -bottom-2 left-0 flex w-full items-center gap-1 px-px font-mono text-[3px] leading-none">
+          <span className="flex items-center gap-px">
+            <span className="h-px w-px bg-emerald-400" /> QBR
+          </span>
+          <span className="flex items-center gap-px">
+            <span className="h-px w-px bg-amber-400" /> today
+          </span>
+          <span className="ml-auto text-violet-400/80">
+            5/5 on-track ✓
+          </span>
+        </div>
+      </div>
+
+      {/* === Health pulse monitor — upper right === */}
+      <div className="absolute right-[3%] top-[1.4rem] h-7 w-[20%] rounded border border-emerald-500/60 bg-stone-950/80 p-px shadow-[inset_0_0_3px_rgba(16,185,129,0.4)]">
+        <div className="border-b border-emerald-700/60 bg-emerald-950/60 px-px font-mono text-[4px] font-bold leading-none tracking-wider text-emerald-300">
+          ♥ HEALTH
+        </div>
+        {/* ECG pulse line */}
+        <svg viewBox="0 0 60 16" className="mt-px h-3 w-full">
+          <polyline
+            points="0,8 8,8 10,3 12,13 14,8 22,8 24,5 26,11 28,8 36,8 38,4 40,12 42,8 50,8 52,6 54,10 56,8 60,8"
+            fill="none"
+            stroke="rgb(52 211 153)"
+            strokeWidth="0.6"
+          />
+        </svg>
+        <div className="flex items-baseline gap-px px-px font-mono text-[4px] leading-none">
+          <span className="font-bold text-emerald-300">0</span>
+          <span className="text-emerald-500/70">churn risk</span>
+        </div>
+      </div>
+
+      {/* === Tea / coffee service station — lower left === */}
+      <div className="absolute bottom-3 left-[6%] flex items-end gap-1">
+        {/* Espresso machine */}
+        <div className="relative h-4 w-3 rounded-sm border border-stone-500 bg-gradient-to-b from-stone-800 to-stone-900 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.6)]">
+          <div className="absolute left-px right-px top-px h-px bg-amber-300/80" />
+          <div className="absolute left-1/2 top-1.5 h-1.5 w-px -translate-x-1/2 bg-stone-400" />
+          {/* Steam */}
+          <div className="absolute -top-1 left-1/2 h-1 w-px -translate-x-1/2 animate-pulse bg-gradient-to-t from-stone-300/70 to-transparent blur-[0.5px]" />
+        </div>
+        {/* Two espresso cups on tray */}
+        <div className="h-px w-2 bg-stone-600/70" />
+        <div className="relative -ml-2 h-1 w-1 rounded-b border border-amber-200 bg-stone-900">
+          <div className="absolute inset-x-px top-px h-px bg-amber-700" />
+        </div>
+        <div className="relative -ml-1 h-1 w-1 rounded-b border border-amber-200 bg-stone-900">
+          <div className="absolute inset-x-px top-px h-px bg-amber-700" />
+        </div>
+      </div>
+
+      {/* === Plush armchair (concierge desk seating) — center bottom === */}
+      <div className="absolute bottom-2.5 left-[42%] w-3 -translate-x-1/2">
+        <div className="relative h-3 w-3 rounded-t-md border border-violet-700 bg-gradient-to-b from-violet-700 to-violet-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_2px_rgba(0,0,0,0.6)]">
+          {/* Tufting buttons */}
+          <div className="absolute left-1 top-1 h-px w-px rounded-full bg-amber-400/80" />
+          <div className="absolute right-1 top-1 h-px w-px rounded-full bg-amber-400/80" />
+          <div className="absolute left-1 top-2 h-px w-px rounded-full bg-amber-400/80" />
+          <div className="absolute right-1 top-2 h-px w-px rounded-full bg-amber-400/80" />
+        </div>
+      </div>
+
+      {/* === Upsell ladder display — bottom right === */}
+      <div className="absolute bottom-3 right-[5%] flex flex-col gap-px font-mono text-[4px] uppercase leading-none">
+        <span className="rounded-sm border border-rose-500/60 bg-rose-950/40 px-1 py-px font-bold tracking-wider text-rose-200">
+          PREMIUM €2.5K
+        </span>
+        <span className="rounded-sm border border-violet-500/60 bg-violet-950/40 px-1 py-px tracking-wider text-violet-200">
+          VOICE €1.5K
+        </span>
+        <span className="rounded-sm border border-stone-500/60 bg-stone-950/60 px-1 py-px tracking-wider text-stone-300">
+          MREŽA €797
+        </span>
+      </div>
+
+      {/* === Marble floor === */}
+      <div
+        className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-violet-400/30 bg-gradient-to-b from-stone-700 to-stone-900"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(135deg, rgba(167,139,250,0.08) 0 4px, transparent 4px 12px)",
+        }}
+      />
+    </>
+  );
+}
+
+/* =================================================================== */
+/* STRATEG — Reply Analyst                                              */
+/* Theme: violet/cyan intelligence ops — moody, focused, reading minds. */
+/* HERO 1: huge inbound message feed (scrolling) on left wall           */
+/* HERO 2: sentiment trend chart center                                 */
+/* HERO 3: 2 reply draft preview screens right                          */
+/* HERO 4: "NEXT-BEST-ACTION" thinking lamp at center bottom            */
+/* =================================================================== */
+function StrategFurniture() {
+  // Fake inbound message feed lines — gives the room a "live monitor" feel
+  const inboundLines = [
+    "✉ dr.spehar@apex.hr · interested",
+    "✉ marko@dental-rijeka.hr · scheduling",
+    "✉ info@videntis.eu · question",
+    "✉ ivana@orthozg.hr · objection",
+    "✉ tina@laser-ri.hr · interested",
+    "✉ predrag@dt-dent.hr · not_now",
+    "✉ ana@premium-smile.hr · scheduling",
+    "✉ doctor@gikic.hr · question",
+  ];
+
+  return (
+    <>
+      {/* === Dark op-center back wall === */}
+      <div className="absolute inset-x-0 inset-y-0 bg-gradient-to-br from-violet-950/40 via-stone-950 to-cyan-950/40" />
+
+      {/* Grid overlay — gives "tactical map" feel */}
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(167,139,250,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(167,139,250,0.18) 1px, transparent 1px)",
+          backgroundSize: "8px 8px",
+        }}
+      />
+
+      {/* "REPLY ANALYST" plaque — top center */}
+      <div className="absolute left-1/2 top-1 z-30 -translate-x-1/2 rounded-sm border border-violet-400/70 bg-violet-950/90 px-2 py-px shadow-[0_0_4px_rgba(167,139,250,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]">
+        <span className="block font-mono text-[5px] font-bold uppercase leading-none tracking-[0.25em] text-violet-200">
+          ◇ REPLY ANALYST ◇
+        </span>
+        <span className="block text-center font-mono text-[4px] uppercase leading-none tracking-[0.15em] text-cyan-300/80">
+          auto-triage · sentiment · NBA
+        </span>
+      </div>
+
+      {/* === LEFT: Inbound message feed (scrolling-style stack) === */}
+      <div className="absolute left-1 top-[1.6rem] flex h-[5.2rem] w-[40%] flex-col overflow-hidden rounded-sm border border-violet-500/60 bg-stone-950/80 shadow-[inset_0_0_3px_rgba(167,139,250,0.5)]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-violet-700/60 bg-violet-950/80 px-1 py-px">
+          <span className="font-mono text-[4px] font-bold uppercase tracking-wider text-violet-200">
+            ▼ inbound feed
+          </span>
+          <span className="flex items-center gap-px font-mono text-[3px] uppercase text-emerald-300">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_2px_rgba(16,185,129,1)]" />
+            LIVE
+          </span>
+        </div>
+        {/* Scrolling rows */}
+        <div className="flex-1 overflow-hidden">
+          {inboundLines.map((line, i) => {
+            const tone = line.includes("interested") || line.includes("scheduling")
+              ? "text-emerald-300"
+              : line.includes("objection") || line.includes("not_now")
+                ? "text-amber-300"
+                : "text-cyan-200";
+            return (
+              <div
+                key={i}
+                className={`truncate border-b border-violet-900/30 px-1 py-px font-mono text-[4px] leading-tight ${tone}`}
+              >
+                {line}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* === CENTER: Sentiment trend chart === */}
+      <div className="absolute left-[42%] top-[1.6rem] h-[3.4rem] w-[30%] rounded-sm border border-cyan-500/60 bg-stone-950/80 p-px shadow-[inset_0_0_3px_rgba(34,211,238,0.4)]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-cyan-700/50 bg-cyan-950/60 px-1 py-px">
+          <span className="font-mono text-[4px] font-bold uppercase tracking-wider text-cyan-200">
+            ▼ Sentiment 7d
+          </span>
+          <span className="font-mono text-[3px] uppercase tracking-wider text-emerald-300">
+            ▲ +3
+          </span>
+        </div>
+        {/* Stacked area chart (warming up / cooling) */}
+        <svg viewBox="0 0 60 24" className="mt-px h-7 w-full">
+          {/* Cooling fill (amber) */}
+          <polygon
+            points="0,18 10,16 20,17 30,15 40,16 50,14 60,15 60,24 0,24"
+            fill="rgba(245,158,11,0.4)"
+          />
+          {/* Warming fill (emerald) */}
+          <polygon
+            points="0,12 10,10 20,11 30,7 40,9 50,5 60,6 60,18 50,14 40,16 30,15 20,17 10,16 0,18"
+            fill="rgba(16,185,129,0.5)"
+          />
+          {/* Trend line */}
+          <polyline
+            points="0,12 10,10 20,11 30,7 40,9 50,5 60,6"
+            fill="none"
+            stroke="rgb(110 231 183)"
+            strokeWidth="0.8"
+          />
+        </svg>
+      </div>
+
+      {/* === RIGHT: 2 reply draft preview screens === */}
+      <div className="absolute right-1 top-[1.6rem] flex h-[5.2rem] w-[24%] flex-col gap-px">
+        {/* Draft 1 — concise confirm */}
+        <div className="flex-1 rounded-sm border border-emerald-500/50 bg-stone-950/80 p-px shadow-[inset_0_0_2px_rgba(16,185,129,0.4)]">
+          <div className="flex items-center justify-between border-b border-emerald-700/50 bg-emerald-950/40 px-px">
+            <span className="font-mono text-[3px] font-bold uppercase tracking-wider text-emerald-300">
+              draft #1
+            </span>
+            <span className="font-mono text-[3px] uppercase text-emerald-400/80">
+              concise
+            </span>
+          </div>
+          {/* Body lines (fake text) */}
+          <div className="space-y-px p-px">
+            <div className="h-px w-full bg-emerald-300/60" />
+            <div className="h-px w-3/4 bg-emerald-300/40" />
+            <div className="h-px w-5/6 bg-emerald-300/50" />
+            <div className="h-px w-1/2 bg-emerald-300/30" />
+            <div className="mt-px h-px w-2/3 bg-emerald-400/70" />
+          </div>
+        </div>
+        {/* Draft 2 — value reinforcement */}
+        <div className="flex-1 rounded-sm border border-cyan-500/50 bg-stone-950/80 p-px shadow-[inset_0_0_2px_rgba(34,211,238,0.4)]">
+          <div className="flex items-center justify-between border-b border-cyan-700/50 bg-cyan-950/40 px-px">
+            <span className="font-mono text-[3px] font-bold uppercase tracking-wider text-cyan-300">
+              draft #2
+            </span>
+            <span className="font-mono text-[3px] uppercase text-cyan-400/80">
+              value
+            </span>
+          </div>
+          <div className="space-y-px p-px">
+            <div className="h-px w-full bg-cyan-300/60" />
+            <div className="h-px w-5/6 bg-cyan-300/40" />
+            <div className="h-px w-3/4 bg-cyan-300/50" />
+            <div className="h-px w-4/5 bg-cyan-300/40" />
+            <div className="mt-px h-px w-2/3 bg-cyan-400/70" />
+          </div>
+        </div>
+      </div>
+
+      {/* === CENTER BOTTOM: NBA "thinking lamp" === */}
+      <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2">
+        {/* Lamp glow */}
+        <div className="absolute -inset-2 rounded-full bg-violet-400/20 blur-md" />
+        {/* Lamp body */}
+        <div className="relative h-3 w-3 rounded-full border border-violet-400 bg-gradient-to-b from-violet-300 via-violet-500 to-violet-800 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),0_0_6px_rgba(167,139,250,0.7)]">
+          <div className="absolute left-1 top-1 h-px w-px rounded-full bg-white" />
+        </div>
+        {/* NBA label */}
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[4px] font-bold uppercase tracking-wider text-violet-300">
+          NBA · next-best-action
+        </div>
+      </div>
+
+      {/* === Pattern recognition mini-graph — bottom left === */}
+      <div className="absolute bottom-2.5 left-2 h-3 w-6 rounded-sm border border-violet-500/40 bg-stone-950/60 px-px">
+        <span className="block font-mono text-[3px] uppercase leading-none tracking-wider text-violet-300/80">
+          patterns
+        </span>
+        {/* Mini node graph */}
+        <svg viewBox="0 0 24 8" className="mt-px h-2 w-full">
+          <circle cx="3" cy="4" r="0.8" fill="rgb(167 139 250)" />
+          <circle cx="9" cy="2" r="0.8" fill="rgb(34 211 238)" />
+          <circle cx="9" cy="6" r="0.8" fill="rgb(34 211 238)" />
+          <circle cx="15" cy="3" r="0.8" fill="rgb(110 231 183)" />
+          <circle cx="15" cy="5" r="0.8" fill="rgb(110 231 183)" />
+          <circle cx="21" cy="4" r="0.8" fill="rgb(245 158 11)" />
+          <line x1="3" y1="4" x2="9" y2="2" stroke="rgba(167,139,250,0.5)" strokeWidth="0.3" />
+          <line x1="3" y1="4" x2="9" y2="6" stroke="rgba(167,139,250,0.5)" strokeWidth="0.3" />
+          <line x1="9" y1="2" x2="15" y2="3" stroke="rgba(34,211,238,0.5)" strokeWidth="0.3" />
+          <line x1="9" y1="6" x2="15" y2="5" stroke="rgba(34,211,238,0.5)" strokeWidth="0.3" />
+          <line x1="15" y1="3" x2="21" y2="4" stroke="rgba(110,231,183,0.5)" strokeWidth="0.3" />
+          <line x1="15" y1="5" x2="21" y2="4" stroke="rgba(110,231,183,0.5)" strokeWidth="0.3" />
+        </svg>
+      </div>
+
+      {/* === Stats panel — bottom right === */}
+      <div className="absolute bottom-2.5 right-2 flex flex-col gap-px rounded-sm border border-cyan-500/40 bg-stone-950/70 p-px font-mono text-[3px] uppercase leading-none">
+        <div className="flex items-center justify-between gap-1 text-emerald-300">
+          <span>warm</span>
+          <span className="font-bold">0</span>
+        </div>
+        <div className="flex items-center justify-between gap-1 text-amber-300">
+          <span>obj</span>
+          <span className="font-bold">0</span>
+        </div>
+        <div className="flex items-center justify-between gap-1 text-stone-300">
+          <span>cool</span>
+          <span className="font-bold">0</span>
+        </div>
+      </div>
+
+      {/* === Floor (dark with violet glow strip) === */}
+      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-violet-400/40 bg-gradient-to-b from-stone-800 to-stone-950 shadow-[inset_0_1px_2px_rgba(167,139,250,0.2)]" />
     </>
   );
 }
