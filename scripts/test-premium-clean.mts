@@ -28,13 +28,16 @@ const SWAPS: Swap[] = [
     find: /\bcontent engine-?(a|om|u|i|ima)?\b/gi,
     replace: (m) => {
       const suffix = m.match(/engine-?(a|om|u|i|ima)?$/i)?.[1] ?? "";
-      const base = "stroj za sadržaj";
-      const withSuffix = suffix
-        ? base.replace(/sadržaj$/, "sadržaj" + suffix)
-        : base;
-      return matchCase(m, withSuffix);
+      const base = suffix === "a"
+        ? "produkcije sadržaja"
+        : suffix === "om"
+          ? "produkcijom sadržaja"
+          : suffix === "u"
+            ? "produkciji sadržaja"
+            : "produkcija sadržaja";
+      return matchCase(m, base);
     },
-    reason: "content engine → stroj za sadržaj",
+    reason: "content engine → produkcija sadržaja",
   },
   {
     find: /\bcontent (strategy|strategija|strategije)\b/gi,
@@ -143,8 +146,28 @@ const SWAPS: Swap[] = [
   },
   {
     find: /\bnurture (sequence|sekvenca|sekvenc[ae])\b/gi,
-    replace: (m) => matchCase(m, "follow-up niz"),
-    reason: "nurture sequence → follow-up niz",
+    replace: (m) => matchCase(m, "automatizirane poruke"),
+    reason: "nurture sequence → automatizirane poruke",
+  },
+  {
+    find: /\bfollow-up niz\w*\b/gi,
+    replace: (m) => matchCase(m, "automatizirane poruke"),
+    reason: "follow-up niz → automatizirane poruke",
+  },
+  {
+    find: /\s*Dostupno za[^€]*€\/?(mj|mjesec|mjesečno)?\.?/gi,
+    replace: "",
+    reason: "stripped: Dostupno za X€/mj",
+  },
+  {
+    find: /\bPlima paket:?\s*[\d.,\s\-–]+€\/?(mj|mjesec|mjesečno)?\.?/gi,
+    replace: "Plima paket pokrivam u 15-min pozivu.",
+    reason: "stripped: Plima paket €-amount",
+  },
+  {
+    find: /\b(Cijena|Investicija)\s+(od\s+)?[\d.,\s\-–]+€\/?(mj|mjesec)?\.?/gi,
+    replace: "",
+    reason: "stripped: cijena/investicija €-amount",
   },
 ];
 
@@ -218,6 +241,27 @@ const cases: Case[] = [
     input: "Bookinga očekujemo u rujnu i bookinge zatim",
     mustNotContain: ["bookinga", "bookinge"],
     shouldContain: ["termin"],
+  },
+  {
+    input: "To je posao 5 ljudi koji bi u HR koštao 10-15K€/mj bruto. Dostupno za 2.500–3.500€/mj. Predlažem srijedu u 10:30.",
+    mustNotContain: ["2.500", "3.500€/mj", "Dostupno za 2"],
+    shouldContain: ["10-15K€/mj bruto", "Predlažem"],
+  },
+  {
+    input: "Plima paket: 2.500-3.500€/mj — pokriva sve potrebe vaše ordinacije.",
+    mustNotContain: ["2.500-3.500€", "2.500"],
+    shouldContain: ["Plima paket"],
+  },
+  {
+    input: "follow-up niz za leadove koji nisu nazvali",
+    mustNotContain: ["follow-up niz", "follow-up"],
+    shouldContain: ["automatizirane poruke"],
+  },
+  {
+    input:
+      "Videntis dental centar ima jedan od ozbiljnijih content engine-a u dentalnoj niši",
+    mustNotContain: ["content engine", "stroj za sadržaja"],
+    shouldContain: ["produkcije sadržaja"],
   },
 ];
 

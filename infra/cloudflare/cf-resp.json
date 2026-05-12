@@ -1,0 +1,26 @@
+{
+  "result": {
+    "created_on": "2026-05-11T17:57:12.922369Z",
+    "modified_on": "2026-05-11T22:30:05.196267Z",
+    "id": "lamon-plima-proxy",
+    "tag": "ff8269185a854a5d9f171e9952cbba53",
+    "entry_point": "worker.mjs",
+    "tags": null,
+    "deployment_id": "4d9a831b83804386a7e081d96c662732",
+    "tail_consumers": null,
+    "logpush": false,
+    "has_assets": false,
+    "has_modules": true,
+    "etag": "a7795e03ca5e86e881382a0960d436c13a802a17542df1cd8af598fd4bf109ba",
+    "handlers": [
+      "fetch"
+    ],
+    "last_deployed_from": "api",
+    "compatibility_date": "2026-01-01",
+    "usage_model": "standard",
+    "startup_time_ms": 0
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}

@@ -126,17 +126,22 @@ const SWAPS: Swap[] = [
   // Hardcoded English-to-Croatian translations for words that leak from
   // Holmes context (best_angle, opening_hook) into draft + subject.
   // Whole-word matching, case-insensitive, preserves leading capitalization.
+  // "content engine" → "produkcija sadržaja" — grammatically flexible
+  // (produkcija is feminine, declines naturally in Croatian sentences).
   {
     find: /\bcontent engine-?(a|om|u|i|ima)?\b/gi,
     replace: (m) => {
       const suffix = m.match(/engine-?(a|om|u|i|ima)?$/i)?.[1] ?? "";
-      const baseSwap = "stroj za sadržaj";
-      const withSuffix = suffix
-        ? baseSwap.replace(/sadržaj$/, "sadržaj" + suffix)
-        : baseSwap;
-      return matchCase(m, withSuffix);
+      const base = suffix === "a"
+        ? "produkcije sadržaja"
+        : suffix === "om"
+          ? "produkcijom sadržaja"
+          : suffix === "u"
+            ? "produkciji sadržaja"
+            : "produkcija sadržaja";
+      return matchCase(m, base);
     },
-    reason: "content engine → stroj za sadržaj",
+    reason: "content engine → produkcija sadržaja",
   },
   {
     find: /\bcontent (strategy|strategija|strategije)\b/gi,
@@ -214,8 +219,38 @@ const SWAPS: Swap[] = [
   },
   {
     find: /\bnurture (sequence|sekvenca|sekvenc[ae])\b/gi,
-    replace: (m) => matchCase(m, "follow-up niz"),
-    reason: "nurture sequence → follow-up niz",
+    replace: (m) => matchCase(m, "automatizirane poruke"),
+    reason: "nurture sequence → automatizirane poruke",
+  },
+  {
+    find: /\bfollow-up niz\w*\b/gi,
+    replace: (m) => matchCase(m, "automatizirane poruke"),
+    reason: "follow-up niz → automatizirane poruke",
+  },
+
+  // ── #16 NO UPFRONT PRICING — strip pricing sentences from drafts ──
+  // Cold outreach must NEVER name a Plima €-amount. Strip the whole
+  // sentence containing the price if AI leaked it. Preserves grammar
+  // by removing from the previous period to the period after.
+  {
+    // "Dostupno za 2.500–3.500€/mj." or "Dostupno za 2.500-3.500€/mjesec."
+    // Use [^€]* (not [^.]*) so Croatian thousand-separator dots don't
+    // prematurely end the match (e.g. "2.500€" contains a dot).
+    find: /\s*Dostupno za[^€]*€\/?(mj|mjesec|mjesečno)?\.?/gi,
+    replace: "",
+    reason: "stripped: Dostupno za X€/mj (no upfront pricing)",
+  },
+  {
+    // "Plima paket: 2.500-3.500€/mj"
+    find: /\bPlima paket:?\s*[\d.,\s\-–]+€\/?(mj|mjesec|mjesečno)?\.?/gi,
+    replace: "Plima paket pokrivam u 15-min pozivu.",
+    reason: "stripped: Plima paket €-amount",
+  },
+  {
+    // "Cijena/Investicija od X€" or "od X-Y €/mj"
+    find: /\b(Cijena|Investicija)\s+(od\s+)?[\d.,\s\-–]+€\/?(mj|mjesec)?\.?/gi,
+    replace: "",
+    reason: "stripped: cijena/investicija €-amount",
   },
 ];
 

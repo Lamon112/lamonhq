@@ -1,0 +1,279 @@
+{
+  "source_file": "C:/Users/teaml/Downloads/filtrirana_lista_svih_osim_neispravnih.xlsx",
+  "processed_at": "2026-05-11T20:37:53.964Z",
+  "stats": {
+    "total": 1751,
+    "duplicate_email": 0,
+    "invalid_email": 0,
+    "personal_domain": 1166,
+    "business_domain": 585,
+    "empty_name": 0
+  },
+  "cleaned_count": 1751,
+  "top_business_domains": [
+    {
+      "domain": "sfzg.hr",
+      "count": 61
+    },
+    {
+      "domain": "zg.t-com.hr",
+      "count": 47
+    },
+    {
+      "domain": "ri.t-com.hr",
+      "count": 34
+    },
+    {
+      "domain": "pu.t-com.hr",
+      "count": 20
+    },
+    {
+      "domain": "st.t-com.hr",
+      "count": 15
+    },
+    {
+      "domain": "email.t-com.hr",
+      "count": 11
+    },
+    {
+      "domain": "optinet.hr",
+      "count": 10
+    },
+    {
+      "domain": "hi.t-com.hr",
+      "count": 7
+    },
+    {
+      "domain": "si.t-com.hr",
+      "count": 7
+    },
+    {
+      "domain": "yahoo.co.uk",
+      "count": 6
+    },
+    {
+      "domain": "dzsb.hr",
+      "count": 6
+    },
+    {
+      "domain": "ka.t-com.hr",
+      "count": 6
+    },
+    {
+      "domain": "spz.hr",
+      "count": 5
+    },
+    {
+      "domain": "idz.hr",
+      "count": 5
+    },
+    {
+      "domain": "dz-sdz.hr",
+      "count": 5
+    },
+    {
+      "domain": "ck.t-com.hr",
+      "count": 4
+    },
+    {
+      "domain": "vz.t-com.hr",
+      "count": 4
+    },
+    {
+      "domain": "novamed.hr",
+      "count": 3
+    },
+    {
+      "domain": "dentvitalis.com",
+      "count": 3
+    },
+    {
+      "domain": "bj.t-com.hr",
+      "count": 3
+    },
+    {
+      "domain": "gnathos.hr",
+      "count": 3
+    },
+    {
+      "domain": "live.com",
+      "count": 3
+    },
+    {
+      "domain": "dentex.hr",
+      "count": 3
+    },
+    {
+      "domain": "plestadent.hr",
+      "count": 3
+    },
+    {
+      "domain": "du.t-com.hr",
+      "count": 3
+    },
+    {
+      "domain": "rident.hr",
+      "count": 3
+    },
+    {
+      "domain": "zimmermann-dental.com",
+      "count": 3
+    },
+    {
+      "domain": "zubovic.com",
+      "count": 3
+    },
+    {
+      "domain": "medri.uniri.hr",
+      "count": 3
+    },
+    {
+      "domain": "ymail.com",
+      "count": 3
+    }
+  ],
+  "sample_first_10": [
+    {
+      "email": "agulin@ortodont.hr",
+      "full_name": "Gulin Aleksandar",
+      "first_name": "Gulin",
+      "email_type": "business",
+      "domain": "ortodont.hr"
+    },
+    {
+      "email": "almabohte@yahoo.co.uk",
+      "full_name": "SPEC. ORD. ZA STOM. PROTETIKU VUKOJA BOHTE",
+      "first_name": "SPEC.",
+      "email_type": "business",
+      "domain": "yahoo.co.uk"
+    },
+    {
+      "email": "ana.klakocer@gmai.com",
+      "full_name": "Prebeg Klakočer Ana",
+      "first_name": "Prebeg",
+      "email_type": "business",
+      "domain": "gmai.com"
+    },
+    {
+      "email": "ana.novacic@novamed.hr",
+      "full_name": "NOVA MED - ZDRAVSTVENI CENTAR",
+      "first_name": "NOVA",
+      "email_type": "business",
+      "domain": "novamed.hr"
+    },
+    {
+      "email": "ana.parcina@zg.ht.hr",
+      "full_name": "PRIVATNA SPEC. ORD. ZA ORTODONCIJU",
+      "first_name": "PRIVATNA",
+      "email_type": "business",
+      "domain": "zg.ht.hr"
+    },
+    {
+      "email": "ana@dentvitalis.com",
+      "full_name": "Beljan Ana",
+      "first_name": "Beljan",
+      "email_type": "business",
+      "domain": "dentvitalis.com"
+    },
+    {
+      "email": "anadidovicjakopovic@sb.t-com.hr",
+      "full_name": "PRIVATNA ORD. DENTALNE MEDICINE",
+      "first_name": "PRIVATNA",
+      "email_type": "business",
+      "domain": "sb.t-com.hr"
+    },
+    {
+      "email": "andrea.anic@implant-centre-martinko.com",
+      "full_name": "Anić Kardum Andrea",
+      "first_name": "Kardum",
+      "email_type": "business",
+      "domain": "implant-centre-martinko.com"
+    },
+    {
+      "email": "andrej.vicic@zg.t-com.hr",
+      "full_name": "Vičić Andrej",
+      "first_name": "Andrej",
+      "email_type": "business",
+      "domain": "zg.t-com.hr"
+    },
+    {
+      "email": "andric.dragan.dr.stom.stomatoloska.ordinacija@zg.t-com.hr",
+      "full_name": "Andrić Dragan",
+      "first_name": "Dragan",
+      "email_type": "business",
+      "domain": "zg.t-com.hr"
+    }
+  ],
+  "sample_business_first_10": [
+    {
+      "email": "agulin@ortodont.hr",
+      "full_name": "Gulin Aleksandar",
+      "first_name": "Gulin",
+      "email_type": "business",
+      "domain": "ortodont.hr"
+    },
+    {
+      "email": "almabohte@yahoo.co.uk",
+      "full_name": "SPEC. ORD. ZA STOM. PROTETIKU VUKOJA BOHTE",
+      "first_name": "SPEC.",
+      "email_type": "business",
+      "domain": "yahoo.co.uk"
+    },
+    {
+      "email": "ana.klakocer@gmai.com",
+      "full_name": "Prebeg Klakočer Ana",
+      "first_name": "Prebeg",
+      "email_type": "business",
+      "domain": "gmai.com"
+    },
+    {
+      "email": "ana.novacic@novamed.hr",
+      "full_name": "NOVA MED - ZDRAVSTVENI CENTAR",
+      "first_name": "NOVA",
+      "email_type": "business",
+      "domain": "novamed.hr"
+    },
+    {
+      "email": "ana.parcina@zg.ht.hr",
+      "full_name": "PRIVATNA SPEC. ORD. ZA ORTODONCIJU",
+      "first_name": "PRIVATNA",
+      "email_type": "business",
+      "domain": "zg.ht.hr"
+    },
+    {
+      "email": "ana@dentvitalis.com",
+      "full_name": "Beljan Ana",
+      "first_name": "Beljan",
+      "email_type": "business",
+      "domain": "dentvitalis.com"
+    },
+    {
+      "email": "anadidovicjakopovic@sb.t-com.hr",
+      "full_name": "PRIVATNA ORD. DENTALNE MEDICINE",
+      "first_name": "PRIVATNA",
+      "email_type": "business",
+      "domain": "sb.t-com.hr"
+    },
+    {
+      "email": "andrea.anic@implant-centre-martinko.com",
+      "full_name": "Anić Kardum Andrea",
+      "first_name": "Kardum",
+      "email_type": "business",
+      "domain": "implant-centre-martinko.com"
+    },
+    {
+      "email": "andrej.vicic@zg.t-com.hr",
+      "full_name": "Vičić Andrej",
+      "first_name": "Andrej",
+      "email_type": "business",
+      "domain": "zg.t-com.hr"
+    },
+    {
+      "email": "andric.dragan.dr.stom.stomatoloska.ordinacija@zg.t-com.hr",
+      "full_name": "Andrić Dragan",
+      "first_name": "Dragan",
+      "email_type": "business",
+      "domain": "zg.t-com.hr"
+    }
+  ]
+}
