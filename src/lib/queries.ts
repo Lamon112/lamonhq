@@ -145,23 +145,66 @@ export async function getOutreachList(limit = 50): Promise<OutreachRow[]> {
  * Returns the set of lead IDs that already have at least one outreach row
  * for the current user. Source of truth for "is this lead already touched"
  * — Outreach Lab uses this to permanently hide leads from the queue after
- * Mark sent, independent of lead.stage. This decouples the visual filter
- * from the stage column (which can be null / out-of-sync / blocked by RLS
- * silently), so a single addOutreach insert is enough to remove the lead.
+ * Mark sent, independent of lead.stage.
+ *
+ * NB: Historical rows logged before we passed leadId through have
+ * `outreach.lead_id = null`. We compensate by also matching on
+ * `outreach.lead_name` against the current leads list (case-insensitive,
+ * trimmed). So legacy "Mark sent" clicks are still honoured.
+ *
+ * Also side-effects a one-time backfill: when we resolve a legacy row to
+ * a real lead.id, we patch outreach.lead_id so the next call doesn't have
+ * to re-match by name. Best-effort — failures are silent.
  */
 export async function getOutreachedLeadIds(): Promise<Set<string>> {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) return new Set();
-  const { data } = await supabase
-    .from("outreach")
-    .select("lead_id")
-    .eq("user_id", userData.user.id)
-    .not("lead_id", "is", null);
-  const ids = new Set<string>();
-  for (const r of data ?? []) {
-    if (r.lead_id) ids.add(r.lead_id as string);
+  const userId = userData.user.id;
+
+  const [outreachRes, leadsRes] = await Promise.all([
+    supabase
+      .from("outreach")
+      .select("id, lead_id, lead_name")
+      .eq("user_id", userId),
+    supabase.from("leads").select("id, name").eq("user_id", userId),
+  ]);
+
+  const byName = new Map<string, string>();
+  for (const l of leadsRes.data ?? []) {
+    if (l.name) byName.set((l.name as string).toLowerCase().trim(), l.id as string);
   }
+
+  const ids = new Set<string>();
+  const backfill: { rowId: string; leadId: string }[] = [];
+
+  for (const r of outreachRes.data ?? []) {
+    if (r.lead_id) {
+      ids.add(r.lead_id as string);
+      continue;
+    }
+    if (r.lead_name) {
+      const matched = byName.get(
+        (r.lead_name as string).toLowerCase().trim(),
+      );
+      if (matched) {
+        ids.add(matched);
+        backfill.push({ rowId: r.id as string, leadId: matched });
+      }
+    }
+  }
+
+  // One-time backfill — runs at most once per legacy row. Fire and forget.
+  if (backfill.length > 0) {
+    void Promise.all(
+      backfill.map(({ rowId, leadId }) =>
+        supabase.from("outreach").update({ lead_id: leadId }).eq("id", rowId),
+      ),
+    ).catch(() => {
+      /* never throw from a query helper */
+    });
+  }
+
   return ids;
 }
 
