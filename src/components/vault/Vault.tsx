@@ -61,11 +61,49 @@ export function Vault({}: VaultProps) {
   const [spawningRaid, setSpawningRaid] = useState(false);
 
   // === Subscribe to ALL agent_actions updates via Supabase Realtime ===
-  // We subscribe once at mount; the channel pushes any UPDATE/INSERT
-  // happening in agent_actions to all connected clients (single user
-  // anyway, so no auth filtering needed).
+  // Two halves:
+  //   1. Initial fetch — pull any currently-queued/running rows so the
+  //      Vault overlay shows immediately when the user navigates back from
+  //      HQ to Vault while a job is still in progress (Realtime only
+  //      delivers FUTURE deltas, not the current state).
+  //   2. Realtime subscription — pushes any UPDATE/INSERT to all clients.
   useEffect(() => {
     const supabase = createClient();
+    let cancelled = false;
+
+    // ---- 1. Initial fetch of in-flight actions ----
+    void supabase
+      .from("agent_actions")
+      .select("id, room, progress_text, status, created_at")
+      .in("status", ["queued", "running"])
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setActive((prev) => {
+          const next = { ...prev };
+          for (const row of data as Array<{
+            id: string;
+            room: AgentId;
+            progress_text: string | null;
+            status: "queued" | "running";
+          }>) {
+            // First (most recent) row per room wins — typical case is one
+            // active action per room, but if there are stale rows we show
+            // the newest.
+            if (!next[row.room]) {
+              next[row.room] = {
+                actionRowId: row.id,
+                room: row.room,
+                progress: row.progress_text,
+                status: row.status,
+              };
+            }
+          }
+          return next;
+        });
+      });
+
+    // ---- 2. Subscribe for live updates ----
     const channel = supabase
       .channel("vault-agent-actions")
       .on(
@@ -110,6 +148,7 @@ export function Vault({}: VaultProps) {
       .subscribe();
 
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, []);
