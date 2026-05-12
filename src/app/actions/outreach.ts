@@ -654,7 +654,7 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
       },
       // mark when last refreshed so we can show "refreshed 2 min ago" in UI
       last_refreshed_at: new Date().toISOString(),
-      last_refreshed_prompt_version: "v9",
+      last_refreshed_prompt_version: "v11",
     };
 
     const { error: updErr } = await supabase

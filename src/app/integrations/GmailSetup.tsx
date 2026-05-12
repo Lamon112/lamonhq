@@ -50,7 +50,7 @@ export function GmailSetup({
           </h2>
           <p className="text-xs text-text-muted">
             Stvarno slanje outreach emailova iz tvog Gmail accounta —
-            preporučljivo: lamonorganization@gmail.com
+            preporučljivo: leonardo@lamon.io
           </p>
         </div>
         {status.connected && (
@@ -70,7 +70,7 @@ export function GmailSetup({
             <li>
               <span className="text-red-400">2.</span> Google ti pokazuje
               consent screen — odaberi{" "}
-              <strong className="text-text">lamonorganization@gmail.com</strong>{" "}
+              <strong className="text-text">leonardo@lamon.io</strong>{" "}
               account
             </li>
             <li>
