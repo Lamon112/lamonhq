@@ -17,7 +17,9 @@ function matchCase(original: string, replacement: string): string {
 
 interface Swap {
   find: RegExp;
-  replace: string | ((m: string) => string);
+  replace:
+    | string
+    | ((m: string, ...captureGroups: string[]) => string);
   reason: string;
 }
 
@@ -169,6 +171,21 @@ const SWAPS: Swap[] = [
     replace: "",
     reason: "stripped: cijena/investicija €-amount",
   },
+  {
+    find: /(TikTok[^.]{0,80}?)\b(\d[\d.,]*)\s+pregleda\b/gi,
+    replace: (m: string, prefix: string, num: string) => `${prefix}${num} interakcija`,
+    reason: "TikTok pregleda → interakcija",
+  },
+  {
+    find: /\s*Mogu (unaprijed )?poslati[^.]*ROI snapshot[^.]*\.?/gi,
+    replace: "",
+    reason: "stripped: ROI snapshot promise",
+  },
+  {
+    find: /\s*(\+\s*)?(kratki\s+)?ROI snapshot[^.]*\.?/gi,
+    replace: "",
+    reason: "stripped: ROI snapshot inline",
+  },
 ];
 
 function cleanPremiumLanguage(input: string): {
@@ -183,7 +200,9 @@ function cleanPremiumLanguage(input: string): {
     const before = text;
     if (typeof s.replace === "function") {
       const fn = s.replace;
-      text = text.replace(s.find, (m) => fn(m));
+      text = text.replace(s.find, (m: string, ...rest: unknown[]) =>
+        fn(m, ...(rest.filter((r) => typeof r === "string") as string[])),
+      );
     } else {
       text = text.replace(s.find, s.replace);
     }
@@ -262,6 +281,18 @@ const cases: Case[] = [
       "Videntis dental centar ima jedan od ozbiljnijih content engine-a u dentalnoj niši",
     mustNotContain: ["content engine", "stroj za sadržaja"],
     shouldContain: ["produkcije sadržaja"],
+  },
+  {
+    input:
+      "TikTok kanal s 121 videom i ukupno 2.755 pregleda pokazuje jasan signal",
+    mustNotContain: ["pregleda"],
+    shouldContain: ["interakcija"],
+  },
+  {
+    input:
+      "Predlažem srijedu u 10:30 ili četvrtak nakon 18h. Mogu unaprijed poslati i kratki ROI snapshot specifičan za Videntis.",
+    mustNotContain: ["ROI snapshot", "Mogu unaprijed poslati"],
+    shouldContain: ["Predlažem"],
   },
 ];
 

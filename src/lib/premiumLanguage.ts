@@ -15,8 +15,13 @@
 interface Swap {
   /** Regex to find — case-insensitive, word-boundary-safe where possible */
   find: RegExp;
-  /** Replacement (preserves leading capitalization where applicable) */
-  replace: string | ((match: string) => string);
+  /**
+   * Replacement. Function form receives the full match + any capture
+   * groups, mirroring String.prototype.replace semantics.
+   */
+  replace:
+    | string
+    | ((match: string, ...captureGroups: string[]) => string);
   /** Brief explanation for the badge tooltip */
   reason: string;
 }
@@ -252,6 +257,41 @@ const SWAPS: Swap[] = [
     replace: "",
     reason: "stripped: cijena/investicija €-amount",
   },
+
+  // ── #14 KRIVE METRIKE ── TikTok srca = lajkovi, NIKAD pregledi ──
+  // Holmes often labels TikTok heart-counts as "pregleda" (views). Doctor
+  // recipient instantly clocks this as wrong (TikTok shows views in
+  // millions/thousands; the small number is likes). Auto-replace when
+  // TikTok context is nearby.
+  {
+    // "TikTok ... 2.755 pregleda" → "TikTok ... 2.755 interakcija"
+    // Multi-line scan: match "pregleda" within 80 chars of "TikTok"
+    find: /(TikTok[^.]{0,80}?)\b(\d[\d.,]*)\s+pregleda\b/gi,
+    replace: (m, prefix: string, num: string) => `${prefix}${num} interakcija`,
+    reason: "TikTok N pregleda → N interakcija (TikTok hearts ≠ views)",
+  },
+
+  // ── #15 NO VAGUE PROMISES — strip ROI snapshot / audit / analiza filler ──
+  // AI loves to end with "+ kratki ROI snapshot specifičan za X" type
+  // filler. Strip the whole sentence — we don't have a deliverable.
+  {
+    // "Mogu unaprijed poslati ... ROI snapshot ... ." (whole sentence)
+    find: /\s*Mogu (unaprijed )?poslati[^.]*ROI snapshot[^.]*\.?/gi,
+    replace: "",
+    reason: "stripped: 'Mogu poslati ROI snapshot' (vague promise)",
+  },
+  {
+    // "+ ROI snapshot specifičan za X" inline
+    find: /\s*(\+\s*)?(kratki\s+)?ROI snapshot[^.]*\.?/gi,
+    replace: "",
+    reason: "stripped: ROI snapshot mention (vague promise)",
+  },
+  {
+    // "personaliziran audit / detaljnu analizu vaše klinike"
+    find: /\s*(I\s+)?(?:šaljem|pošaljem|šaljemo|mogu poslati)\s+(personaliziran|detaljni|kratki)?\s*(audit|analizu)[^.]*\.?/gi,
+    replace: "",
+    reason: "stripped: audit/analizu vague promise",
+  },
 ];
 
 export interface CleanResult {
@@ -278,7 +318,11 @@ export function cleanPremiumLanguage(input: string): CleanResult {
     const before = text;
     if (typeof swap.replace === "function") {
       const fn = swap.replace;
-      text = text.replace(swap.find, (m) => fn(m));
+      // Pass through all replace callback args (match + capture groups)
+      // so swaps that use back-references like /(TikTok…)(\d+)/ work.
+      text = text.replace(swap.find, (m: string, ...rest: unknown[]) =>
+        fn(m, ...(rest.filter((r) => typeof r === "string") as string[])),
+      );
     } else {
       text = text.replace(swap.find, swap.replace);
     }
