@@ -6,7 +6,7 @@ import {
   RefreshCw,
   ChevronRight,
 } from "lucide-react";
-import { runHolmesForLead } from "@/app/actions/holmes";
+import { runHolmesForLead, bulkRunHolmesHot } from "@/app/actions/holmes";
 import { StatTile, PrimaryButton } from "@/components/ui/common";
 import type { LeadRow } from "@/lib/queries";
 import { HolmesLeadDetail, type HolmesDetailTab } from "./HolmesLeadDetail";
@@ -106,36 +106,37 @@ export function HolmesBureauPanel({ initialLeads }: HolmesBureauPanelProps) {
   function bulkInvestigate(force = false) {
     setError(null);
     setInfo(null);
-    setBulkProgress({ done: 0, total: hotLeads.length });
+    const targetCount = force
+      ? hotLeads.length
+      : hotLeads.filter((l) => !l.holmes_report).length;
+    setBulkProgress({ done: 0, total: targetCount });
+
     startBulkTransition(async () => {
-      const targets = force
-        ? hotLeads
-        : hotLeads.filter((l) => !l.holmes_report);
-      let done = 0;
-      let errs = 0;
-      for (const l of targets) {
-        setBulkProgress({ done, total: targets.length, current: l.name });
-        try {
-          const res = await runHolmesForLead(l.id);
-          if (res.ok && res.report) {
-            setLeads((prev) =>
-              prev.map((row) =>
-                row.id === l.id ? { ...row, holmes_report: res.report } : row,
-              ),
-            );
-          } else {
-            errs++;
-          }
-        } catch {
-          errs++;
+      // Server-side bulk runner now writes to agent_actions table → Vault's
+      // Detective Bureau room shows live AI-working overlay even if user
+      // closes this modal. Progress streams via Realtime to the room.
+      // Local progress tile here just shows "running" indicator; the real
+      // detailed progress lives in the Vault visualization.
+      setBulkProgress({
+        done: 0,
+        total: targetCount,
+        current: "Pokrećem batch · prati Detective Bureau room u Vault-u za live progress",
+      });
+      try {
+        const res = await bulkRunHolmesHot({ force });
+        if (!res.ok) {
+          setError("Bulk Holmes greška");
+        } else {
+          setInfo(
+            `🕵️ ${res.investigated} / ${targetCount} istraženo${res.errors.length ? ` · ${res.errors.length} grešaka` : ""}. Refresh stranice za nove dossier-e.`,
+          );
+          // Trigger soft refresh after a delay so user can see the new data
+          setTimeout(() => window.location.reload(), 2500);
         }
-        done++;
-        setBulkProgress({ done, total: targets.length, current: l.name });
+      } catch (e) {
+        setError(`Bulk Holmes greška: ${e instanceof Error ? e.message : "unknown"}`);
       }
       setBulkProgress(null);
-      setInfo(
-        `🕵️ ${done - errs} / ${targets.length} istraženo${errs ? ` · ${errs} grešaka` : ""}.`,
-      );
     });
   }
 

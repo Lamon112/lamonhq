@@ -10,6 +10,13 @@ import {
 } from "@/lib/channelHealth";
 import { sendViaGmail } from "./gmail";
 import { pushTelegramNotification } from "./telegram";
+import { beginAgentAction } from "@/lib/agentActionProgress";
+
+// Allow long-running drafts batch (refreshOutreachDraftsWithCurrentRules
+// can take 5-10 min on 50+ leads). Vercel Pro: max 300s, Hobby: 10s.
+// If batch hits the cap mid-loop, the agent_actions row stays in "running"
+// state and Leonardo sees where it stopped — restartable.
+export const maxDuration = 300;
 
 export interface AddOutreachInput {
   leadName: string;
@@ -540,10 +547,24 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
   const list = leads ?? [];
   if (list.length === 0) return { ok: true, refreshed: 0, skipped: 0 };
 
+  // Wire to agent_actions so Vault's Comms room shows "AI working" overlay
+  // for the whole duration. Progress text streams to the UI via Realtime.
+  const tracker = await beginAgentAction({
+    supabase,
+    room: "comms",
+    actionType: "comms.refresh_outreach_drafts",
+    title: "Osvježavam outreach drafts (Brend · 09)",
+    initialProgress: `0 / ${list.length} · pripremam…`,
+  });
+
   let refreshed = 0;
   let skipped = 0;
 
-  for (const lead of list) {
+  for (let i = 0; i < list.length; i++) {
+    const lead = list[i];
+    await tracker.progress(
+      `${i + 1} / ${list.length} · ${(lead.name as string).slice(0, 60)}`,
+    );
     const report = lead.holmes_report as Record<string, unknown> | null;
     if (!report) {
       skipped++;
@@ -624,6 +645,8 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
     refreshed++;
   }
 
+  await tracker.complete({ refreshed, skipped, total: list.length });
+
   void logActivity(userId, {
     type: "outreach_sent",
     title: `Refreshed ${refreshed} outreach drafts (Brend · 09)`,
@@ -631,6 +654,12 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
     hqRoom: "outreach",
     tags: ["refresh", "brend-09"],
   });
+
+  void pushTelegramNotification(
+    "followups",
+    `✨ Leonardo, osvježeno ${refreshed}/${list.length} outreach draftova po Brend · 09 pravilima${skipped ? ` · ${skipped} preskočeno` : ""}. Otvori Outreach Lab za review.\n\n— Jarvis`,
+    userId,
+  );
 
   revalidatePath("/");
   return { ok: true, refreshed, skipped };

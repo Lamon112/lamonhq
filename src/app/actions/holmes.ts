@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runAgentHolmes, type HolmesReport } from "@/lib/agentHolmes";
 import { logActivity } from "./activityLog";
+import { beginAgentAction } from "@/lib/agentActionProgress";
+import { pushTelegramNotification } from "./telegram";
+
+// Bulk Holmes investigation can take 5-15 min on 10+ hot leads (each
+// Holmes call is 30-60s of Anthropic web_search). Bump Vercel timeout so
+// the action completes inline; Vault overlay tracks live progress.
+export const maxDuration = 300;
 
 export interface HolmesActionResult {
   ok: boolean;
@@ -95,12 +102,13 @@ export async function bulkRunHolmesHot(
 
   const { data: hotLeads } = await supabase
     .from("leads")
-    .select("id, holmes_report")
+    .select("id, name, holmes_report")
     .gte("icp_score", 15)
     .in("stage", ["discovery", "pricing", "financing", "booking"]);
 
   const all = (hotLeads ?? []) as Array<{
     id: string;
+    name: string;
     holmes_report: unknown;
   }>;
   const todo = opts.force ? all : all.filter((l) => !l.holmes_report);
@@ -112,14 +120,41 @@ export async function bulkRunHolmesHot(
       errors: [],
     };
 
+  // Wire to agent_actions so Vault's Detective Bureau room shows
+  // "AI working" overlay for the whole duration.
+  const tracker = await beginAgentAction({
+    supabase,
+    room: "holmes",
+    actionType: "holmes.bulk_investigate_hot",
+    title: `Holmes istražuje ${todo.length} hot leadova`,
+    initialProgress: `0 / ${todo.length} · pripremam…`,
+  });
+
   let investigated = 0;
   const errors: string[] = [];
-  for (const l of todo) {
+  for (let i = 0; i < todo.length; i++) {
+    const l = todo[i];
+    await tracker.progress(
+      `${i + 1} / ${todo.length} · ${l.name.slice(0, 60)}`,
+    );
     const res = await runHolmesForLead(l.id);
     if (!res.ok) errors.push(`${l.id}: ${res.error ?? "unknown"}`);
     else investigated++;
     await new Promise((r) => setTimeout(r, 500));
   }
+
+  await tracker.complete({
+    investigated,
+    skipped: all.length - todo.length,
+    errors: errors.length,
+  });
+
+  void pushTelegramNotification(
+    "followups",
+    `🕵️ Leonardo, Holmes istražio ${investigated}/${todo.length} hot leadova${errors.length ? ` · ${errors.length} grešaka` : ""}. Otvori Detective Bureau za review.\n\n— Jarvis`,
+    userData.user.id,
+  );
+
   return {
     ok: true,
     investigated,
