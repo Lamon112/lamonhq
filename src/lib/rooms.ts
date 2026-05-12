@@ -12,6 +12,7 @@ import {
   Sparkles,
   Search,
   Archive,
+  MessageSquare,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -23,6 +24,7 @@ export type RoomId =
   | "closing"
   | "lead_scorer"
   | "holmes"
+  | "strateg"
   | "analytics"
   | "competitor"
   | "clients"
@@ -110,6 +112,15 @@ const holmes: Room = {
   floor: "intelligence",
 };
 
+const strateg: Room = {
+  id: "strateg",
+  name: "Strateg",
+  tagline: "Auto-reply triage · sentiment · next-best-action po lead-u",
+  icon: MessageSquare,
+  emoji: "🧠",
+  floor: "intelligence",
+};
+
 const competitor: Room = {
   id: "competitor",
   name: "Competitor Watch",
@@ -168,7 +179,7 @@ export const FLOORS: Floor[] = [
     number: 2,
     name: "Intelligence Bay",
     subtitle: "Score · Holmes · analytics · competitor watch",
-    rooms: [leadScorer, holmes, analytics, competitor],
+    rooms: [leadScorer, holmes, strateg, analytics, competitor],
   },
   {
     id: "revenue",

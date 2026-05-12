@@ -36,6 +36,8 @@ import { CompetitorPanel } from "./rooms/CompetitorPanel";
 import { CalendarPanel } from "./rooms/CalendarPanel";
 import { ReportsPanel } from "./rooms/ReportsPanel";
 import { BriefPanel } from "./rooms/BriefPanel";
+import { StrategPanel } from "./rooms/StrategPanel";
+import type { InboundMessage } from "@/app/actions/inbound";
 
 export interface RoomData {
   outreach: {
@@ -67,6 +69,8 @@ export interface RoomData {
     stats: ReportsStats;
     weekStart: string;
   };
+  /** Auto-triaged inbound replies for the Strateg room. */
+  inbound: InboundMessage[];
 }
 
 interface RoomModalProps {
@@ -189,6 +193,8 @@ function RoomBody({
       );
     case "holmes":
       return <HolmesBureauPanel initialLeads={data.leads.list} />;
+    case "strateg":
+      return <StrategPanel initialInbound={data.inbound} />;
     case "analytics":
       return (
         <RevenueEnginePanel

@@ -156,6 +156,7 @@ export default async function HQPage() {
             stats: reportStats,
             weekStart: getCurrentWeekStart(),
           },
+          inbound: inboundMessages,
         }}
       />
       <ActivityFeed initialRows={activityRows} />

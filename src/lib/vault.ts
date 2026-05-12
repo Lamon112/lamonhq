@@ -20,6 +20,7 @@ import {
   Users,
   Brain,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 
 export type AgentId =
@@ -32,7 +33,8 @@ export type AgentId =
   | "atlas"
   | "steward"
   | "aegis"
-  | "mentat";
+  | "mentat"
+  | "strateg";
 
 export interface Agent {
   id: AgentId;
@@ -136,6 +138,20 @@ const AGENTS: Agent[] = [
     status: "online",
     accent: "sky",
     hint: "Sve DM-ove, mailove, replies u jednom mjestu.",
+  },
+  {
+    id: "strateg",
+    name: "Strateg",
+    room: "Reply Analyst",
+    role: "Auto-triage replies · sentiment · next-best-action",
+    icon: MessageSquare,
+    emoji: "🧠",
+    floor: 2,
+    slot: 3,
+    unlockLevel: 1,
+    status: "online",
+    accent: "violet",
+    hint: "Gmail poller svakih 5 min · 2 draftova replyja po inbound.",
   },
 
   // FLOOR 3 — Operations

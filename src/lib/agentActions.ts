@@ -1461,6 +1461,7 @@ Pričaj hrvatski. Direktno. Ne hedge.`,
 Ako iz konteksta NE vidiš konkretno koji je sljedeći meeting, daj generic playbook za "premium dentalna klinika Zagreb, vlasnik = doktor, 15+ leadova/mj, prvi cold call".`,
     },
   ],
+  strateg: [],
 };
 
 export function getActionsForRoom(room: AgentId): AgentActionDef[] {
