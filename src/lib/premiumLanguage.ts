@@ -126,6 +126,36 @@ const SWAPS: Swap[] = [
     replace: (m) => matchCase(m, "evo što preporučam"),
     reason: "odgovara li vam ovo → evo što preporučam",
   },
+  {
+    // "Slobodni u srijedu..." → "Predlažem srijedu..."
+    // Brend · 09 #1 LEAD don't ASK — "Slobodni" is asking permission,
+    // "Predlažem" is leading with authority. Prompt v10+ already
+    // instructs the AI; this regex catches stragglers from older
+    // drafts that haven't been refreshed yet.
+    find: /\bSlobodni\s+(u\s+)?(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/gi,
+    replace: (m) => {
+      const dayMatch = m.match(/(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i);
+      const day = dayMatch?.[0].toLowerCase() ?? "";
+      // Force accusative form so "Predlažem srijedu/utorak/..." reads
+      // naturally in Croatian
+      const dayMap: Record<string, string> = {
+        ponedjeljak: "ponedjeljak",
+        utorak: "utorak",
+        srijeda: "srijedu",
+        srijedu: "srijedu",
+        četvrtak: "četvrtak",
+        petak: "petak",
+        subota: "subotu",
+        subotu: "subotu",
+        nedjelja: "nedjelju",
+        nedjelju: "nedjelju",
+        sutra: "sutra",
+      };
+      const dayAcc = dayMap[day] ?? day;
+      return matchCase(m, `Predlažem ${dayAcc}`);
+    },
+    reason: "'Slobodni u [dan]' → 'Predlažem [dan]' (Brend · 09 #1 Lead don't Ask)",
+  },
 
   // ── #13 ENGLESKE RIJEČI → HRVATSKI ──
   // Hardcoded English-to-Croatian translations for words that leak from
@@ -256,6 +286,24 @@ const SWAPS: Swap[] = [
     find: /\b(Cijena|Investicija)\s+(od\s+)?[\d.,\s\-–]+€\/?(mj|mjesec)?\.?/gi,
     replace: "",
     reason: "stripped: cijena/investicija €-amount",
+  },
+  {
+    // "Za vaš tier: 2.500-3.500€/mj" — AI leaked tier-specific pricing.
+    // Matches Za va[šs] (tier|paket) : numbers €/mj (with possible space).
+    // Negative-lookahead on K avoids stripping value references like
+    // "10-15K€/mj bruto" (those are HR salary equivalents, allowed).
+    find: /\b(Za va[šs]\s+)?(tier|paket)\s*:?\s*(?!\d+\s*K)[\d.,\s\-–]+€\s*\/?\s*(mj|mjesec|mjesečno)?\.?/gi,
+    replace: "",
+    reason: "stripped: 'Za vaš tier/paket: X€/mj' pricing",
+  },
+  {
+    // Catch-all: any non-K-suffixed €/mj range standalone — but only
+    // when NOT preceded by HR salary context like "bruto" / "u HR" /
+    // "koštao" / "koštali". This catches lone "2.500-3.500€/mj." that
+    // sneaks in without "Za vaš tier" prefix.
+    find: /(?<!K|k|bruto|HR|u HR|koštao|koštali|koštalo)\s+[\d.,]+\s*[-–]\s*[\d.,]+\s*€\s*\/?\s*(mj|mjesec|mjesečno)\b\.?/gi,
+    replace: "",
+    reason: "stripped: lone €-range/mj pricing",
   },
 
   // ── #14 KRIVE METRIKE ── TikTok srca = lajkovi, NIKAD pregledi ──

@@ -172,6 +172,39 @@ const SWAPS: Swap[] = [
     reason: "stripped: cijena/investicija €-amount",
   },
   {
+    find: /\b(Za va[šs]\s+)?(tier|paket)\s*:?\s*(?!\d+\s*K)[\d.,\s\-–]+€\s*\/?\s*(mj|mjesec|mjesečno)?\.?/gi,
+    replace: "",
+    reason: "stripped: 'Za vaš tier/paket: X€/mj'",
+  },
+  {
+    find: /(?<!K|k|bruto|HR|u HR|koštao|koštali|koštalo)\s+[\d.,]+\s*[-–]\s*[\d.,]+\s*€\s*\/?\s*(mj|mjesec|mjesečno)\b\.?/gi,
+    replace: "",
+    reason: "stripped: lone €-range/mj",
+  },
+  {
+    find: /\bSlobodni\s+(u\s+)?(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/gi,
+    replace: (m: string) => {
+      const dayMatch = m.match(/(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i);
+      const day = dayMatch?.[0].toLowerCase() ?? "";
+      const dayMap: Record<string, string> = {
+        ponedjeljak: "ponedjeljak",
+        utorak: "utorak",
+        srijeda: "srijedu",
+        srijedu: "srijedu",
+        četvrtak: "četvrtak",
+        petak: "petak",
+        subota: "subotu",
+        subotu: "subotu",
+        nedjelja: "nedjelju",
+        nedjelju: "nedjelju",
+        sutra: "sutra",
+      };
+      const dayAcc = dayMap[day] ?? day;
+      return matchCase(m, `Predlažem ${dayAcc}`);
+    },
+    reason: "Slobodni [dan] → Predlažem [dan]",
+  },
+  {
     find: /(TikTok[^.]{0,80}?)\b(\d[\d.,]*)\s+pregleda\b/gi,
     replace: (m: string, prefix: string, num: string) => `${prefix}${num} interakcija`,
     reason: "TikTok pregleda → interakcija",
@@ -293,6 +326,17 @@ const cases: Case[] = [
       "Predlažem srijedu u 10:30 ili četvrtak nakon 18h. Mogu unaprijed poslati i kratki ROI snapshot specifičan za Videntis.",
     mustNotContain: ["ROI snapshot", "Mogu unaprijed poslati"],
     shouldContain: ["Predlažem"],
+  },
+  {
+    input:
+      "...koji bi vas u HR-u koštali 10-15K€/mj bruto. Za vaš tier: 2.500-3.500€/mj. Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?",
+    mustNotContain: ["2.500-3.500€/mj", "Za vaš tier:", "Slobodni u srijedu"],
+    shouldContain: ["10-15K€/mj bruto", "Predlažem srijedu"],
+  },
+  {
+    input: "Slobodni u utorak u 11:30 ili četvrtak nakon 18h?",
+    mustNotContain: ["Slobodni u utorak"],
+    shouldContain: ["Predlažem utorak"],
   },
 ];
 
