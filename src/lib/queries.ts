@@ -8,6 +8,8 @@ export interface HQStats {
   totalLeads: number;
   hotLeads: number;
   contentPostsThisMonth: number;
+  /** Outreach rows with sent_at >= midnight today (resets at 00:00). */
+  outreachToday: number;
   goalTargetCents: number;
 }
 
@@ -32,9 +34,16 @@ function startOfWeek(d = new Date()): string {
   return monday.toISOString();
 }
 
+function startOfDay(d = new Date()): string {
+  const m = new Date(d);
+  m.setHours(0, 0, 0, 0);
+  return m.toISOString();
+}
+
 export async function getHQStats(): Promise<HQStats> {
   const supabase = await createClient();
   const monthStart = startOfMonth();
+  const todayStart = startOfDay();
 
   const [
     activeClientsRes,
@@ -43,6 +52,7 @@ export async function getHQStats(): Promise<HQStats> {
     hotLeadsRes,
     contentRes,
     mrrRes,
+    outreachTodayRes,
   ] = await Promise.all([
     supabase
       .from("clients")
@@ -70,6 +80,12 @@ export async function getHQStats(): Promise<HQStats> {
       .from("clients")
       .select("monthly_revenue")
       .eq("status", "active"),
+    // Outreach today — resets at local midnight. Counts ALL outreach rows
+    // (any platform) with sent_at >= midnight; RLS scopes to current user.
+    supabase
+      .from("outreach")
+      .select("*", { count: "exact", head: true })
+      .gte("sent_at", todayStart),
   ]);
 
   const mrrCents = (mrrRes.data ?? []).reduce(
@@ -85,6 +101,7 @@ export async function getHQStats(): Promise<HQStats> {
     totalLeads: leadsRes.count ?? 0,
     hotLeads: hotLeadsRes.count ?? 0,
     contentPostsThisMonth: contentRes.count ?? 0,
+    outreachToday: outreachTodayRes.count ?? 0,
     goalTargetCents: GOAL_MRR_CENTS,
   };
 }

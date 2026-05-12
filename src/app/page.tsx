@@ -1,7 +1,7 @@
 import { ResourceBar } from "@/components/ResourceBar";
 import { HQViewport } from "@/components/HQViewport";
 import { ActivityFeed } from "@/components/ActivityFeed";
-import { DailyBriefing } from "@/components/DailyBriefing";
+import { DailyBriefingButton } from "@/components/DailyBriefingButton";
 import { FollowUpsPanel } from "@/components/FollowUpsPanel";
 import { InboxTriage } from "@/components/InboxTriage";
 import { getRecentActivity } from "@/app/actions/activityLog";
@@ -119,8 +119,12 @@ export default async function HQPage() {
 
   return (
     <>
-      <ResourceBar stats={stats} xp={xpStats} user={userMeta} />
-      <DailyBriefing initialBriefing={todaysBriefing} />
+      <ResourceBar
+        stats={stats}
+        xp={xpStats}
+        user={userMeta}
+        inlineSlot={<DailyBriefingButton initialBriefing={todaysBriefing} />}
+      />
       <FollowUpsPanel initialDrafts={followUps} />
       <InboxTriage initialMessages={inboundMessages} />
       <HQViewport

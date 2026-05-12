@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Cable, Database, LogOut, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { signOut } from "@/app/actions/auth";
 import { formatEuro } from "@/lib/format";
 import type { HQStats } from "@/lib/queries";
@@ -18,9 +18,15 @@ interface ResourceBarProps {
     fullName: string | null;
     avatarUrl: string | null;
   };
+  /**
+   * Slot rendered inline after the stat tiles, before PlayerLevel.
+   * Used to host the compact DailyBriefingButton so the briefing lives
+   * in the resource bar instead of a separate full-width row.
+   */
+  inlineSlot?: ReactNode;
 }
 
-export function ResourceBar({ stats, xp, user }: ResourceBarProps) {
+export function ResourceBar({ stats, xp, user, inlineSlot }: ResourceBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const progress = Math.min((stats.mrrCents / stats.goalTargetCents) * 100, 100);
 
@@ -48,6 +54,12 @@ export function ResourceBar({ stats, xp, user }: ResourceBarProps) {
       value: stats.totalLeads.toString(),
       delta: `Hot: ${stats.hotLeads}`,
       emoji: "📥",
+    },
+    {
+      label: "Today out",
+      value: stats.outreachToday.toString(),
+      delta: "outreach danas",
+      emoji: "📤",
     },
     {
       label: "Content",
@@ -82,7 +94,7 @@ export function ResourceBar({ stats, xp, user }: ResourceBarProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
               className="flex min-w-[140px] flex-1 items-center gap-3 rounded-lg border border-border bg-bg-card/60 px-3 py-2"
-              data-resource-tile={s.label.toLowerCase()}
+              data-resource-tile={s.label.toLowerCase().replace(" ", "-")}
             >
               <span className="text-xl">{s.emoji}</span>
               <div className="leading-tight">
@@ -98,6 +110,16 @@ export function ResourceBar({ stats, xp, user }: ResourceBarProps) {
               </div>
             </motion.div>
           ))}
+          {inlineSlot ? (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: tiles.length * 0.05 }}
+              className="flex min-w-[140px] flex-1"
+            >
+              {inlineSlot}
+            </motion.div>
+          ) : null}
         </div>
 
         <PlayerLevel stats={xp} />
