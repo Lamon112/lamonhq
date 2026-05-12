@@ -397,7 +397,11 @@ function LeadActionCard({
     return cleanPremiumLanguage(raw);
   }, [lead, channel]);
   const [draft, setDraft] = useState(initialResult.cleaned);
-  const [sent, setSent] = useState(false);
+  // Sent state derives from lead.stage so it survives page reloads. Anything
+  // past "discovery" means an outreach was already logged (addOutreach bumps
+  // the lead from discovery → pricing on success). Local state still wins on
+  // the in-flight click so the badge appears instantly.
+  const [sent, setSent] = useState(lead.stage !== "discovery");
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [gmail, setGmail] = useState<GmailStatus | null>(null);
@@ -438,6 +442,7 @@ function LeadActionCard({
     startTransition(async () => {
       await addOutreach({
         leadName: lead.name,
+        leadId: lead.id,
         platform,
         message,
       });
@@ -462,6 +467,7 @@ function LeadActionCard({
         // Log the outreach event separately
         await addOutreach({
           leadName: lead.name,
+          leadId: lead.id,
           platform: "email",
           message: draft,
         });

@@ -20,6 +20,13 @@ export const maxDuration = 300;
 
 export interface AddOutreachInput {
   leadName: string;
+  /**
+   * When provided, persists the FK in outreach.lead_id AND advances the
+   * lead's stage from "discovery" → "pricing" so the lead is marked as
+   * "touched" and disappears from the Outreach Lab default queue (which
+   * filters for discovery-stage leads with holmes_report).
+   */
+  leadId?: string;
   platform: "linkedin" | "instagram" | "tiktok" | "email" | "other";
   message: string;
   status?: "sent" | "replied" | "no_reply" | "bounced";
@@ -45,6 +52,7 @@ export async function addOutreach(
     .from("outreach")
     .insert({
       user_id: userData.user.id,
+      lead_id: input.leadId ?? null,
       lead_name: leadName,
       platform: input.platform,
       message: input.message?.trim() || null,
@@ -52,6 +60,19 @@ export async function addOutreach(
     })
     .select("id")
     .single();
+
+  // When the outreach is tied to a specific lead, also bump that lead's
+  // stage from discovery → pricing so the Outreach Lab no longer surfaces
+  // it as "needs first touch". This is what makes "Mark sent" actually
+  // remove the lead from the queue across page reloads.
+  if (input.leadId && !error) {
+    await supabase
+      .from("leads")
+      .update({ stage: "pricing" })
+      .eq("id", input.leadId)
+      .eq("user_id", userData.user.id)
+      .eq("stage", "discovery"); // only bump if still in discovery
+  }
 
   if (error) return { ok: false, error: error.message };
 
