@@ -12,11 +12,10 @@ import { sendViaGmail } from "./gmail";
 import { pushTelegramNotification } from "./telegram";
 import { beginAgentAction } from "@/lib/agentActionProgress";
 
-// Allow long-running drafts batch (refreshOutreachDraftsWithCurrentRules
-// can take 5-10 min on 50+ leads). Vercel Pro: max 300s, Hobby: 10s.
-// If batch hits the cap mid-loop, the agent_actions row stays in "running"
-// state and Leonardo sees where it stopped — restartable.
-export const maxDuration = 300;
+// NB: server-action timeout is configured in vercel.json (functions
+// config) — `export const maxDuration` is not allowed in a "use server"
+// module (only async functions may be exported). If the bulk refresh
+// gets killed by Vercel's 60s default, switch to an Inngest job instead.
 
 export interface AddOutreachInput {
   leadName: string;
@@ -61,17 +60,21 @@ export async function addOutreach(
     .select("id")
     .single();
 
-  // When the outreach is tied to a specific lead, also bump that lead's
-  // stage from discovery → pricing so the Outreach Lab no longer surfaces
-  // it as "needs first touch". This is what makes "Mark sent" actually
-  // remove the lead from the queue across page reloads.
+  // When the outreach is tied to a specific lead, advance the stage to
+  // "pricing" (best-effort — Outreach Lab no longer depends on this; the
+  // sentLeadIds set drives the queue filter). We only bump if the lead is
+  // still in an early stage so we don't regress a closed/booking deal
+  // back to pricing.
   if (input.leadId && !error) {
     await supabase
       .from("leads")
-      .update({ stage: "pricing" })
+      .update({
+        stage: "pricing",
+        last_touchpoint_at: new Date().toISOString(),
+      })
       .eq("id", input.leadId)
       .eq("user_id", userData.user.id)
-      .eq("stage", "discovery"); // only bump if still in discovery
+      .in("stage", ["discovery", "pricing"]); // never regress later stages
   }
 
   if (error) return { ok: false, error: error.message };

@@ -141,6 +141,82 @@ export async function getOutreachList(limit = 50): Promise<OutreachRow[]> {
   return (data ?? []) as OutreachRow[];
 }
 
+/**
+ * Returns the set of lead IDs that already have at least one outreach row
+ * for the current user. Source of truth for "is this lead already touched"
+ * — Outreach Lab uses this to permanently hide leads from the queue after
+ * Mark sent, independent of lead.stage. This decouples the visual filter
+ * from the stage column (which can be null / out-of-sync / blocked by RLS
+ * silently), so a single addOutreach insert is enough to remove the lead.
+ */
+export async function getOutreachedLeadIds(): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return new Set();
+  const { data } = await supabase
+    .from("outreach")
+    .select("lead_id")
+    .eq("user_id", userData.user.id)
+    .not("lead_id", "is", null);
+  const ids = new Set<string>();
+  for (const r of data ?? []) {
+    if (r.lead_id) ids.add(r.lead_id as string);
+  }
+  return ids;
+}
+
+/**
+ * Full list of outreach rows (joined with lead name + ICP) for the Sent
+ * Archive room. Different from getOutreachList — that one is just the
+ * lightweight row for dashboard counters. This one carries enough info
+ * to render a browsable history table.
+ */
+export interface OutreachArchiveRow extends OutreachRow {
+  lead_icp_score: number | null;
+  lead_niche: string | null;
+}
+
+export async function getOutreachArchive(
+  limit = 500,
+): Promise<OutreachArchiveRow[]> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return [];
+
+  // Single round-trip: pull outreach rows + lead refs together via FK.
+  const { data } = await supabase
+    .from("outreach")
+    .select(
+      "id, lead_id, lead_name, platform, message, status, sent_at, leads(icp_score, niche)",
+    )
+    .eq("user_id", userData.user.id)
+    .order("sent_at", { ascending: false })
+    .limit(limit);
+
+  // Supabase typed the embedded `leads` relation as an array even though
+  // the FK is to-one. We collapse it to the first row.
+  type RawRow = OutreachRow & {
+    leads?:
+      | { icp_score: number | null; niche: string | null }[]
+      | { icp_score: number | null; niche: string | null }
+      | null;
+  };
+  return ((data ?? []) as unknown as RawRow[]).map((r) => {
+    const lead = Array.isArray(r.leads) ? r.leads[0] : r.leads;
+    return {
+      id: r.id,
+      lead_id: r.lead_id,
+      lead_name: r.lead_name,
+      platform: r.platform,
+      message: r.message,
+      status: r.status,
+      sent_at: r.sent_at,
+      lead_icp_score: lead?.icp_score ?? null,
+      lead_niche: lead?.niche ?? null,
+    };
+  });
+}
+
 export interface LeadRef {
   id: string;
   name: string;

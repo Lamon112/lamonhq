@@ -7,10 +7,10 @@ import { logActivity } from "./activityLog";
 import { beginAgentAction } from "@/lib/agentActionProgress";
 import { pushTelegramNotification } from "./telegram";
 
-// Bulk Holmes investigation can take 5-15 min on 10+ hot leads (each
-// Holmes call is 30-60s of Anthropic web_search). Bump Vercel timeout so
-// the action completes inline; Vault overlay tracks live progress.
-export const maxDuration = 300;
+// NB: Vercel function timeout for server actions is set globally via
+// vercel.json (functions config) — `export const maxDuration` is not
+// allowed in a "use server" module (only async functions may be
+// exported from a server action file in Next.js).
 
 export interface HolmesActionResult {
   ok: boolean;

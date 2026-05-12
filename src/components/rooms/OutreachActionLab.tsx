@@ -166,29 +166,33 @@ const CHANNELS: ChannelMeta[] = [
 
 interface Props {
   initialList: LeadRow[];
+  /**
+   * Lead IDs that already have at least one outreach row. These leads are
+   * hidden from Outreach Lab entirely — they live in the Sent Archive
+   * room instead. Source of truth = outreach table, NOT lead.stage, so
+   * "Mark sent" works deterministically the moment addOutreach inserts.
+   */
+  sentLeadIds: string[];
 }
 
-type ViewMode = "queue" | "sent";
+export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
+  // Build a Set for O(1) membership checks; recompute only when the parent
+  // refreshes the array. Mark sent inserts an outreach row + revalidates
+  // the path, which re-renders the parent with the lead's id now in this
+  // set, which makes the lead disappear from the queue — permanently.
+  const sentSet = useMemo(() => new Set(sentLeadIds), [sentLeadIds]);
 
-const SENT_STAGES = new Set(["pricing", "financing", "booking"]);
-
-export function OutreachActionLab({ initialList }: Props) {
-  // ── Queue / Sent toggle ──
-  // Default landing = "queue" — leads that still need a first outreach
-  // (stage="discovery", holmes-investigated). "sent" view shows leads
-  // we've already touched (stage moved to pricing/financing/booking)
-  // grouped by the same channel UI so Leonardo can browse what he sent
-  // without leaving the room. Closed deals (won/lost) live in the
-  // Closing Room instead — different mental context.
-  const [viewMode, setViewMode] = useState<ViewMode>("queue");
-
-  const allLeads = useMemo(() => {
-    const matchStage =
-      viewMode === "queue"
-        ? (s: string) => s === "discovery"
-        : (s: string) => SENT_STAGES.has(s);
-    return initialList.filter((l) => matchStage(l.stage) && l.holmes_report);
-  }, [initialList, viewMode]);
+  const allLeads = useMemo(
+    () =>
+      initialList.filter(
+        (l) =>
+          !sentSet.has(l.id) &&
+          l.holmes_report &&
+          l.stage !== "closed_won" &&
+          l.stage !== "closed_lost",
+      ),
+    [initialList, sentSet],
+  );
 
   // Group by primary channel (fallback: derive from reachability or available channels)
   const byChannel = useMemo(() => {
@@ -203,22 +207,12 @@ export function OutreachActionLab({ initialList }: Props) {
       const ch = inferPrimaryChannel(lead);
       if (ch) map[ch].push(lead);
     }
-    // Sort: queue by ICP score desc, sent by most recently touched
-    // (updated_at proxies that — leads bumped to pricing get a fresh
-    // updated_at via the stage update).
+    // Queue is pure execution surface — always best ICP first.
     for (const ch of Object.keys(map) as Channel[]) {
-      if (viewMode === "queue") {
-        map[ch].sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0));
-      } else {
-        map[ch].sort((a, b) => {
-          const av = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-          const bv = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-          return bv - av;
-        });
-      }
+      map[ch].sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0));
     }
     return map;
-  }, [allLeads, viewMode]);
+  }, [allLeads]);
 
   // Pick default tab = channel with most leads
   const defaultChannel: Channel = useMemo(() => {
@@ -259,76 +253,8 @@ export function OutreachActionLab({ initialList }: Props) {
     });
   };
 
-  // Counts for the queue/sent toggle pills — sum across all channels for
-  // each mode so the user can see at a glance how big each side is.
-  const queueTotalCount = useMemo(
-    () =>
-      initialList.filter(
-        (l) => l.stage === "discovery" && l.holmes_report,
-      ).length,
-    [initialList],
-  );
-  const sentTotalCount = useMemo(
-    () =>
-      initialList.filter(
-        (l) => SENT_STAGES.has(l.stage) && l.holmes_report,
-      ).length,
-    [initialList],
-  );
-
   return (
     <div className="flex h-full flex-col">
-      {/* ── Queue / Sent toggle (sticky on top of channel tabs) ── */}
-      <div className="mb-3 flex items-center gap-2">
-        <button
-          onClick={() => setViewMode("queue")}
-          className={
-            "flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all " +
-            (viewMode === "queue"
-              ? "border border-cyan-400/50 bg-cyan-500/15 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.25)]"
-              : "border border-border bg-bg-card text-text-muted hover:border-border-strong hover:text-text")
-          }
-        >
-          📥 U redu
-          <span
-            className={
-              "rounded-full px-1.5 text-[10px] font-bold " +
-              (viewMode === "queue"
-                ? "bg-black/40 text-white"
-                : "bg-bg-elevated text-text-dim")
-            }
-          >
-            {queueTotalCount}
-          </span>
-        </button>
-        <button
-          onClick={() => setViewMode("sent")}
-          className={
-            "flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all " +
-            (viewMode === "sent"
-              ? "border border-emerald-400/50 bg-emerald-500/15 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.25)]"
-              : "border border-border bg-bg-card text-text-muted hover:border-border-strong hover:text-text")
-          }
-        >
-          📤 Poslano
-          <span
-            className={
-              "rounded-full px-1.5 text-[10px] font-bold " +
-              (viewMode === "sent"
-                ? "bg-black/40 text-white"
-                : "bg-bg-elevated text-text-dim")
-            }
-          >
-            {sentTotalCount}
-          </span>
-        </button>
-        <span className="ml-2 text-[11px] text-text-dim">
-          {viewMode === "queue"
-            ? "Leadovi koji čekaju prvi outreach"
-            : "Leadovi kojima si već poslao — kronološki"}
-        </span>
-      </div>
-
       {/* ── Channel tabs ── */}
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
         {CHANNELS.map((ch) => {
@@ -484,11 +410,12 @@ function LeadActionCard({
     return cleanPremiumLanguage(raw);
   }, [lead, channel]);
   const [draft, setDraft] = useState(initialResult.cleaned);
-  // Sent state derives from lead.stage so it survives page reloads. Anything
-  // past "discovery" means an outreach was already logged (addOutreach bumps
-  // the lead from discovery → pricing on success). Local state still wins on
-  // the in-flight click so the badge appears instantly.
-  const [sent, setSent] = useState(lead.stage !== "discovery");
+  // Sent state is local-only — the moment Mark sent inserts an outreach
+  // row, revalidatePath fires and the parent re-renders without this lead
+  // in the list (filter is now sentLeadIds-based). Local state shows the
+  // success badge for the 200ms before that re-render lands so the click
+  // feels instant.
+  const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [gmail, setGmail] = useState<GmailStatus | null>(null);

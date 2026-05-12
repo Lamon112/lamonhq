@@ -11,12 +11,14 @@ import {
   FileText,
   Sparkles,
   Search,
+  Archive,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
 
 export type RoomId =
   | "outreach"
+  | "sent_archive"
   | "discovery"
   | "closing"
   | "lead_scorer"
@@ -51,6 +53,15 @@ const outreach: Room = {
   tagline: "Ručna i AI poruka prema lead-u",
   icon: Target,
   emoji: "🎯",
+  floor: "revenue",
+};
+
+const sentArchive: Room = {
+  id: "sent_archive",
+  name: "Sent Archive",
+  tagline: "Povijest poslanih outreach poruka",
+  icon: Archive,
+  emoji: "📤",
   floor: "revenue",
 };
 
@@ -164,7 +175,7 @@ export const FLOORS: Floor[] = [
     number: 1,
     name: "B2B Revenue Factory",
     subtitle: "Outreach → Discovery → Close",
-    rooms: [outreach, discovery, closing],
+    rooms: [outreach, sentArchive, discovery, closing],
   },
 ];
 

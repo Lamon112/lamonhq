@@ -14,6 +14,8 @@ import {
   getHQStats,
   getOutreachStats,
   getOutreachList,
+  getOutreachedLeadIds,
+  getOutreachArchive,
   getClients,
   getClientsStats,
   getLeads,
@@ -46,6 +48,8 @@ export default async function HQPage() {
     stats,
     outreachStats,
     outreachList,
+    outreachedLeadIds,
+    outreachArchive,
     clientList,
     clientStats,
     leadList,
@@ -72,6 +76,8 @@ export default async function HQPage() {
     getHQStats(),
     getOutreachStats(),
     getOutreachList(),
+    getOutreachedLeadIds(),
+    getOutreachArchive(),
     getClients(),
     getClientsStats(),
     getLeads(),
@@ -119,7 +125,12 @@ export default async function HQPage() {
       <InboxTriage initialMessages={inboundMessages} />
       <HQViewport
         data={{
-          outreach: { list: outreachList, stats: outreachStats },
+          outreach: {
+            list: outreachList,
+            stats: outreachStats,
+            sentLeadIds: Array.from(outreachedLeadIds),
+            archive: outreachArchive,
+          },
           clients: { list: clientList, stats: clientStats },
           leads: { list: leadList, stats: leadStats },
           discovery: { stats: discoveryStats },

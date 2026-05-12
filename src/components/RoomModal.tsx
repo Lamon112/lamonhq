@@ -6,6 +6,7 @@ import type { Room } from "@/lib/rooms";
 import type {
   OutreachRow,
   OutreachStats,
+  OutreachArchiveRow,
   ClientRow,
   ClientsStats,
   LeadRow,
@@ -24,6 +25,7 @@ import type {
   ReportsStats,
 } from "@/lib/queries";
 import { OutreachActionLab } from "./rooms/OutreachActionLab";
+import { SentArchivePanel } from "./rooms/SentArchivePanel";
 import { ClientsPanel } from "./rooms/ClientsPanel";
 import { LeadScorerPanel } from "./rooms/LeadScorerPanel";
 import { DiscoveryPanel } from "./rooms/DiscoveryPanel";
@@ -36,7 +38,14 @@ import { ReportsPanel } from "./rooms/ReportsPanel";
 import { BriefPanel } from "./rooms/BriefPanel";
 
 export interface RoomData {
-  outreach: { list: OutreachRow[]; stats: OutreachStats };
+  outreach: {
+    list: OutreachRow[];
+    stats: OutreachStats;
+    /** Lead IDs that have already been touched (any outreach row exists). */
+    sentLeadIds: string[];
+    /** Full archive for the Sent Archive room. */
+    archive: OutreachArchiveRow[];
+  };
   clients: { list: ClientRow[]; stats: ClientsStats };
   leads: { list: LeadRow[]; stats: LeadsStats };
   discovery: { stats: DiscoveryStats };
@@ -141,7 +150,14 @@ function RoomBody({
 }) {
   switch (room.id) {
     case "outreach":
-      return <OutreachActionLab initialList={data.leads.list} />;
+      return (
+        <OutreachActionLab
+          initialList={data.leads.list}
+          sentLeadIds={data.outreach.sentLeadIds}
+        />
+      );
+    case "sent_archive":
+      return <SentArchivePanel rows={data.outreach.archive} />;
     case "clients":
       return (
         <ClientsPanel
