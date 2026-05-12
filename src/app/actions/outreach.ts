@@ -11,6 +11,7 @@ import {
 import { sendViaGmail } from "./gmail";
 import { pushTelegramNotification } from "./telegram";
 import { beginAgentAction } from "@/lib/agentActionProgress";
+import { cleanPremiumLanguage } from "@/lib/premiumLanguage";
 
 // NB: server-action timeout is configured in vercel.json (functions
 // config) — `export const maxDuration` is not allowed in a "use server"
@@ -608,7 +609,10 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
       lead as HotLeadCandidate,
       orgChannels,
     );
-    const hook = extractHook(lead.notes as string | null);
+    // Clean the hook BEFORE passing to AI so English words from Holmes
+    // (e.g. "content engine") don't leak into the draft.
+    const rawHook = extractHook(lead.notes as string | null);
+    const hook = rawHook ? cleanPremiumLanguage(rawHook).cleaned : rawHook;
 
     const ownerCtx = owner?.name
       ? {
@@ -639,6 +643,26 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
       );
       if (shortened.ok && shortened.draft) finalDraft = shortened.draft;
     }
+    // Post-AI cleanup — catches any English leak that survived the prompt.
+    finalDraft = cleanPremiumLanguage(finalDraft).cleaned;
+
+    // Also clean the best_angle.summary + opening_hook in-place so the
+    // UI panels (Best angle / Opening hook 30s) render Croatian-only
+    // copy too, not just the draft body.
+    const existingBestAngle = report.best_angle as
+      | { summary?: string; opening_hook?: string; avoid?: string[] }
+      | undefined;
+    const cleanedBestAngle = existingBestAngle
+      ? {
+          ...existingBestAngle,
+          summary: existingBestAngle.summary
+            ? cleanPremiumLanguage(existingBestAngle.summary).cleaned
+            : existingBestAngle.summary,
+          opening_hook: existingBestAngle.opening_hook
+            ? cleanPremiumLanguage(existingBestAngle.opening_hook).cleaned
+            : existingBestAngle.opening_hook,
+        }
+      : existingBestAngle;
 
     // Update the holmes_report blob in-place: keep all other fields,
     // overwrite outreach_draft + channel_drafts.<platform>.
@@ -647,6 +671,7 @@ export async function refreshOutreachDraftsWithCurrentRules(): Promise<RefreshOu
       {};
     const updatedReport = {
       ...report,
+      best_angle: cleanedBestAngle,
       outreach_draft: finalDraft,
       channel_drafts: {
         ...channelDrafts,

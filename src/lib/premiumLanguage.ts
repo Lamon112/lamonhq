@@ -121,6 +121,102 @@ const SWAPS: Swap[] = [
     replace: (m) => matchCase(m, "evo što preporučam"),
     reason: "odgovara li vam ovo → evo što preporučam",
   },
+
+  // ── #13 ENGLESKE RIJEČI → HRVATSKI ──
+  // Hardcoded English-to-Croatian translations for words that leak from
+  // Holmes context (best_angle, opening_hook) into draft + subject.
+  // Whole-word matching, case-insensitive, preserves leading capitalization.
+  {
+    find: /\bcontent engine-?(a|om|u|i|ima)?\b/gi,
+    replace: (m) => {
+      const suffix = m.match(/engine-?(a|om|u|i|ima)?$/i)?.[1] ?? "";
+      const baseSwap = "stroj za sadržaj";
+      const withSuffix = suffix
+        ? baseSwap.replace(/sadržaj$/, "sadržaj" + suffix)
+        : baseSwap;
+      return matchCase(m, withSuffix);
+    },
+    reason: "content engine → stroj za sadržaj",
+  },
+  {
+    find: /\bcontent (strategy|strategija|strategije)\b/gi,
+    replace: (m) =>
+      matchCase(m, m.toLowerCase().includes("strategija") ? "strategija sadržaja" : "strategija sadržaja"),
+    reason: "content strategy → strategija sadržaja",
+  },
+  {
+    find: /\bcontenta\b/gi,
+    replace: (m) => matchCase(m, "sadržaja"),
+    reason: "contenta → sadržaja",
+  },
+  {
+    find: /\bcontentom\b/gi,
+    replace: (m) => matchCase(m, "sadržajem"),
+    reason: "contentom → sadržajem",
+  },
+  // "content" standalone — careful with brand names ("Content Marketing Institute" etc.)
+  // Only swap when followed by Croatian context words OR at word boundary alone.
+  {
+    find: /\bcontent\b(?!\s+(Marketing|Institute|Hub|Studio|Inc|Ltd))/gi,
+    replace: (m) => matchCase(m, "sadržaj"),
+    reason: "content → sadržaj",
+  },
+  {
+    find: /\bengagement(-?a|om|u|i)?\b/gi,
+    replace: (m) => {
+      const suffix = m.match(/engagement-?(a|om|u|i)?$/i)?.[1] ?? "";
+      const base = "interakcij" + (suffix === "om" ? "om" : suffix === "u" ? "u" : suffix === "i" ? "i" : "a");
+      return matchCase(m, base);
+    },
+    reason: "engagement → interakcija",
+  },
+  {
+    find: /\breach-?(a|om|u|i)?\b/gi,
+    replace: (m) => {
+      const suffix = m.match(/reach-?(a|om|u|i)?$/i)?.[1] ?? "";
+      const base = "doseg" + (suffix === "om" ? "om" : suffix === "u" ? "u" : suffix === "i" ? "u" : suffix === "a" ? "a" : "");
+      return matchCase(m, base);
+    },
+    reason: "reach → doseg",
+  },
+  {
+    find: /\bbookinga?\b/gi,
+    replace: (m) => matchCase(m, m.endsWith("a") || m.endsWith("A") ? "termina" : "termin"),
+    reason: "booking → termin",
+  },
+  {
+    find: /\bbookinge\b/gi,
+    replace: (m) => matchCase(m, "termine"),
+    reason: "bookinge → termine",
+  },
+  {
+    find: /\bbookinga\b/gi,
+    replace: (m) => matchCase(m, "termina"),
+    reason: "bookinga → termina",
+  },
+  {
+    find: /\bperformance(-?a|om|u|i)?\b/gi,
+    replace: (m) => {
+      const suffix = m.match(/performance-?(a|om|u|i)?$/i)?.[1] ?? "";
+      const base = "rezultat" + (suffix === "om" ? "om" : suffix === "u" ? "u" : suffix === "i" ? "i" : suffix === "a" ? "a" : "i");
+      return matchCase(m, base);
+    },
+    reason: "performance → rezultati",
+  },
+  {
+    find: /\bgrowth-?(a|om|u|i)?\b/gi,
+    replace: (m) => {
+      const suffix = m.match(/growth-?(a|om|u|i)?$/i)?.[1] ?? "";
+      const base = "rast" + (suffix === "om" ? "om" : suffix === "u" ? "u" : suffix === "i" ? "i" : suffix === "a" ? "a" : "");
+      return matchCase(m, base);
+    },
+    reason: "growth → rast",
+  },
+  {
+    find: /\bnurture (sequence|sekvenca|sekvenc[ae])\b/gi,
+    replace: (m) => matchCase(m, "follow-up niz"),
+    reason: "nurture sequence → follow-up niz",
+  },
 ];
 
 export interface CleanResult {

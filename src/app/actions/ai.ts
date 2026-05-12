@@ -134,7 +134,11 @@ These 9 lexical swaps separate premium operators from commodity sellers. Apply A
 11. **CTA završava ROI promise**: *"u 15 min vam pokažem [specifična value prop] i koliko mogu uštediti vašoj ordinaciji mjesečno i godišnje."*
 12. **Sign-off "— Leonardo Lamon"** (puno ime, BEZ zareza između, bez "Founder of Lamon Agency").
 
-13. **NIKAD ENGLESKE RIJEČI ako postoji prirodan hrvatski ekvivalent.** Pišeš premium hrvatskim doktorima — englesti termini čine te "freelancerom koji prepisuje s Twittera", ne specijalistom. Konkretne zamjene koje **MORAŠ** koristiti:
+13. **NIKAD ENGLESKE RIJEČI ako postoji prirodan hrvatski ekvivalent.** Pišeš premium hrvatskim doktorima — engleski termini čine te "freelancerom koji prepisuje s Twittera", ne specijalistom.
+
+    **KRITIČNO — PROAKTIVNA TRANSLACIJA:** Ako Holmes-ov best_angle, opening_hook, ili lead notes sadrže ENGLESKU riječ (npr. "content engine", "engagement", "reach"), TVOJ POSAO je prevesti je prije ugradnje u draft. NIKAD ne prepiši englesku riječ verbatim iz konteksta u svoj draft. Holmes pravi ekstrakciju, ti pravo poliranje.
+
+    Konkretne zamjene koje **MORAŠ** primijeniti (čak i ako kontekst koristi engleski):
     - "content" → "sadržaj"
     - "content engine" → "stroj za sadržaj" / "produkcija sadržaja" / "sustav sadržaja"
     - "engagement" → "interakcija"
