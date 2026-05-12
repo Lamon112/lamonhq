@@ -65,6 +65,10 @@ export function RoomFurniture({ agentId }: { agentId: AgentId }) {
       return <AegisFurniture />;
     case "strateg":
       return <StrategFurniture />;
+    case "pulse":
+      return <PulseFurniture />;
+    case "riva":
+      return <RivaFurniture />;
     default:
       return null;
   }
@@ -2032,6 +2036,250 @@ function StrategFurniture() {
 
       {/* === Floor (dark with violet glow strip) === */}
       <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-violet-400/40 bg-gradient-to-b from-stone-800 to-stone-950 shadow-[inset_0_1px_2px_rgba(167,139,250,0.2)]" />
+    </>
+  );
+}
+
+/* =================================================================== */
+/* PULSE — Brand Pulse (client social media tracker)                    */
+/* Theme: cyan/teal observatory — live monitoring deck for IG/TT/YT.    */
+/* HERO 1: 4 platform monitors on back wall (IG/TT/YT/FB)               */
+/* HERO 2: central follower-graph dashboard with trend line             */
+/* HERO 3: comment ticker tape at top                                   */
+/* HERO 4: sentiment dial (happy/neutral/cool) at center bottom         */
+/* =================================================================== */
+function PulseFurniture() {
+  return (
+    <>
+      {/* Dark observatory backdrop */}
+      <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/40 via-stone-950 to-stone-950" />
+
+      {/* Plaque */}
+      <div className="absolute left-1/2 top-1 z-30 -translate-x-1/2 rounded-sm border border-cyan-400/70 bg-cyan-950/90 px-2 py-px shadow-[0_0_4px_rgba(34,211,238,0.6)]">
+        <span className="block font-mono text-[5px] font-bold uppercase leading-none tracking-[0.25em] text-cyan-200">
+          ◇ BRAND PULSE ◇
+        </span>
+        <span className="block text-center font-mono text-[4px] uppercase leading-none tracking-[0.15em] text-cyan-300/80">
+          IG · TT · YT · FB
+        </span>
+      </div>
+
+      {/* Comment ticker tape — top scroll */}
+      <div className="absolute left-0 right-0 top-7 h-2 overflow-hidden border-y border-cyan-700/40 bg-stone-950/80">
+        <div className="whitespace-nowrap pl-1 font-mono text-[5px] leading-none text-cyan-300">
+          ❤ @user123 · 🔥 super objava! · 💬 kako se naručujem? · 👏 bravo majstor ·
+          ⭐ preporuka · 💸 koja cijena? · 😍 nevjerojatno ·
+        </div>
+      </div>
+
+      {/* 4 platform monitors on back wall — 2x2 grid */}
+      <div className="absolute left-2 top-10 grid w-[40%] grid-cols-2 gap-1">
+        {[
+          { label: "IG", color: "pink", n: "1.3K", d: "+47" },
+          { label: "TT", color: "fuchsia", n: "8.4K", d: "+312" },
+          { label: "YT", color: "red", n: "560", d: "+12" },
+          { label: "FB", color: "blue", n: "892", d: "+8" },
+        ].map((p, i) => (
+          <div
+            key={i}
+            className={`rounded-sm border border-${p.color}-500/50 bg-stone-950/70 px-1 py-px shadow-[inset_0_0_2px_rgba(0,0,0,0.5)]`}
+          >
+            <div
+              className={`font-mono text-[4px] font-bold uppercase tracking-wider text-${p.color}-300`}
+            >
+              {p.label}
+            </div>
+            <div className="flex items-baseline gap-px">
+              <span
+                className={`font-mono text-[6px] font-bold text-${p.color}-200`}
+              >
+                {p.n}
+              </span>
+              <span className="font-mono text-[3px] text-emerald-300">
+                {p.d}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Central follower-trend chart */}
+      <div className="absolute right-2 top-10 h-7 w-[50%] rounded-sm border border-cyan-500/60 bg-stone-950/80 p-px shadow-[inset_0_0_3px_rgba(34,211,238,0.4)]">
+        <div className="border-b border-cyan-700/50 bg-cyan-950/60 px-1 py-px font-mono text-[4px] font-bold leading-none tracking-wider text-cyan-300">
+          ▼ Followers · 7d trend
+        </div>
+        <svg viewBox="0 0 80 22" className="mt-px h-5 w-full">
+          {/* Area fill */}
+          <polygon
+            points="0,18 10,16 20,15 30,12 40,13 50,10 60,8 70,6 80,5 80,22 0,22"
+            fill="rgba(34,211,238,0.3)"
+          />
+          {/* Trend line */}
+          <polyline
+            points="0,18 10,16 20,15 30,12 40,13 50,10 60,8 70,6 80,5"
+            fill="none"
+            stroke="rgb(34 211 238)"
+            strokeWidth="0.6"
+          />
+          {/* Dots */}
+          {[
+            [0, 18], [10, 16], [20, 15], [30, 12], [40, 13], [50, 10], [60, 8], [70, 6], [80, 5],
+          ].map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="0.6" fill="rgb(110 231 183)" />
+          ))}
+        </svg>
+      </div>
+
+      {/* Sentiment dial — bottom center */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+        <div className="relative">
+          {/* Outer ring */}
+          <div className="h-5 w-5 rounded-full border-2 border-cyan-500/50 bg-stone-950 shadow-[0_0_8px_rgba(34,211,238,0.4)]">
+            {/* Conic gradient for sentiment */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(from -90deg, rgb(16 185 129) 0deg 144deg, rgb(245 158 11) 144deg 252deg, rgb(244 63 94) 252deg 360deg)",
+                mask: "radial-gradient(circle, transparent 30%, black 31%)",
+                WebkitMask:
+                  "radial-gradient(circle, transparent 30%, black 31%)",
+              }}
+            />
+            {/* Needle pointing up-left (positive) */}
+            <div className="absolute left-1/2 top-1/2 h-2 w-px origin-bottom -translate-x-1/2 -translate-y-full -rotate-[35deg] bg-cyan-200 shadow-[0_0_3px_rgba(34,211,238,1)]" />
+            <div className="absolute left-1/2 top-1/2 h-px w-px -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-100" />
+          </div>
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[4px] uppercase tracking-wider text-cyan-300">
+            sentiment · positive
+          </div>
+        </div>
+      </div>
+
+      {/* Floor */}
+      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-cyan-400/40 bg-gradient-to-b from-stone-800 to-stone-950" />
+    </>
+  );
+}
+
+/* =================================================================== */
+/* RIVA OPS — Riva voice agent monitor                                  */
+/* Theme: rose/red mission control — phone bank + waveforms + status   */
+/* HERO 1: Riva avatar (mic + soundwave) center top                     */
+/* HERO 2: per-clinic call status row (5 mini panels)                   */
+/* HERO 3: live waveform when active                                    */
+/* HERO 4: incoming call queue indicator                                */
+/* =================================================================== */
+function RivaFurniture() {
+  return (
+    <>
+      {/* Dark mission-control backdrop with subtle rose glow */}
+      <div className="absolute inset-0 bg-gradient-to-b from-rose-950/40 via-stone-950 to-stone-950" />
+
+      {/* Plaque */}
+      <div className="absolute left-1/2 top-1 z-30 -translate-x-1/2 rounded-sm border border-rose-400/70 bg-rose-950/90 px-2 py-px shadow-[0_0_4px_rgba(244,63,94,0.6)]">
+        <span className="block font-mono text-[5px] font-bold uppercase leading-none tracking-[0.25em] text-rose-200">
+          ◇ RIVA OPS ◇
+        </span>
+        <span className="block text-center font-mono text-[4px] uppercase leading-none tracking-[0.15em] text-rose-300/80">
+          voice agent live monitor
+        </span>
+      </div>
+
+      {/* Riva "avatar" — central mic with concentric wave rings */}
+      <div className="absolute left-1/2 top-10 -translate-x-1/2">
+        <div className="relative">
+          {/* Outer wave ring 1 */}
+          <div className="absolute -inset-3 animate-ping rounded-full border border-rose-400/30" />
+          {/* Outer wave ring 2 */}
+          <div
+            className="absolute -inset-2 animate-pulse rounded-full border border-rose-400/50"
+            style={{ animationDelay: "0.3s" }}
+          />
+          {/* Mic body */}
+          <div className="relative h-5 w-5 rounded-full border-2 border-rose-400 bg-gradient-to-br from-rose-500 to-rose-800 shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),0_0_8px_rgba(244,63,94,0.7)]">
+            {/* Mic grille pattern */}
+            <div className="absolute inset-1 rounded-full border border-rose-300/40">
+              <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-rose-300/30" />
+              <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-rose-300/30" />
+            </div>
+          </div>
+        </div>
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap font-mono text-[4px] uppercase tracking-wider text-rose-300">
+          RIVA · idle
+        </div>
+      </div>
+
+      {/* Live waveform — left side */}
+      <div className="absolute left-2 top-12 h-4 w-[26%] rounded-sm border border-rose-500/50 bg-stone-950/80 px-px py-px">
+        <div className="font-mono text-[3px] uppercase tracking-wider text-rose-400">
+          waveform
+        </div>
+        <svg viewBox="0 0 80 12" className="h-3 w-full">
+          {/* Sine-like wave */}
+          {Array.from({ length: 40 }).map((_, i) => {
+            const x = i * 2;
+            const h = 2 + Math.abs(Math.sin(i * 0.7)) * 7;
+            return (
+              <line
+                key={i}
+                x1={x}
+                y1={6 - h / 2}
+                x2={x}
+                y2={6 + h / 2}
+                stroke="rgb(244 63 94)"
+                strokeWidth="0.6"
+              />
+            );
+          })}
+        </svg>
+      </div>
+
+      {/* Per-clinic call status — right side panel */}
+      <div className="absolute right-2 top-12 h-7 w-[26%] rounded-sm border border-rose-500/50 bg-stone-950/80 p-px shadow-[inset_0_0_3px_rgba(244,63,94,0.4)]">
+        <div className="flex items-center justify-between border-b border-rose-700/50 bg-rose-950/60 px-1 py-px">
+          <span className="font-mono text-[3px] font-bold uppercase tracking-wider text-rose-300">
+            ▼ per-clinic
+          </span>
+          <span className="font-mono text-[3px] uppercase text-emerald-400">
+            ● live
+          </span>
+        </div>
+        <div className="space-y-px p-px">
+          {[
+            { clinic: "Baywash", status: "—", color: "stone" },
+            { clinic: "Apex", status: "—", color: "stone" },
+            { clinic: "Videntis", status: "queue", color: "amber" },
+            { clinic: "Bagatin", status: "—", color: "stone" },
+          ].map((c, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between font-mono text-[3px] uppercase leading-tight"
+            >
+              <span className="truncate text-rose-200">{c.clinic}</span>
+              <span className={`text-${c.color}-300`}>{c.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Today's stats — bottom strip */}
+      <div className="absolute bottom-4 left-2 right-2 flex items-center gap-2 rounded-sm border border-rose-500/30 bg-stone-950/60 px-2 py-1 font-mono text-[4px] uppercase tracking-wider">
+        <span className="text-rose-300">today</span>
+        <span className="rounded border border-rose-400/40 bg-rose-500/10 px-1 py-px text-rose-200">
+          0 calls
+        </span>
+        <span className="rounded border border-emerald-400/40 bg-emerald-500/10 px-1 py-px text-emerald-200">
+          0 booked
+        </span>
+        <span className="rounded border border-amber-400/40 bg-amber-500/10 px-1 py-px text-amber-200">
+          0 escalated
+        </span>
+        <span className="ml-auto text-rose-400">v1 pre-launch</span>
+      </div>
+
+      {/* Floor */}
+      <div className="absolute bottom-1 left-1 right-1 h-1.5 rounded-sm border-t border-rose-400/40 bg-gradient-to-b from-stone-800 to-stone-950" />
     </>
   );
 }

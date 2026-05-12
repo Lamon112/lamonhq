@@ -13,6 +13,8 @@ import {
   Search,
   Archive,
   MessageSquare,
+  TrendingUp,
+  Mic,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -30,7 +32,9 @@ export type RoomId =
   | "clients"
   | "calendar"
   | "reports"
-  | "brief";
+  | "brief"
+  | "brand_pulse"
+  | "riva_ops";
 
 export interface Room {
   id: RoomId;
@@ -166,13 +170,31 @@ const brief: Room = {
   floor: "operations",
 };
 
+const brandPulse: Room = {
+  id: "brand_pulse",
+  name: "Brand Pulse",
+  tagline: "Praćenje social media-a klijenata · followers · komentari · AI savjeti",
+  icon: TrendingUp,
+  emoji: "📈",
+  floor: "operations",
+};
+
+const rivaOps: Room = {
+  id: "riva_ops",
+  name: "Riva Ops",
+  tagline: "Što Riva radi sada · pozivi · transcripts · alerts po klinici",
+  icon: Mic,
+  emoji: "🎙",
+  floor: "operations",
+};
+
 export const FLOORS: Floor[] = [
   {
     id: "operations",
     number: 3,
     name: "Operations Hub",
     subtitle: "Klijenti, kalendar, brief",
-    rooms: [clients, calendar, brief],
+    rooms: [clients, brandPulse, rivaOps, calendar, brief],
   },
   {
     id: "intelligence",

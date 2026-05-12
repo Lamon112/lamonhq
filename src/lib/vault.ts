@@ -21,6 +21,8 @@ import {
   Brain,
   Shield,
   MessageSquare,
+  TrendingUp,
+  Mic,
 } from "lucide-react";
 
 export type AgentId =
@@ -34,7 +36,9 @@ export type AgentId =
   | "steward"
   | "aegis"
   | "mentat"
-  | "strateg";
+  | "strateg"
+  | "pulse"
+  | "riva";
 
 export interface Agent {
   id: AgentId;
@@ -152,6 +156,34 @@ const AGENTS: Agent[] = [
     status: "online",
     accent: "violet",
     hint: "Gmail poller svakih 5 min · 2 draftova replyja po inbound.",
+  },
+  {
+    id: "pulse",
+    name: "Pulse",
+    room: "Brand Pulse",
+    role: "Klijent social tracker · followers · komentari · AI savjeti",
+    icon: TrendingUp,
+    emoji: "📈",
+    floor: 3,
+    slot: 4,
+    unlockLevel: 1,
+    status: "online",
+    accent: "cyan",
+    hint: "Praća IG/TT/YT za svakog aktivnog klijenta · weekly delta + comment sentiment.",
+  },
+  {
+    id: "riva",
+    name: "Riva",
+    room: "Riva Ops",
+    role: "Što Riva radi sada po klinici · pozivi · transcripts · alerts",
+    icon: Mic,
+    emoji: "🎙",
+    floor: 3,
+    slot: 5,
+    unlockLevel: 1,
+    status: "online",
+    accent: "rose",
+    hint: "Real-time Riva voice agent monitor · per-clinic call log + config.",
   },
 
   // FLOOR 3 — Operations

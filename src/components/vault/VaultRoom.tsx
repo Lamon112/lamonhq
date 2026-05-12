@@ -139,6 +139,16 @@ const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
     { kind: "walk", start: 0.5, cycle: 14, delay: 0, suit: "fill-violet-300", label: "Sentiment Analyst", scale: 0.85 },
     { kind: "walk", start: 0.75, cycle: 12, delay: 3, suit: "fill-violet-500", label: "Pattern Spotter", scale: 0.85 },
   ],
+  pulse: [
+    { kind: "sit", pos: 0.25, bottom: 4, suit: "fill-cyan-400", label: "Pulse @ console", scale: 0.9 },
+    { kind: "walk", start: 0.5, cycle: 13, delay: 0, suit: "fill-cyan-300", label: "Comment Analyst", scale: 0.85 },
+    { kind: "walk", start: 0.75, cycle: 11, delay: 2, suit: "fill-cyan-500", label: "Trend Tracker", scale: 0.85 },
+  ],
+  riva: [
+    { kind: "sit", pos: 0.3, bottom: 4, suit: "fill-rose-400", label: "Riva Ops @ panel", scale: 0.9 },
+    { kind: "walk", start: 0.55, cycle: 14, delay: 0, suit: "fill-rose-300", label: "Call Monitor", scale: 0.85 },
+    { kind: "walk", start: 0.78, cycle: 12, delay: 3, suit: "fill-rose-500", label: "Transcript QA", scale: 0.85 },
+  ],
   comms: [
     { kind: "sit", pos: 0.22, bottom: 4, suit: "fill-sky-400", label: "Comms @ board", scale: 0.9 },
     { kind: "walk", start: 0.5, cycle: 13, delay: 0, suit: "fill-sky-300", label: "Operator", scale: 0.85 },

@@ -37,6 +37,8 @@ import { CalendarPanel } from "./rooms/CalendarPanel";
 import { ReportsPanel } from "./rooms/ReportsPanel";
 import { BriefPanel } from "./rooms/BriefPanel";
 import { StrategPanel } from "./rooms/StrategPanel";
+import { BrandPulsePanel } from "./rooms/BrandPulsePanel";
+import { RivaOpsPanel } from "./rooms/RivaOpsPanel";
 import type { InboundMessage } from "@/app/actions/inbound";
 
 export interface RoomData {
@@ -195,6 +197,10 @@ function RoomBody({
       return <HolmesBureauPanel initialLeads={data.leads.list} />;
     case "strateg":
       return <StrategPanel initialInbound={data.inbound} />;
+    case "brand_pulse":
+      return <BrandPulsePanel initialClients={data.clients.list} />;
+    case "riva_ops":
+      return <RivaOpsPanel initialClients={data.clients.list} />;
     case "analytics":
       return (
         <RevenueEnginePanel

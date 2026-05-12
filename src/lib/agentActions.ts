@@ -1462,6 +1462,8 @@ Ako iz konteksta NE vidiš konkretno koji je sljedeći meeting, daj generic play
     },
   ],
   strateg: [],
+  pulse: [],
+  riva: [],
 };
 
 export function getActionsForRoom(room: AgentId): AgentActionDef[] {
