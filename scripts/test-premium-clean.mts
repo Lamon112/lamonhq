@@ -182,6 +182,16 @@ const SWAPS: Swap[] = [
     reason: "stripped: lone €-range/mj",
   },
   {
+    find: /\s*leonardo@lamon\.[a-z]{2,}/gi,
+    replace: "",
+    reason: "stripped: leonardo@lamon.* from body",
+  },
+  {
+    find: /\s*lamon\.io\/plima/gi,
+    replace: "",
+    reason: "stripped: lamon.io/plima from body",
+  },
+  {
     find: /\bSlobodni\s+(u\s+)?(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/gi,
     replace: (m: string) => {
       const dayMatch = m.match(/(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i);
@@ -337,6 +347,22 @@ const cases: Case[] = [
     input: "Slobodni u utorak u 11:30 ili četvrtak nakon 18h?",
     mustNotContain: ["Slobodni u utorak"],
     shouldContain: ["Predlažem utorak"],
+  },
+  {
+    input:
+      "S poštovanjem Leonardo Lamon leonardo@lamon.hr",
+    mustNotContain: ["leonardo@lamon.hr", "leonardo@lamon"],
+    shouldContain: ["Leonardo Lamon"],
+  },
+  {
+    input: "— Leonardo Lamon leonardo@lamon.io",
+    mustNotContain: ["leonardo@lamon.io", "leonardo@lamon"],
+    shouldContain: ["Leonardo Lamon"],
+  },
+  {
+    input: "Vidi pakete na lamon.io/plima za više detalja.",
+    mustNotContain: ["lamon.io/plima"],
+    shouldContain: ["Vidi pakete"],
   },
 ];
 

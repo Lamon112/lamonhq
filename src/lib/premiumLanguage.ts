@@ -127,6 +127,21 @@ const SWAPS: Swap[] = [
     reason: "odgovara li vam ovo → evo što preporučam",
   },
   {
+    // Strip ANY leonardo@lamon.* email reference from body. The Gmail
+    // signature attaches the canonical leonardo@lamon.io with link
+    // styling — duplication in body is noise + AI sometimes hallucinates
+    // wrong TLD (e.g. lamon.hr). Signature is authoritative.
+    find: /\s*leonardo@lamon\.[a-z]{2,}/gi,
+    replace: "",
+    reason: "stripped: leonardo@lamon.* from body (signature has it)",
+  },
+  {
+    // Strip "lamon.io/plima" inline link too — signature has it.
+    find: /\s*lamon\.io\/plima/gi,
+    replace: "",
+    reason: "stripped: lamon.io/plima from body (signature has it)",
+  },
+  {
     // "Slobodni u srijedu..." → "Predlažem srijedu..."
     // Brend · 09 #1 LEAD don't ASK — "Slobodni" is asking permission,
     // "Predlažem" is leading with authority. Prompt v10+ already
