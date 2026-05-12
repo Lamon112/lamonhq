@@ -12,6 +12,8 @@ const LIST_URL =
   "https://gmail.googleapis.com/gmail/v1/users/me/messages";
 const GET_URL =
   "https://gmail.googleapis.com/gmail/v1/users/me/messages";
+const SEND_AS_URL =
+  "https://gmail.googleapis.com/gmail/v1/users/me/settings/sendAs";
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 
 export const GMAIL_SCOPES = [
@@ -156,6 +158,128 @@ function base64UrlEncode(str: string): string {
     .replace(/=+$/, "");
 }
 
+/**
+ * Fetch the Plima B2B signature (or whatever signature) the user has
+ * configured in Gmail web UI for their primary sendAs identity. Gmail
+ * API send does NOT auto-attach signatures — that's a web-compose-only
+ * feature — so we pull it here and append to outbound HTML body.
+ *
+ * Returns the raw HTML signature, or null when no signature is set.
+ */
+export async function fetchGmailSignature(opts: {
+  accessToken: string;
+  /** Defaults to primary sendAs (isPrimary=true). Pass an explicit address
+   * to match against a specific alias's signature. */
+  fromEmail?: string;
+}): Promise<{ ok: boolean; signature?: string; error?: string }> {
+  try {
+    const res = await fetch(SEND_AS_URL, {
+      headers: { Authorization: `Bearer ${opts.accessToken}` },
+      cache: "no-store",
+    });
+    const json = (await res.json()) as {
+      sendAs?: {
+        sendAsEmail: string;
+        signature?: string;
+        isPrimary?: boolean;
+      }[];
+      error?: { message?: string };
+    };
+    if (!res.ok || json.error) {
+      return {
+        ok: false,
+        error: json.error?.message ?? `Gmail sendAs HTTP ${res.status}`,
+      };
+    }
+    const list = json.sendAs ?? [];
+    const want = opts.fromEmail?.toLowerCase();
+    const match = want
+      ? list.find((s) => s.sendAsEmail.toLowerCase() === want)
+      : list.find((s) => s.isPrimary) ?? list[0];
+    return { ok: true, signature: match?.signature || undefined };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gmail signature fetch failed",
+    };
+  }
+}
+
+/**
+ * Convert a plain-text email body into a minimally-styled HTML version
+ * for the text/html MIME part. Preserves paragraph breaks (\n\n → <p>)
+ * and single line breaks (\n → <br>). Email clients render the plain
+ * text part for clients that don't support HTML (Outlook minimal etc.)
+ * and the HTML part everywhere else.
+ */
+function bodyToHtml(plain: string): string {
+  const escaped = plain
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const paragraphs = escaped.split(/\n\n+/).map((p) => p.replace(/\n/g, "<br>"));
+  return paragraphs
+    .map(
+      (p) =>
+        `<p style="margin:0 0 1em 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#222">${p}</p>`,
+    )
+    .join("");
+}
+
+/**
+ * Build a multipart/alternative RFC-822 message with both text/plain and
+ * text/html parts. Recipient clients pick the richer part they support.
+ * Without this, Gmail signature HTML (which contains <img>, <a>) would
+ * be sent as literal HTML source inside a text/plain mail.
+ */
+function buildMultipartMessage(opts: {
+  from: string;
+  to: string;
+  subject: string;
+  plainBody: string;
+  htmlBody: string;
+  replyTo?: string;
+}): string {
+  const boundary = `=_plima_${Date.now().toString(36)}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+  const encodedSubject = `=?UTF-8?B?${Buffer.from(opts.subject, "utf-8").toString("base64")}?=`;
+  const headers = [
+    `From: ${opts.from}`,
+    `To: ${opts.to}`,
+    opts.replyTo ? `Reply-To: ${opts.replyTo}` : "",
+    `Subject: ${encodedSubject}`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+  const plainPart = [
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    opts.plainBody,
+    "",
+  ].join("\r\n");
+  const htmlPart = [
+    `--${boundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    opts.htmlBody,
+    "",
+  ].join("\r\n");
+  return [
+    headers,
+    "",
+    plainPart,
+    htmlPart,
+    `--${boundary}--`,
+    "",
+  ].join("\r\n");
+}
+
 function buildRfc822Message(opts: {
   from: string;
   to: string;
@@ -192,13 +316,50 @@ export async function sendViaGmailApi(
   opts: SendOptions,
 ): Promise<{ ok: boolean; messageId?: string; error?: string }> {
   try {
-    const raw = buildRfc822Message({
-      from: opts.from,
-      to: opts.to,
-      subject: opts.subject,
-      body: opts.body,
-      replyTo: opts.replyTo,
+    // Fetch signature for this sendAs identity. Append below the body
+    // separated by --\r\n (RFC 3676 signature delimiter) in plain text,
+    // and as a styled block in HTML.
+    const sigRes = await fetchGmailSignature({
+      accessToken: opts.accessToken,
+      fromEmail: opts.from,
     });
+    const signatureHtml = sigRes.signature ?? "";
+
+    let raw: string;
+    if (signatureHtml) {
+      const htmlBody =
+        bodyToHtml(opts.body) +
+        `<br><br><div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#222">${signatureHtml}</div>`;
+      // Plain-text body keeps a simple text fallback for the signature so
+      // text/plain-only clients aren't left dangling. Strip HTML tags.
+      const signaturePlain = signatureHtml
+        .replace(/<br\s*\/?\s*>/gi, "\n")
+        .replace(/<\/p>/gi, "\n\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      const plainBody = `${opts.body}\n\n-- \n${signaturePlain}`;
+      raw = buildMultipartMessage({
+        from: opts.from,
+        to: opts.to,
+        subject: opts.subject,
+        plainBody,
+        htmlBody,
+        replyTo: opts.replyTo,
+      });
+    } else {
+      raw = buildRfc822Message({
+        from: opts.from,
+        to: opts.to,
+        subject: opts.subject,
+        body: opts.body,
+        replyTo: opts.replyTo,
+      });
+    }
     const encoded = base64UrlEncode(raw);
     const res = await fetch(SEND_URL, {
       method: "POST",
