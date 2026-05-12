@@ -876,10 +876,12 @@ function getContactForChannel(lead: LeadRow, channel: Channel): string | null {
  *   3. person_enrichment.owner.email — Apollo owner profile email
  *   4. lead.email — top-level (CSV import / Apollo basic)
  *   5. Notes-extracted "Owner email:" / "Email:" line
- *   6. Website-derived info@<domain> fallback (last-ditch guess)
+ *   6. Notes-extracted bare email anywhere (foo@bar.tld pattern)
+ *   7. Notes URL → info@<domain> (any https://… in notes)
+ *   8. Lead name slug → info@<slug>.hr (last-ditch guess)
  *
- * If none match, returns null and the UI surfaces a manual input box
- * with the website-derived suggestion pre-filled.
+ * If none match (truly empty notes + name un-sluggable), returns null
+ * and the UI surfaces a manual input box.
  */
 function resolveEmailForLead(lead: LeadRow): string | null {
   // 1 & 2 & 3: Holmes + Apollo owner
@@ -891,18 +893,61 @@ function resolveEmailForLead(lead: LeadRow): string | null {
   if (owner?.email) return owner.email;
   // 4: top-level lead.email column
   if (lead.email) return lead.email;
-  // 5: notes — Apollo writes "Owner email: foo@bar.hr" lines
   const notes = lead.notes ?? "";
-  const notesMatch = notes.match(
+  // 5: notes — labeled email
+  const labeledMatch = notes.match(
     /(?:Owner email|Email|Mail):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
   );
-  if (notesMatch) return notesMatch[1].toLowerCase();
-  // 6: derive from website domain (info@<domain>)
-  const websiteMatch = notes.match(
-    /(?:Website|Web|Site):\s*https?:\/\/(?:www\.)?([^/\s]+)/i,
+  if (labeledMatch) return labeledMatch[1].toLowerCase();
+  // 6: notes — any bare email
+  const bareEmailMatch = notes.match(
+    /\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/,
   );
-  if (websiteMatch) {
-    return `info@${websiteMatch[1].toLowerCase()}`;
+  if (bareEmailMatch) return bareEmailMatch[1].toLowerCase();
+  // 7: notes URL → info@<domain>. Match ANY https://… or http://…
+  // — not just explicitly labeled "Website:". Strip www. and common
+  // subdomains. Skip social media domains (instagram.com etc.).
+  const urlMatch = notes.match(/https?:\/\/(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+)/);
+  if (urlMatch) {
+    const host = urlMatch[1].toLowerCase();
+    const socialDomains = [
+      "instagram.com",
+      "facebook.com",
+      "tiktok.com",
+      "linkedin.com",
+      "youtube.com",
+      "x.com",
+      "twitter.com",
+      "google.com",
+      "google.hr",
+      "googleusercontent.com",
+    ];
+    if (!socialDomains.some((d) => host.endsWith(d))) {
+      return `info@${host}`;
+    }
+  }
+  // 8: derive from lead name slug as last-ditch fallback. Strip Croatian
+  // diacritics, drop common suffixes ("klinika", "centar", "dental",
+  // "stomatologija"), kebab-case the rest. Reasonable for short names
+  // ("Premium Smile" → premium-smile.hr) but skip for very long
+  // institutional names where the guess would be wildly wrong.
+  const slugSource = lead.name
+    .toLowerCase()
+    .replace(/[čć]/g, "c")
+    .replace(/[š]/g, "s")
+    .replace(/[ž]/g, "z")
+    .replace(/[đ]/g, "d")
+    .replace(
+      /\b(klinika|centar|center|dental|stomatologija|stomatoloska|poliklinika|ordinacija)\b/gi,
+      "",
+    )
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+  // Skip if slug is too long (>30 chars = likely institutional name we
+  // can't guess) or too short (<3 chars).
+  if (slugSource.length >= 3 && slugSource.length <= 30) {
+    return `info@${slugSource}.hr`;
   }
   return null;
 }
