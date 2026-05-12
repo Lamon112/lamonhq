@@ -445,7 +445,20 @@ function LeadActionCard({
           : "border-stone-400/40 bg-stone-500/10 text-stone-300";
 
   // Channel-specific contact / deep-link
-  const contactValue = getContactForChannel(lead, channel);
+  const holmesContact = getContactForChannel(lead, channel);
+  // Manual contact override — when Holmes didn't find an email/handle,
+  // Leonardo can paste one inline so the lead isn't blocked from send.
+  // Auto-suggest comes from the website domain (e.g. bagatin.hr → info@bagatin.hr).
+  const [manualContact, setManualContact] = useState("");
+  const websiteDomain = useMemo(() => {
+    if (channel !== "email") return null;
+    const notes = lead.notes ?? "";
+    const m = notes.match(/(?:Website|Web|Site):\s*https?:\/\/(?:www\.)?([^/\s]+)/i);
+    return m ? m[1].toLowerCase() : null;
+  }, [lead.notes, channel]);
+  const suggestedContact =
+    channel === "email" && websiteDomain ? `info@${websiteDomain}` : null;
+  const contactValue = holmesContact || manualContact || null;
   const channelHref = buildChannelHref(channel, contactValue, draft);
   const channelLabel = getChannelActionLabel(channel);
 
@@ -634,12 +647,39 @@ function LeadActionCard({
               )}
 
               {/* Contact value */}
-              {contactValue && (
+              {contactValue ? (
                 <div className="flex items-center justify-between rounded-md border border-border bg-bg-elevated/40 px-3 py-2 font-mono text-xs">
                   <span className="text-text-muted">{channel}</span>
                   <span className="truncate text-text">{contactValue}</span>
                 </div>
-              )}
+              ) : channel === "email" ? (
+                // No email contact from Holmes — let Leonardo paste one inline.
+                // Auto-suggest from website domain (e.g. info@bagatin.hr).
+                <div className="rounded-md border border-amber-400/40 bg-amber-500/5 px-3 py-2">
+                  <p className="mb-1.5 text-[10px] font-mono uppercase tracking-wider text-amber-300">
+                    ⚠ Holmes nije našao email — upiši ručno
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={manualContact}
+                      onChange={(e) => setManualContact(e.target.value)}
+                      placeholder={suggestedContact ?? "ime@klinika.hr"}
+                      className="flex-1 rounded-sm border border-amber-400/30 bg-bg-elevated/60 px-2 py-1 font-mono text-xs text-text placeholder:text-text-dim focus:border-amber-400/70 focus:outline-none"
+                    />
+                    {suggestedContact && !manualContact && (
+                      <button
+                        type="button"
+                        onClick={() => setManualContact(suggestedContact)}
+                        className="rounded-sm border border-amber-400/40 bg-amber-500/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-amber-200 hover:bg-amber-500/20"
+                        title={`Auto-fill from website domain`}
+                      >
+                        Try {suggestedContact}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : null}
 
               {/* Email subject preview — only for email channel. Shows
                   what the actual Gmail Subject header will be when sent
@@ -699,12 +739,19 @@ function LeadActionCard({
                     <button
                       onClick={sendEmail}
                       disabled={pending || !contactValue}
+                      title={
+                        !contactValue
+                          ? "Upiši primateljev email iznad — bez toga ne mogu poslati"
+                          : pending
+                            ? "Šaljem..."
+                            : `Pošalji na ${contactValue}`
+                      }
                       className={
                         "flex items-center gap-1.5 rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition-all " +
                         channelMeta.bg +
                         " " +
                         channelMeta.accent +
-                        " hover:scale-[1.03] disabled:opacity-50"
+                        " hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50"
                       }
                     >
                       <Send size={12} />
