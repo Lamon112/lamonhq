@@ -851,20 +851,60 @@ function initialDraft(lead: LeadRow, channel: Channel): string {
 
 function getContactForChannel(lead: LeadRow, channel: Channel): string | null {
   const ch = lead.holmes_report?.channels;
-  if (!ch) return null;
   switch (channel) {
     case "instagram":
-      return ch.instagram_personal ?? ch.instagram_company ?? null;
+      return ch?.instagram_personal ?? ch?.instagram_company ?? null;
     case "linkedin":
-      return ch.linkedin_personal ?? ch.linkedin_company ?? null;
+      return ch?.linkedin_personal ?? ch?.linkedin_company ?? null;
     case "email":
-      return ch.email ?? null;
+      return resolveEmailForLead(lead);
     case "phone":
-      return ch.phone ?? null;
+      return ch?.phone ?? null;
     case "whatsapp":
       // WhatsApp uses phone number as the contact
-      return ch.phone ?? null;
+      return ch?.phone ?? null;
   }
+}
+
+/**
+ * Resolve a sendable email for the lead by walking all known sources in
+ * priority order. Returns the FIRST hit so we never have to ask Leonardo
+ * to type anything.
+ *
+ *   1. Holmes channels.email — explicit extraction from socials/website
+ *   2. person_enrichment.owner.channels.email — Apollo owner channel
+ *   3. person_enrichment.owner.email — Apollo owner profile email
+ *   4. lead.email — top-level (CSV import / Apollo basic)
+ *   5. Notes-extracted "Owner email:" / "Email:" line
+ *   6. Website-derived info@<domain> fallback (last-ditch guess)
+ *
+ * If none match, returns null and the UI surfaces a manual input box
+ * with the website-derived suggestion pre-filled.
+ */
+function resolveEmailForLead(lead: LeadRow): string | null {
+  // 1 & 2 & 3: Holmes + Apollo owner
+  const holmesEmail = lead.holmes_report?.channels?.email;
+  if (holmesEmail) return holmesEmail;
+  const owner = lead.person_enrichment?.owner;
+  const ownerChannelEmail = owner?.channels?.email;
+  if (ownerChannelEmail) return ownerChannelEmail;
+  if (owner?.email) return owner.email;
+  // 4: top-level lead.email column
+  if (lead.email) return lead.email;
+  // 5: notes — Apollo writes "Owner email: foo@bar.hr" lines
+  const notes = lead.notes ?? "";
+  const notesMatch = notes.match(
+    /(?:Owner email|Email|Mail):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+  );
+  if (notesMatch) return notesMatch[1].toLowerCase();
+  // 6: derive from website domain (info@<domain>)
+  const websiteMatch = notes.match(
+    /(?:Website|Web|Site):\s*https?:\/\/(?:www\.)?([^/\s]+)/i,
+  );
+  if (websiteMatch) {
+    return `info@${websiteMatch[1].toLowerCase()}`;
+  }
+  return null;
 }
 
 function buildChannelHref(
