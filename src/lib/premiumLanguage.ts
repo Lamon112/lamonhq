@@ -142,34 +142,65 @@ const SWAPS: Swap[] = [
     reason: "stripped: lamon.io/plima from body (signature has it)",
   },
   {
-    // "Slobodni u srijedu..." → "Predlažem srijedu..."
-    // Brend · 09 #1 LEAD don't ASK — "Slobodni" is asking permission,
-    // "Predlažem" is leading with authority. Prompt v10+ already
-    // instructs the AI; this regex catches stragglers from older
-    // drafts that haven't been refreshed yet.
+    // "Slobodni u srijedu..." → "Predlažem 15-minutni Zoom razgovor u srijedu..."
+    // KEY: "Predlažem" requires an explicit object in Croatian (predlažem
+    // ŠTO? — sastanak? razgovor? poziv?). Bare "Predlažem srijedu" is
+    // broken Croatian — recipient reads it and asks "predlažeš ŠTO?".
+    // Inject the canonical object "15-minutni Zoom razgovor u [dan]".
     find: /\bSlobodni\s+(u\s+)?(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/gi,
     replace: (m) => {
       const dayMatch = m.match(/(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i);
       const day = dayMatch?.[0].toLowerCase() ?? "";
-      // Force accusative form so "Predlažem srijedu/utorak/..." reads
-      // naturally in Croatian
+      // Locative form: "u srijedu / u utorak / u petak…"
       const dayMap: Record<string, string> = {
-        ponedjeljak: "ponedjeljak",
-        utorak: "utorak",
-        srijeda: "srijedu",
-        srijedu: "srijedu",
-        četvrtak: "četvrtak",
-        petak: "petak",
-        subota: "subotu",
-        subotu: "subotu",
-        nedjelja: "nedjelju",
-        nedjelju: "nedjelju",
+        ponedjeljak: "u ponedjeljak",
+        utorak: "u utorak",
+        srijeda: "u srijedu",
+        srijedu: "u srijedu",
+        četvrtak: "u četvrtak",
+        petak: "u petak",
+        subota: "u subotu",
+        subotu: "u subotu",
+        nedjelja: "u nedjelju",
+        nedjelju: "u nedjelju",
         sutra: "sutra",
       };
-      const dayAcc = dayMap[day] ?? day;
-      return matchCase(m, `Predlažem ${dayAcc}`);
+      const dayLoc = dayMap[day] ?? day;
+      return matchCase(m, `Predlažem 15-minutni Zoom razgovor ${dayLoc}`);
     },
-    reason: "'Slobodni u [dan]' → 'Predlažem [dan]' (Brend · 09 #1 Lead don't Ask)",
+    reason:
+      "'Slobodni u [dan]' → 'Predlažem 15-minutni Zoom razgovor u [dan]' (Brend · 09 #1 Lead don't Ask + explicit object)",
+  },
+  {
+    // Catch bare "Predlažem [day] u [time]" without an explicit object —
+    // inject "15-minutni Zoom razgovor" between Predlažem and the day.
+    // "Predlažem srijedu u 10:30" → "Predlažem 15-minutni Zoom razgovor u srijedu u 10:30"
+    // Pattern: Predlažem (NOT followed by typical objects: razgovor, poziv,
+    // sastanak, Zoom, kratak, kratki, kratki, 15) then a day token.
+    find: /\bPredlažem\s+(?!(\d+[-\s]?(min|minut|minutni)|razgov|poziv|sastan|Zoom|zoom|kratak|kratki|kratki|15|kratko|brzi|kratki))(u\s+)?(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)\b/gi,
+    replace: (m) => {
+      const dayMatch = m.match(
+        /(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i,
+      );
+      const day = dayMatch?.[0].toLowerCase() ?? "";
+      const dayMap: Record<string, string> = {
+        ponedjeljak: "u ponedjeljak",
+        utorak: "u utorak",
+        srijeda: "u srijedu",
+        srijedu: "u srijedu",
+        četvrtak: "u četvrtak",
+        petak: "u petak",
+        subota: "u subotu",
+        subotu: "u subotu",
+        nedjelja: "u nedjelju",
+        nedjelju: "u nedjelju",
+        sutra: "sutra",
+      };
+      const dayLoc = dayMap[day] ?? day;
+      return matchCase(m, `Predlažem 15-minutni Zoom razgovor ${dayLoc}`);
+    },
+    reason:
+      "bare 'Predlažem [dan]' → 'Predlažem 15-minutni Zoom razgovor u [dan]' (explicit object required)",
   },
 
   // ── #13 ENGLESKE RIJEČI → HRVATSKI ──

@@ -197,22 +197,48 @@ const SWAPS: Swap[] = [
       const dayMatch = m.match(/(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i);
       const day = dayMatch?.[0].toLowerCase() ?? "";
       const dayMap: Record<string, string> = {
-        ponedjeljak: "ponedjeljak",
-        utorak: "utorak",
-        srijeda: "srijedu",
-        srijedu: "srijedu",
-        četvrtak: "četvrtak",
-        petak: "petak",
-        subota: "subotu",
-        subotu: "subotu",
-        nedjelja: "nedjelju",
-        nedjelju: "nedjelju",
+        ponedjeljak: "u ponedjeljak",
+        utorak: "u utorak",
+        srijeda: "u srijedu",
+        srijedu: "u srijedu",
+        četvrtak: "u četvrtak",
+        petak: "u petak",
+        subota: "u subotu",
+        subotu: "u subotu",
+        nedjelja: "u nedjelju",
+        nedjelju: "u nedjelju",
         sutra: "sutra",
       };
-      const dayAcc = dayMap[day] ?? day;
-      return matchCase(m, `Predlažem ${dayAcc}`);
+      const dayLoc = dayMap[day] ?? day;
+      return matchCase(m, `Predlažem 15-minutni Zoom razgovor ${dayLoc}`);
     },
-    reason: "Slobodni [dan] → Predlažem [dan]",
+    reason: "Slobodni [dan] → Predlažem 15-minutni Zoom razgovor u [dan]",
+  },
+  {
+    find: /\bPredlažem\s+(?!(\d+[-\s]?(min|minut|minutni)|razgov|poziv|sastan|Zoom|zoom|kratak|kratki|kratki|15|kratko|brzi|kratki))(u\s+)?(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)\b/gi,
+    replace: (m: string) => {
+      const dayMatch = m.match(
+        /(ponedjeljak|utorak|srijed[au]|četvrtak|petak|subot[au]|nedjelj[au]|sutra)/i,
+      );
+      const day = dayMatch?.[0].toLowerCase() ?? "";
+      const dayMap: Record<string, string> = {
+        ponedjeljak: "u ponedjeljak",
+        utorak: "u utorak",
+        srijeda: "u srijedu",
+        srijedu: "u srijedu",
+        četvrtak: "u četvrtak",
+        petak: "u petak",
+        subota: "u subotu",
+        subotu: "u subotu",
+        nedjelja: "u nedjelju",
+        nedjelju: "u nedjelju",
+        sutra: "sutra",
+      };
+      const dayLoc = dayMap[day] ?? day;
+      return matchCase(m, `Predlažem 15-minutni Zoom razgovor ${dayLoc}`);
+    },
+    reason:
+      "bare 'Predlažem [dan]' → 'Predlažem 15-minutni Zoom razgovor u [dan]'",
   },
   {
     find: /(TikTok[^.]{0,80}?)\b(\d[\d.,]*)\s+pregleda\b/gi,
@@ -340,13 +366,20 @@ const cases: Case[] = [
   {
     input:
       "...koji bi vas u HR-u koštali 10-15K€/mj bruto. Za vaš tier: 2.500-3.500€/mj. Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?",
-    mustNotContain: ["2.500-3.500€/mj", "Za vaš tier:", "Slobodni u srijedu"],
-    shouldContain: ["10-15K€/mj bruto", "Predlažem srijedu"],
+    mustNotContain: [
+      "2.500-3.500€/mj",
+      "Za vaš tier:",
+      "Slobodni u srijedu",
+    ],
+    shouldContain: [
+      "10-15K€/mj bruto",
+      "Predlažem 15-minutni Zoom razgovor u srijedu",
+    ],
   },
   {
     input: "Slobodni u utorak u 11:30 ili četvrtak nakon 18h?",
     mustNotContain: ["Slobodni u utorak"],
-    shouldContain: ["Predlažem utorak"],
+    shouldContain: ["Predlažem 15-minutni Zoom razgovor u utorak"],
   },
   {
     input:
@@ -363,6 +396,22 @@ const cases: Case[] = [
     input: "Vidi pakete na lamon.io/plima za više detalja.",
     mustNotContain: ["lamon.io/plima"],
     shouldContain: ["Vidi pakete"],
+  },
+  {
+    input: "Predlažem srijedu u 10:30 ili četvrtak nakon 18h?",
+    mustNotContain: ["Predlažem srijedu u"],
+    shouldContain: ["Predlažem 15-minutni Zoom razgovor u srijedu"],
+  },
+  {
+    input: "Predlažem utorak u 11:30 ili četvrtak nakon 18h?",
+    mustNotContain: ["Predlažem utorak u"],
+    shouldContain: ["Predlažem 15-minutni Zoom razgovor u utorak"],
+  },
+  {
+    input:
+      "Predlažem 15-minutni Zoom razgovor u utorak u 11:30 ili četvrtak nakon 18h.",
+    mustNotContain: [],
+    shouldContain: ["Predlažem 15-minutni Zoom razgovor u utorak"],
   },
 ];
 
