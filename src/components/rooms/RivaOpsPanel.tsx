@@ -161,7 +161,148 @@ function profileForClient(client: ClientRow): RivaProfile {
   };
 }
 
+/**
+ * DEMO PREVIEW — a fully-provisioned, currently-busy Riva profile for a
+ * hypothetical clinic (Apex Dental Centar). Shows Leonardo what the room
+ * looks like once Riva is live and handling real patient calls. Realistic
+ * mix of outcomes: 4 booked, 1 qualified (callback), 1 escalated to
+ * doctor, 1 info-only, 1 voicemail. Multilingual hint via Slovenian
+ * caller. Marked DEMO via the client name suffix so it's never confused
+ * with real data.
+ */
+const DEMO_RIVA: { client: ClientRow; profile: RivaProfile } = {
+  client: {
+    id: "demo-apex-riva",
+    name: "Apex Dental Centar (DEMO)",
+    type: "b2b_clinic",
+    status: "active",
+    monthly_revenue: 1497,
+    start_date: new Date().toISOString(),
+    notes: "DEMO PREVIEW — not a real client. Shows what Riva Ops looks like when fully provisioned.",
+    last_touchpoint_at: null,
+    next_action: null,
+    next_action_date: null,
+    churn_risk: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  profile: {
+    provisioned: true,
+    voicePreset: "warm-hr-female",
+    languages: ["HR", "EN", "SL"],
+    hours: "08-20 Mon-Sat",
+    busy: true,
+    callsToday: 12,
+    callsThisWeek: 47,
+    avgDurationSec: 105, // 1:45
+    conversionRate: 0.38,
+    lastCallAt: new Date(Date.now() - 30 * 1000).toISOString(),
+    recentCalls: [
+      {
+        id: "demo-1",
+        startedAt: new Date(Date.now() - 30 * 1000).toISOString(),
+        durationSec: 142,
+        callerName: "Ivana Marić",
+        callerNumber: "+385 91 555 1234",
+        outcome: "booked",
+        confidence: 0.94,
+        language: "HR",
+        transcript:
+          "Pacijentica je zvala za konzultaciju o implantatima. Riva je kvalificirala (1 izgubljeni zub, prošla nije imala iskustvo s klinikom, budžet 800-1200€). Bukirana srijeda 11:00 kod dr. Špehara.",
+      },
+      {
+        id: "demo-2",
+        startedAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+        durationSec: 89,
+        callerName: "Marko Babić",
+        callerNumber: "+385 98 123 9876",
+        outcome: "qualified",
+        confidence: 0.87,
+        language: "HR",
+        transcript:
+          "Caller pitao za all-on-4. Riva ga je educirala (proces, trajanje, indikativni raspon), kvalificirala (interes je tu, želi razmisliti). Callback zakazan za petak 10h.",
+      },
+      {
+        id: "demo-3",
+        startedAt: new Date(Date.now() - 38 * 60 * 1000).toISOString(),
+        durationSec: 23,
+        callerName: "Nepoznat",
+        callerNumber: "+385 95 888 4421",
+        outcome: "escalated",
+        confidence: 0.65,
+        language: "HR",
+        transcript:
+          "Caller je odmah počeo glasno govoriti o nezadovoljstvu s prethodnim tretmanom. Riva nije pokušala kvalificirati — escalation rule okinula u 12s, poziv prebačen na dr. Špehar mobitel uz 30s context briefing.",
+      },
+      {
+        id: "demo-4",
+        startedAt: new Date(Date.now() - 65 * 60 * 1000).toISOString(),
+        durationSec: 67,
+        callerName: "Tina Horvat",
+        callerNumber: "+385 91 222 3344",
+        outcome: "booked",
+        confidence: 0.96,
+        language: "HR",
+        transcript:
+          "Pacijent rutinski pregled + čišćenje. Riva fully autonomous — provjerila kalendar, predložila slobodne termine, potvrdila četvrtak 14:30.",
+      },
+      {
+        id: "demo-5",
+        startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        durationSec: 154,
+        callerName: "Jan Kovač",
+        callerNumber: "+386 41 555 2233",
+        outcome: "booked",
+        confidence: 0.91,
+        language: "SL",
+        transcript:
+          "Slovenski pacijent zvao za implantate (dental turizam). Riva detected SL → switched to slovenian voice profile. Educirala o procesu + dao orientacijski raspored 2-dnevnog termina. Bukirano za drugi tjedan u utorak 09:00.",
+      },
+      {
+        id: "demo-6",
+        startedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        durationSec: 35,
+        callerName: "Anonimni",
+        outcome: "info",
+        confidence: 0.88,
+        language: "HR",
+        transcript:
+          "Caller pitao radno vrijeme + adresu. Riva dala info + soft CTA (\"mogu Vam odmah pomoći ako želite zakazati termin\"). Caller rekao da će razmisliti.",
+      },
+      {
+        id: "demo-7",
+        startedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        durationSec: 8,
+        callerNumber: "+385 99 000 1111",
+        outcome: "wrong_number",
+        confidence: 0.95,
+        language: "HR",
+        transcript:
+          "Caller pitao za pizzeriju. Riva: 'Bok, ovo je Apex Dental Centar. Mislim da imate krivi broj. Ugodan dan!'",
+      },
+      {
+        id: "demo-8",
+        startedAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
+        durationSec: 18,
+        callerName: "Petra Novak",
+        callerNumber: "+385 91 444 7788",
+        outcome: "voicemail",
+        confidence: 0.7,
+        language: "HR",
+        transcript:
+          "Caller frustrirana, htjela hitno govoriti s doktorom, Riva nije uspjela zadržati. Voicemail message: 'Trebam dr. Špehara hitno za zub koji me boli, javim se opet sutra.' → Auto-push Leonardu kao Telegram alert.",
+      },
+    ],
+  },
+};
+
 export function RivaOpsPanel({ initialClients }: Props) {
+  // Demo preview toggle — surfaces a fully-provisioned Apex Dental card
+  // at the top so Leonardo can see what the room looks like once Riva
+  // is handling real patient calls. Defaults ON so the room is never
+  // empty-looking on first visit. Toggle off to see only real state.
+  const [demoVisible, setDemoVisible] = useState(true);
+
   const activeClients = useMemo(
     () => initialClients.filter((c) => c.status === "active"),
     [initialClients],
@@ -172,7 +313,7 @@ export function RivaOpsPanel({ initialClients }: Props) {
     [activeClients],
   );
 
-  const profiles = useMemo(
+  const realProfiles = useMemo(
     () =>
       activeClients.map((c) => ({
         client: c,
@@ -181,11 +322,17 @@ export function RivaOpsPanel({ initialClients }: Props) {
     [activeClients],
   );
 
+  const profiles = demoVisible
+    ? [DEMO_RIVA, ...realProfiles]
+    : realProfiles;
+
   const [expandedId, setExpandedId] = useState<string | null>(
-    profiles[0]?.client.id ?? null,
+    demoVisible ? DEMO_RIVA.client.id : realProfiles[0]?.client.id ?? null,
   );
 
-  // Global summary
+  // Global summary — counts include DEMO row when visible so the stats
+  // tiles also "come alive" in demo mode. Production state would only
+  // count real provisioned clinics.
   const totalProvisioned = profiles.filter((p) => p.profile.provisioned).length;
   const totalCallsToday = profiles.reduce(
     (sum, p) => sum + p.profile.callsToday,
@@ -206,6 +353,18 @@ export function RivaOpsPanel({ initialClients }: Props) {
             Real-time monitor za Riva voice agent po klijentu · pozivi · alerts · transcripts
           </p>
         </div>
+        <button
+          onClick={() => setDemoVisible((v) => !v)}
+          className={
+            "flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all " +
+            (demoVisible
+              ? "border-amber-400/50 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+              : "border-border bg-bg-card text-text-muted hover:border-amber-400/40 hover:text-amber-200")
+          }
+          title="Toggle DEMO preview card (Apex Dental — fake but realistic Riva data)"
+        >
+          {demoVisible ? "▸ Sakrij DEMO" : "▸ Prikaži DEMO preview"}
+        </button>
       </div>
 
       {/* ── Global stats ── */}
@@ -286,15 +445,23 @@ function ClientRivaCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const isDemo = client.name.includes("(DEMO)");
   return (
     <div
       className={
         "overflow-hidden rounded-lg border bg-bg-card/60 transition-all " +
-        (expanded
-          ? "border-rose-400/40 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
-          : "border-border hover:border-border-strong")
+        (isDemo
+          ? "border-amber-400/40 shadow-[0_0_20px_rgba(251,191,36,0.15)] ring-1 ring-amber-400/20"
+          : expanded
+            ? "border-rose-400/40 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+            : "border-border hover:border-border-strong")
       }
     >
+      {isDemo && (
+        <div className="border-b border-amber-400/30 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber-200">
+          ⚠ DEMO PREVIEW — sintetički podaci za vizualizaciju, nije pravi klijent
+        </div>
+      )}
       {/* Header */}
       <button
         onClick={onToggle}
@@ -399,53 +566,91 @@ function ClientRivaCard({
                   {/* Recent calls */}
                   <div>
                     <p className="mb-2 text-[10px] font-mono uppercase tracking-wider text-rose-300">
-                      Recent calls
+                      Recent calls · {profile.recentCalls.length}
                     </p>
                     {profile.recentCalls.length === 0 ? (
                       <p className="rounded-md border border-dashed border-border bg-bg-card/40 px-3 py-2 text-center text-[11px] text-text-muted">
                         Još nema poziva.
                       </p>
                     ) : (
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         {profile.recentCalls.slice(0, 8).map((call) => {
                           const meta = OUTCOME_META[call.outcome];
                           const Icon = meta.Icon;
                           return (
                             <div
                               key={call.id}
-                              className="flex items-center gap-2 rounded-md border border-border bg-bg-elevated/40 px-2 py-1.5"
+                              className="overflow-hidden rounded-md border border-border bg-bg-elevated/40"
                             >
-                              <span
-                                className={
-                                  "flex h-6 w-6 shrink-0 items-center justify-center rounded border " +
-                                  meta.bg +
-                                  " " +
-                                  meta.tone
-                                }
-                              >
-                                <Icon size={10} />
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-mono text-[11px] text-text">
-                                  {call.callerName ??
-                                    call.callerNumber ??
-                                    "Anon"}
-                                </p>
-                                <p className="truncate text-[9px] text-text-dim">
-                                  {formatDuration(call.durationSec)} ·{" "}
-                                  {formatWhen(call.startedAt)}
-                                </p>
+                              {/* Call row header */}
+                              <div className="flex items-center gap-2 px-2 py-1.5">
+                                <span
+                                  className={
+                                    "flex h-6 w-6 shrink-0 items-center justify-center rounded border " +
+                                    meta.bg +
+                                    " " +
+                                    meta.tone
+                                  }
+                                >
+                                  <Icon size={10} />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate font-mono text-[11px] font-semibold text-text">
+                                      {call.callerName ??
+                                        call.callerNumber ??
+                                        "Anon"}
+                                    </p>
+                                    {call.language && (
+                                      <span className="rounded border border-stone-500/40 bg-stone-500/10 px-1 py-px font-mono text-[8px] uppercase tracking-wider text-stone-300">
+                                        {call.language}
+                                      </span>
+                                    )}
+                                    {call.confidence != null && (
+                                      <span
+                                        className={
+                                          "font-mono text-[9px] " +
+                                          (call.confidence >= 0.85
+                                            ? "text-emerald-300"
+                                            : call.confidence >= 0.7
+                                              ? "text-amber-300"
+                                              : "text-rose-300")
+                                        }
+                                      >
+                                        {(call.confidence * 100).toFixed(0)}% conf
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="truncate text-[9px] text-text-dim">
+                                    {formatDuration(call.durationSec)} ·{" "}
+                                    {formatWhen(call.startedAt)}
+                                    {call.callerNumber && call.callerName
+                                      ? ` · ${call.callerNumber}`
+                                      : ""}
+                                  </p>
+                                </div>
+                                <span
+                                  className={
+                                    "shrink-0 rounded border px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider " +
+                                    meta.bg +
+                                    " " +
+                                    meta.tone
+                                  }
+                                >
+                                  {meta.label}
+                                </span>
                               </div>
-                              <span
-                                className={
-                                  "shrink-0 rounded border px-1 py-0.5 font-mono text-[9px] uppercase tracking-wider " +
-                                  meta.bg +
-                                  " " +
-                                  meta.tone
-                                }
-                              >
-                                {meta.label}
-                              </span>
+                              {/* Transcript summary — the killer demo content */}
+                              {call.transcript && (
+                                <div className="border-t border-border/50 bg-bg-card/40 px-2 py-1.5">
+                                  <p className="mb-0.5 font-mono text-[8px] uppercase tracking-wider text-text-muted">
+                                    Transcript summary
+                                  </p>
+                                  <p className="text-[11px] leading-relaxed text-text">
+                                    {call.transcript}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
