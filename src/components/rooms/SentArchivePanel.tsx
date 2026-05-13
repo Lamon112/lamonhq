@@ -427,14 +427,14 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                               onClick={() => copyWaFollowUp(row)}
                               title={
                                 pairedWa
-                                  ? `WhatsApp follow-up već loggiran ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira URL bez dupliranja outreach row-a.`
-                                  : "Kopira web.whatsapp.com/send URL + logira WhatsApp outreach. " +
+                                  ? `WhatsApp follow-up već poslan ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira URL bez dupliranja.`
+                                  : "Kopira web.whatsapp.com/send URL. " +
                                     "U WA Business tabu: Ctrl+L → Ctrl+V → Enter."
                               }
                               className={
                                 "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:opacity-90 " +
                                 (pairedWa
-                                  ? "border-stone-500/40 bg-stone-500/10 text-stone-300"
+                                  ? "border-emerald-400/30 bg-emerald-500/[0.06] text-emerald-300/80"
                                   : "border-emerald-400/50 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20")
                               }
                             >
@@ -442,14 +442,14 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                                 {waCopiedId === row.id
                                   ? "✅"
                                   : pairedWa
-                                    ? "🔁"
+                                    ? "✓"
                                     : "💬"}
                               </span>
                               {waCopiedId === row.id
                                 ? "URL kopiran — paste u WA Business (Ctrl+L → V → ⏎)"
                                 : pairedWa
-                                  ? `Re-copy URL (WA već loggiran ${formatWhen(pairedWa.sent_at)})`
-                                  : "Follow-up WhatsApp + log"}
+                                  ? `WA poslan · ${formatWhen(pairedWa.sent_at)}`
+                                  : "Follow-up WhatsApp"}
                             </button>
                             <span className="font-mono text-[10px] text-text-dim">
                               +{row.lead_phone.replace(/[^0-9+]/g, "").replace(/^\+/, "")}
