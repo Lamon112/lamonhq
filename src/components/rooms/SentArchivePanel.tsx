@@ -164,11 +164,11 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
       "Pozdrav, poslao sam vam mail o filtriranju pacijenata prije " +
       "recepcije — možda ćete kasnije pogledati. Ako vam je lakše " +
       "porazgovarati ovdje, samo javite. — Leonardo";
-    // Format: "+broj\n\nporuka" — designed for WA Business "New chat"
-    // workflow (paste broj → click "Send message to +XXX" → paste body).
-    // The URL approach (web.whatsapp.com/send?...) hung blank on unsaved
-    // numbers due to session re-claim + unknown-phone validation.
-    const payload = `+${num}\n\n${body}`;
+    // Click-to-chat URL — paste in WA Business browser URL bar
+    // (Ctrl+L → Ctrl+V → Enter) auto-navigates to /send and opens the
+    // chat with body prefilled. NOT for pasting into WA's New chat
+    // search field (that only matches saved contact names).
+    const payload = `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(body)}`;
 
     navigator.clipboard.writeText(payload).then(() => {
       setWaCopiedId(row.id);
@@ -510,11 +510,10 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                               onClick={() => copyWaFollowUp(row)}
                               title={
                                 pairedWa
-                                  ? `WhatsApp follow-up već poslan ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira broj + poruku.`
-                                  : "Kopira +broj + cijelu poruku u clipboard. " +
-                                    "U WA Business: klikni 'New chat' (zelena + ikona, lijevo gore) " +
-                                    "→ paste +broj u search → klikni 'Send message to +XXX' " +
-                                    "→ paste poruku u chat → send."
+                                  ? `WhatsApp follow-up već poslan ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira URL.`
+                                  : "Kopira web.whatsapp.com/send URL. " +
+                                    "U WA Business tabu: Ctrl+L (URL bar gore) → Ctrl+V → Enter. " +
+                                    "Auto-otvori prefilled chat. NE pastei u WA-ovu search bar."
                               }
                               className={
                                 "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:opacity-90 " +
@@ -531,7 +530,7 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                                     : "💬"}
                               </span>
                               {waCopiedId === row.id
-                                ? "Broj + poruka kopirano (paste u WA New chat)"
+                                ? "URL kopiran → paste u URL bar (Ctrl+L → V → ⏎)"
                                 : pairedWa
                                   ? `WA poslan · ${formatWhen(pairedWa.sent_at)}`
                                   : "Follow-up WhatsApp"}
