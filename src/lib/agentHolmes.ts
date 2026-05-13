@@ -172,18 +172,52 @@ Kada evaluiraš "instagram_profile" (ili "social_depth.instagram") za personal_a
       \`\`\`
       📝 PORUKA (max 280 znakova, OPENING TOUCH koji izaziva reply):
 
-      Cilj poruke: catchy hook + zaintrigirati ih dovoljno da odgovore. Završi s ASSERTIVE tease za glasovnu — NE PITAJ PERMISSION, NE pisati "Mogu poslati ako je u redu" / "Volio bih" / bilo šta submissive.
+      Cilj poruke: predstavi se kratko + catchy hook + zaintrigirati ih dovoljno da odgovore. Završi s ASSERTIVE tease za glasovnu ILI direktnom CTA na Zoom (ovisno o tieru — vidi dolje). NE PITAJ PERMISSION, NE pisati "Mogu poslati ako je u redu" / "Volio bih" / bilo šta submissive.
 
-      Format (3-4 rečenice):
-      1. Hook iz njihovog konkretnog sadržaja/brand-a (1 rečenica, konkretna observacija — ne general compliment).
-      2. Pitanje ili teza koja izaziva reply (1 rečenica — npr. "Pitam se: koliko od tih [interakcija] postaje termin?" ili "Vidim X, ali nedostaje Y — primijetili ste?").
-      3. Tease za glasovnu: "Imam 60-sek glasovnu sa konkretnom analizom za vašu kliniku — javite kad stignete, šaljem." ILI "Pripremio sam 60-sek glasovnu specifično za [klinika] — javite jednu riječ, ide odmah." ILI assertive varijanta — direktna, peer-level, bez permission ask.
+      **MANDATORY FORMAT — 5 rečenica, svaka u svom paragrafu (prazan red između):**
+
+      1. **POZDRAV + IME** (1 rečenica) — "Dobar dan 🙂" ILI "Bok [ime], dobar dan." Dodaj smajli za toplinu. Ako znamo recommended_contact ime — koristi ga ("Bok Marko, dobar dan."). Bez imena ako ga ne znamo (info kontakt, generic email).
+
+      2. **PREDSTAVLJANJE** (1 rečenica) — "Leonardo Lamon ovdje — bavim se razvojem privatnih ordinacija." (TAJ TOČAN TEKST — peer-level signal autoriteta, kratko, bez "želim", "mogu", "samo"). Bez ovog koraka poruka izgleda kao spam — bez konteksta tko piše.
+
+      3. **HOOK IZ KONKRETNOG SIGNALA** (1 rečenica) — observation iz njihove evidence-a s KONKRETNIM brojkama. Format: "Vidio sam da [klinika] ima [konkretna brojka: 225K YouTube pregleda, 543 TikTok videa, 13K IG followera, branded template feed] — [zašto je to rijetko/impresivno u dentalnom]." Ne general compliment. Brojke iz evidence-a, NE izmišljene.
+
+      4. **JEDNO SPECIFIČNO PITANJE** (1 rečenica) — provocira reply jer prebacuje konverzaciju na PAIN/CONVERSION. Format: "Jedno pitanje: koliko [signal] zapravo završi kao [zakazani pacijent / uplata / termin]?" ILI "Koliko upita tjedno vam dođe navečer/vikendom kad ordinacija ne radi?" Bez "se pitam", "možda biste mogli" — direktno pitanje.
+
+      5. **CTA** — DVA mode-a ovisno o tieru:
+         - **VETERAN / INTERMEDIATE** (klinika ima dokazane brojke): **DIREKTAN ZOOM CTA**: "Imate li 15 min ovaj tjedan za kratki Zoom?" Bez tease za glasovnu — već imaš njihovu pažnju kroz konkretni hook.
+         - **STARTER**: tease za glasovnu: "Imam 60-sek glasovnu s konkretnom analizom za vašu kliniku — javite jednu riječ, šaljem odmah." (glasovna im daje VRIJEDNOST prije Zoom commit-a).
+
+      **OGRANIČENJE: max 600 znakova ukupno** (WhatsApp cap). Ako predstavljanje + hook traje predugo, skrati hook ali NIKAD ne skidaj predstavljanje.
 
       ZABRANJENE FRAZE u poruci:
       ❌ "Mogu poslati ako je u redu" / "ako vam odgovara" / "ako se slažete"
       ❌ "Volio bih" / "želio bih" / "smio bih"
       ❌ "Ako biste bili tako ljubazni"
       ❌ "Nadam se da ne smetam"
+      ❌ Poruka koja počinje s observacijom ("GoMED ima dobru osnovu...") BEZ predstavljanja — recipient ne zna tko piše, izgleda kao spam.
+
+      ✅ Primjer ispravne poruke (Veteran tier, Dental SPA):
+      "Dobar dan 🙂
+
+      Leonardo Lamon ovdje — bavim se razvojem privatnih ordinacija.
+
+      Vidio sam da Dental SPA ima 225K YouTube pregleda i 155 TikTok videa — rijetko vidim takvu produkciju sadržaja kod dentalne klinike.
+
+      Jedno pitanje: koliko tih gledatelja zapravo završi kao zakazani pacijent?
+
+      Imate li 15 min ovaj tjedan za kratki Zoom?"
+
+      ✅ Primjer ispravne poruke (Starter tier, GoMED):
+      "Dobar dan 🙂
+
+      Leonardo Lamon ovdje — bavim se razvojem privatnih ordinacija.
+
+      Vidio sam da GoMED ima web, IG i direktni WhatsApp za pacijente — solidna osnova.
+
+      Koliko upita tjedno vam dođe navečer ili vikendom kad ordinacija ne radi?
+
+      Imam 60-sek glasovnu s konkretnom analizom za vašu kliniku — javite jednu riječ, šaljem odmah."
 
       ---
 

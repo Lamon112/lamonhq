@@ -465,6 +465,41 @@ function LeadActionCard({
   const [waCopied, setWaCopied] = useState(false);
   const [gmail, setGmail] = useState<GmailStatus | null>(null);
 
+  // "Invalid contact" — Leonardo clicks this when the WA broj isn't on
+  // WhatsApp, the phone is disconnected, or the IG handle is dead. This
+  // doesn't insert an outreach row (different from Mark sent — no
+  // outreach actually happened); it just persists "primary channel
+  // doesn't work for this lead" so the UI hides the dead deep-link
+  // and elevates the fallback chips strip. Stored per (lead, channel)
+  // in localStorage so it survives reloads without a DB write.
+  const invalidKey = `outreach_invalid_${lead.id}_${channel}`;
+  const [invalid, setInvalid] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(invalidKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  function markInvalid() {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(invalidKey, "1");
+    } catch {
+      /* ignore */
+    }
+    setInvalid(true);
+  }
+  function clearInvalid() {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(invalidKey);
+    } catch {
+      /* ignore */
+    }
+    setInvalid(false);
+  }
+
   const report = lead.holmes_report ?? null;
   const angle = report?.best_angle ?? null;
   const reachability = report?.reachability ?? [];
@@ -1110,6 +1145,47 @@ function LeadActionCard({
                 </button>
 
                 {/*
+                 * "Krivi broj / kanal" button — fires when the primary
+                 * channel doesn't work for this lead (WA broj nije na
+                 * WhatsApp-u, telefon disconnected, IG handle 404'd).
+                 * Unlike Mark sent, this does NOT insert an outreach
+                 * row — nothing was actually sent. It just flips a
+                 * localStorage flag so the dead deep-link disappears
+                 * and the fallback chips strip becomes the primary
+                 * surface. Shown for WA / phone / IG / LinkedIn (every
+                 * channel where the contact value can fail) — for
+                 * email the failure mode is bounce, which is handled
+                 * by Sent Archive's "Bounced" status pill instead.
+                 */}
+                {channel !== "email" && !invalid && (
+                  <button
+                    onClick={markInvalid}
+                    title={
+                      channel === "whatsapp"
+                        ? "Klikni ako broj nije na WhatsApp-u — UI će ti odmah ponuditi mail / IG / LinkedIn za ovu kliniku."
+                        : channel === "phone"
+                          ? "Klikni ako je telefon disconnected — prebacujem na alternativni kanal."
+                          : "Klikni ako kanal nije funkcionalan — prebacujem na alternativu."
+                    }
+                    className="flex items-center gap-1 rounded-md border border-rose-400/40 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-500/20"
+                  >
+                    <X size={12} />
+                    {channel === "whatsapp" || channel === "phone"
+                      ? "Krivi broj"
+                      : "Kanal ne radi"}
+                  </button>
+                )}
+                {invalid && (
+                  <button
+                    onClick={clearInvalid}
+                    title="Vrati primarni kanal (ako si pogrešno označio kao invalid)"
+                    className="flex items-center gap-1 rounded-md border border-stone-400/30 bg-stone-500/10 px-3 py-1.5 text-xs text-text-muted hover:border-stone-300/50 hover:text-text"
+                  >
+                    ↩ Vrati
+                  </button>
+                )}
+
+                {/*
                  * Parallel WhatsApp quick-send button on the email card.
                  * Multi-touch outreach (email + WhatsApp same day) roughly
                  * triples response rate, so when Leonardo sends an email
@@ -1250,9 +1326,23 @@ function LeadActionCard({
                   },
                 };
                 return (
-                  <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2">
-                    <span className="text-[10px] uppercase tracking-wider text-text-muted">
-                      Ako ne radi · fallback:
+                  <div
+                    className={
+                      "mt-2 flex flex-wrap items-center gap-2 border-t pt-2 " +
+                      (invalid
+                        ? "border-rose-400/50 bg-rose-500/5 -mx-3 px-3 rounded-md py-2"
+                        : "border-border/40")
+                    }
+                  >
+                    <span
+                      className={
+                        "text-[10px] uppercase tracking-wider " +
+                        (invalid ? "text-rose-300 font-semibold" : "text-text-muted")
+                      }
+                    >
+                      {invalid
+                        ? `❌ Primarni ${channel === "whatsapp" || channel === "phone" ? "broj" : "kanal"} ne radi — koristi:`
+                        : "Ako ne radi · fallback:"}
                     </span>
                     {fallbacks.map(({ ch, value }) => {
                       const meta = chipMeta[ch];
