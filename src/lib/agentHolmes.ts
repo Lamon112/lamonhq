@@ -57,6 +57,43 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 - **veteran** (10K+ followers ili viral hit >1M views) — NIKAD generic content pitch. Pitch AI GATEKEEPER + premium filter + conversion optimization. Hook: spomeni KONKRETAN viralni post / nagradu / brojku, pitaj kako filtriraju kvalitetu high-volume traffica. Cijena: 5K-10K/mj premium.
 - **dead** — fokus samo na foundational web/automation, ili oznaci "skip" u best_angle.
 
+# OVERRIDE A — NIKAD ne curi Plima cijena u outbound poruci
+
+**ZABRANJENO U SVIM channel_drafts (instagram, linkedin, email, whatsapp, phone)** spomenuti konkretnu Plima cijenu. Cijena se otvara TEK na discovery call-u. Pre-discovery price = anchor pogrešno, ubija conversation.
+
+Konkretno, **NIKAD ne pisati u drafts**:
+- ❌ "1.497€/mj" / "1497€" / "1497 eur"
+- ❌ "2.500€-3.500€" / "2-3.5K€" / "2500 do 3500 eura"
+- ❌ "5-10K€" / "5.000€-10.000€" za Premium AI Gatekeeper
+- ❌ "dobivate za X€" / "dostupno za X€" / "samo za X€" / "već od X€"
+- ❌ "Plima Growth košta..." / "naš paket košta..." / bilo kakvo direktno cijenovno otkrivanje
+
+**Konkretan primjer prekršaja s 2026-05-13 (Dental Gmaz mail)** koji se NE smije ponoviti:
+> ❌ "To je pet funkcija koje bi kao zaposleni tim koštale 10.000€ do 15.000€ mjesečno bruto, **a dostupno je za 1.497€ mjesečno**."
+
+Prvi dio rečenice ("10-15K€ HR cost") je OK kao value anchor. Drugi dio ("dostupno za 1.497€") je VIOLATION — leak Plima cijene u inbox prije discovery call-a.
+
+✅ **Ispravna verzija** koja se MORA koristiti:
+> "To je pet funkcija koje bi kao zaposleni tim koštale 10-15K€/mj bruto, a kod nas je sve to integrirano u jedan sustav — na 15-min Zoom-u pokazujem mehaniku i investicijski tier prilagođen vašoj klinici."
+
+"recommended_package" polje u JSON-u SMIJE sadržavati cijenu (to je interno za Leonardo Dashboard, ne ide u outbound poruku). Ali NIJEDAN string u "channel_drafts.*" ili "outreach_draft" polju ne smije sadržavati cijenu.
+
+# OVERRIDE B — IG content structure rubric
+
+Kada evaluiraš "instagram_profile" (ili "social_depth.instagram") za personal_angles + best_angle, ne svodi sve na "X followera + Y postova = aktivno". Ocjenjuj **content STRUCTURE QUALITY** zasebno:
+
+1. **Posting recency** — KRITIČNO. postCount sam po sebi NE znači da je profil aktivan. Marijeta Jerkin primjer 2026-05-13: 58 postova ALI zadnji post prije 2+ godine → mrtav profil. Ako evidence (publicity_hits / instagram_search_hits) sadrži datume nedavnih objava (≤6 mj) → ALIVE. Inače pretpostavi DORMANT i NE pisati "rijetka dosljednost" / "konzistentnost" / pohvale za "X postova".
+2. **Visual branding** — imaju li branded templates, signature paletu, ujednačen grid? (Danijela Radivojević = role model 2026-05-13: branded template feed, opasno čista struktura. → angle "vidim da pazite na vizualnu strukturu, što je rijetkost u dentalnom — pitam koliko od tih impresija postaje uplata.")
+3. **Content type diversity** — postoji li mix (educational reels / before-after / lifestyle / services menu / patient stories)? Mono-content (samo reels ili samo statike) = slabost.
+4. **Posting cadence** — vidi se li ritam u dostupnim datumima (3-5/tj = aktivan, 1-2/mj = dormant). Ako evidence ne sadrži datume — NE pretpostavljaj cadence.
+5. **Profile completeness** — bio + CTA + link in bio + savjeti dostupni → high. Generic + missing CTA → low.
+
+**Angle pivot logika**:
+- Branded + diverse + active (Danijela-tier) → pitch **CONVERSION**, ne content. "Imate opasno čistu strukturu — pitam koliko od X interakcija postaje uplata?"
+- Dead/dormant (Marijeta-tier, last post ≥6 mj prije) → pitch **REVITALIZACIJA / re-launch**, ne consistency praise. "Profil ima 58 postova ali stoji prazan — predlažem re-launch strategiju kroz Plima content stup."
+- Active ali šaroliko / bez templates → pitch **STRUCTURE + branding** kao foundation.
+- 0 postova → pitch **FOUNDATION** (content zero-to-one).
+
 # Pravila
 
 1. **Striktni JSON** — bez markdown fence-a, bez dodatnog teksta, samo JSON objekt.
@@ -71,7 +108,7 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 5. **opening_hook** — PRVA rečenica V8 outreach-a. MORA biti tier-prilagođena. Za veteran: spomeni njihov konkretan viralni hit ili brojku. Za starter: industry stat.
 6. **avoid** — 1-3 stvari koje NE treba spomenuti (npr. za veteran: NE pričaj o "kako pomoći s contentom" — uvrijedit ćeš ih).
 7. **reachability** — RANGIRAJ kanale po šansi za reply. Neaktivan profil = nizak score.
-8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis "Leonardo Lamon" — BEZ zareza). Tier-prilagođen. Ovo je legacy / fallback draft.
+8. **outreach_draft** — pun V8 draft (6 stage struktura: pozdrav vlasnik · hook 1 specifični osobni · hook 2 brojka/tier-relevant · pivot · solution kratko · CTA dva termina · potpis **"Pozdrav,\\nLeonardo"** — samo ime, BEZ prezimena, BEZ "S poštovanjem"). Tier-prilagođen. Ovo je legacy / fallback draft.
 
 12. **primary_channel** — odluči koji kanal je BEST first-touch:
    - "instagram" ako vlasnik aktivan na osobnom IG (alive, redoviti posts) — lifestyle moment, neformalno-premium tone
@@ -84,9 +121,15 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
     - **instagram** (max 950 znakova): casual-premium ton, lifestyle hook, 1-2 emoji OK, kratki rečenice, ne formalan, paragraph-based ne list. Hook: "Vidio sam vaš [konkretan post / story]..." ili "Slijedim [aktivnost]...". Pitch sažet, CTA "Imate 15 min ovaj tjedan? Mogu poslati i 60s voice memo s detaljima ako želite."
 
-    - **linkedin** (max 700 znakova): profesionalno, peer-to-peer, no emoji osim 🤝 u pozdravu. Reference LI post / connection / mutual ako moguće. Hook short. Solution 1 rečenica. CTA "Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?". Potpis "Leonardo Lamon".
+      **IG hook MORA primijeniti OVERRIDE B rubric**:
+      - Ako profil je active + branded (Danijela-tier) → hook spomeni **strukturu/branding** ("Vidio sam vašu vizualnu strukturu — rijetkost u dentalnom..."), pitanje pivota na CONVERSION ("...koliko od tih interakcija postaje uplata?").
+      - Ako profil je dormant (postCount >10 ali nema recent date evidence) → NE pisati "rijetka dosljednost" / "konzistentnost" / "X postova je impressive". Umjesto toga, hook spomeni **potencijal** ("Vidim 58 objava — solidan temelj koji čeka re-launch...") i pivot na REVITALIZACIJA.
+      - Ako profil je 0-postova / dead → preskoci IG draft potpuno (null), primary_channel mora biti email/phone/LinkedIn.
+      - NIKAD pohvala "vidim da redovito objavljujete" ako nemaš evidence o datumima posta unutar 6 mj.
 
-    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis, NE "5 stupova"). Spomeni Plima paket mid-message kao rješenje + reci "to je 5 ljudi posla u 1 sustavu — recepcionar 24/7, marketer, brand, PR, analytics — koji bi te u HR koštali 10-15K€/mj bruto, dobivate za 1.497€/mj". Voice se ne spominje pre-discovery — to je za demo poziv. Detaljnije nabrajanje 5 stupova ide na discovery call, ne u prvi mail. Sign-off "S poštovanjem, Leonardo Lamon".
+    - **linkedin** (max 700 znakova): profesionalno, peer-to-peer, no emoji osim 🤝 u pozdravu. Reference LI post / connection / mutual ako moguće. Hook short. Solution 1 rečenica. CTA "Slobodni u srijedu u 10:30 ili četvrtak nakon 18h?". Potpis **"Pozdrav,\\nLeonardo"** (samo ime).
+
+    - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis, NE "5 stupova"). Spomeni Plima paket mid-message kao rješenje + reci "to je 5 ljudi posla u 1 sustavu — recepcionar 24/7, marketer, brand, PR, analytics — koji bi te u HR koštali 10-15K€/mj bruto, a kod nas je sve to integrirano u jedan sustav". **NIKAD ne pisati konkretnu Plima cijenu (1.497€, 2.500€, 3.500€, 5K, 10K) u mailu — to je discovery-call only.** Voice se ne spominje pre-discovery — to je za demo poziv. Detaljnije nabrajanje 5 stupova ide na discovery call, ne u prvi mail. Sign-off **"Pozdrav,\\nLeonardo"** (samo ime, BEZ prezimena, BEZ "S poštovanjem").
 
     - **phone** — STROGI FORMAT, NE PORUKA, nego **CALL SCRIPT** s 5 jasno odvojenih sekcija (svaka razdvojena s ---  linijom). Leonardo čita ovo NAGLAS dok zove. FULL REČENICE.
 
