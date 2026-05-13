@@ -258,7 +258,6 @@ export interface OutreachArchiveRow extends OutreachRow {
  * follow up with (premium clinic prospects he hand-added).
  */
 function resolvePhoneFromLead(lead: {
-  phone?: string | null;
   holmes_report?: { channels?: { phone?: string | null } | null } | null;
   person_enrichment?: {
     owner?: {
@@ -272,9 +271,7 @@ function resolvePhoneFromLead(lead: {
 } | null): string | null {
   if (!lead) return null;
 
-  // 1. Top-level phone column
-  if (lead.phone) return lead.phone;
-
+  // 1. (No top-level phone column on leads table — skipped.)
   // 2. Holmes-extracted channels
   const hPhone = lead.holmes_report?.channels?.phone;
   if (hPhone) return hPhone;
@@ -315,11 +312,16 @@ export async function getOutreachArchive(
   // Pull every field that might hold a phone so the WhatsApp follow-up
   // button surfaces for leads regardless of which pipeline they came
   // through (Holmes / Apollo / manual / CSV import).
+  //
+  // Note: there is no top-level `phone` column on the leads table —
+  // phones live inside the JSONB fields (holmes_report,
+  // person_enrichment) or are pasted into `notes`. Selecting a column
+  // that doesn't exist makes the whole join fail silently.
   const { data } = await supabase
     .from("outreach")
     .select(
       "id, lead_id, lead_name, platform, message, status, sent_at, " +
-        "leads(icp_score, niche, phone, holmes_report, person_enrichment, notes)",
+        "leads(icp_score, niche, holmes_report, person_enrichment, notes)",
     )
     .eq("user_id", userData.user.id)
     .order("sent_at", { ascending: false })
@@ -332,7 +334,6 @@ export async function getOutreachArchive(
   type EmbeddedLead = {
     icp_score?: number | null;
     niche?: string | null;
-    phone?: string | null;
     holmes_report?: { channels?: { phone?: string | null } | null } | null;
     person_enrichment?: {
       owner?: {

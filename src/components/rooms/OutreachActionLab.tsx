@@ -837,7 +837,6 @@ function LeadActionCard({
                     // leads that didn't go through the Holmes pipeline (e.g.
                     // manually added premium clinic prospects).
                     type LeadWithPhone = typeof lead & {
-                      phone?: string | null;
                       person_enrichment?: {
                         owner?: {
                           phone?: string | null;
@@ -853,7 +852,6 @@ function LeadActionCard({
                       /(\+?385[\s\-./]?\d[\d\s\-./]{6,12}|\b0\d{1,2}[\s\-./]?\d[\d\s\-./]{5,10})/,
                     );
                     const waNumRaw =
-                      l.phone ??
                       l.holmes_report?.channels?.phone ??
                       l.person_enrichment?.owner?.channels?.phone ??
                       l.person_enrichment?.owner?.phone ??
