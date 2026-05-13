@@ -99,15 +99,18 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
   const [waCopiedId, setWaCopiedId] = useState<string | null>(null);
 
   /**
-   * Multi-touch follow-up: copy a short WhatsApp message referencing the
-   * email Leonardo already sent to clipboard. He pastes into his existing
-   * logged-in WhatsApp Business tab (no window.open here — that's what
-   * caused the session-conflict spinner before).
+   * Multi-touch follow-up: copy a click-to-chat URL to clipboard.
    *
-   * Clipboard payload format: "+38591…\n\n[message]" so the first paste
-   * lands in WA Web's new-chat / search field (which accepts the bare
-   * phone), and a second paste drops the prefilled body into the chat
-   * input.
+   * The previous attempt copied "+phone\n\nmessage" hoping it could be
+   * pasted into WA Web's New chat search field — but that field only
+   * matches saved contacts, never unsaved numbers, so the paste returned
+   * "No results found".
+   *
+   * The reliable path is WhatsApp's official click-to-chat URL
+   * `web.whatsapp.com/send?phone=...&text=...`. Pasting that into the
+   * URL bar (Ctrl+L → Ctrl+V → Enter) navigates the existing logged-in
+   * tab to a fresh chat with the unsaved number and the message
+   * prefilled. Same tab, same session — no conflict.
    */
   function copyWaFollowUp(row: OutreachArchiveRow) {
     if (typeof navigator === "undefined" || !navigator.clipboard) return;
@@ -118,8 +121,8 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
       "Pozdrav, poslao sam vam mail o filtriranju pacijenata prije " +
       "recepcije — možda ćete kasnije pogledati. Ako vam je lakše " +
       "porazgovarati ovdje, samo javite. — Leonardo";
-    const payload = `+${num}\n\n${body}`;
-    navigator.clipboard.writeText(payload).then(() => {
+    const url = `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(body)}`;
+    navigator.clipboard.writeText(url).then(() => {
       setWaCopiedId(row.id);
       setTimeout(() => {
         setWaCopiedId((id) => (id === row.id ? null : id));
@@ -373,10 +376,10 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                             <button
                               onClick={() => copyWaFollowUp(row)}
                               title={
-                                "Kopira broj + follow-up poruku u clipboard. " +
-                                "Idi na svoju WhatsApp Business tabu i paste — " +
-                                "prvi paste u pretragu pronalazi broj, drugi u " +
-                                "message field stavlja poruku."
+                                "Kopira web.whatsapp.com/send URL s brojem i porukom. " +
+                                "U WA Business tabu: Ctrl+L (fokus URL bar) → Ctrl+V → " +
+                                "Enter. Otvara chat s prefilled porukom u istoj tabi, " +
+                                "bez session konflikta."
                               }
                               className="flex items-center gap-1.5 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
                             >
@@ -384,7 +387,7 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                                 {waCopiedId === row.id ? "✅" : "💬"}
                               </span>
                               {waCopiedId === row.id
-                                ? "Kopirano (paste u WA Business)"
+                                ? "URL kopiran — paste u WA Business URL bar (Ctrl+L → Ctrl+V → Enter)"
                                 : "Follow-up WhatsApp"}
                             </button>
                             <span className="font-mono text-[10px] text-text-dim">

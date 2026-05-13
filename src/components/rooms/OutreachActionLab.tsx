@@ -871,26 +871,23 @@ function LeadActionCard({
                       `prije recepcije — možda ćete kasnije pogledati. Ako ` +
                       `vam je lakše porazgovarati ovdje, samo javite. — Leonardo`;
                     const handleWaClick = () => {
-                      // Pure clipboard copy — no window.open.
+                      // Copy a WhatsApp click-to-chat URL to clipboard.
                       //
-                      // Every previous attempt to open a new
-                      // web.whatsapp.com/send tab got stuck on the loading
-                      // spinner because Leonardo already has a logged-in
-                      // WhatsApp Business tab claiming the WA Web session
-                      // (WA Web allows only one active session per
-                      // browser). The named-tab trick can't bypass that —
-                      // it just creates a new tab that fights the existing
-                      // one for the claim.
+                      // WA Web's New chat / search box only matches saved
+                      // contacts — pasting an unsaved phone number there
+                      // returns "No results found". The official path for
+                      // unsaved-number chats is the click-to-chat URL
+                      // `web.whatsapp.com/send?phone=…&text=…`.
                       //
-                      // Solution: don't open any tab at all. Copy phone +
-                      // message to clipboard. Leonardo alt-tabs to his
-                      // already-logged-in Business tab, pastes the number
-                      // in the search/new-chat field to find the contact,
-                      // then pastes the message into the chat input. Works
-                      // every time, no session disruption.
-                      const clipboardPayload = `+${waNum}\n\n${waBody}`;
+                      // Pasting that URL into the address bar of his
+                      // already-logged-in WA Business tab (Ctrl+L →
+                      // Ctrl+V → Enter) navigates the SAME tab to a fresh
+                      // chat with the unsaved number, message prefilled.
+                      // No new tab, no session conflict, no missing
+                      // contact.
+                      const url = `https://web.whatsapp.com/send?phone=${waNum}&text=${encodeURIComponent(waBody)}`;
                       if (typeof navigator !== "undefined" && navigator.clipboard) {
-                        navigator.clipboard.writeText(clipboardPayload).then(() => {
+                        navigator.clipboard.writeText(url).then(() => {
                           setWaCopied(true);
                           setTimeout(() => setWaCopied(false), 2500);
                         });
@@ -900,15 +897,14 @@ function LeadActionCard({
                       <button
                         onClick={handleWaClick}
                         title={
-                          `Kopira +${waNum} + follow-up poruku u clipboard. ` +
-                          `Idi na svoju WhatsApp Business tabu, paste broj u ` +
-                          `pretragu/novi chat, otvori chat, paste poruku, ` +
-                          `pošalji. Bez session konflikta.`
+                          `Kopira web.whatsapp.com/send URL za +${waNum}. ` +
+                          `U WA Business tabu: Ctrl+L (URL bar) → Ctrl+V → ` +
+                          `Enter. Otvara chat s prefilled porukom u istoj tabi.`
                         }
                         className="flex items-center gap-1 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
                       >
                         <span className="text-sm leading-none">{waCopied ? "✅" : "💬"}</span>
-                        {waCopied ? "Kopirano (paste u WA Business)" : "i WhatsApp"}
+                        {waCopied ? "URL kopiran (Ctrl+L → V → ⏎ u WA tabu)" : "i WhatsApp"}
                       </button>
                     );
                   })()}
