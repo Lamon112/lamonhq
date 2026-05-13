@@ -1034,6 +1034,120 @@ function LeadActionCard({
                     );
                   })()}
               </div>
+
+              {/*
+               * Fallback channels strip.
+               *
+               * Surfaces every OTHER reachable channel for this lead so
+               * Leonardo has a one-click fallback when the primary
+               * channel fails — e.g. "The number isn't on WhatsApp" /
+               * the URL paste hangs on the gray splash / the prospect
+               * doesn't respond. Each chip is the actual
+               * email / IG handle / phone / LinkedIn URL, with a
+               * channel-coloured icon and a click target that opens
+               * the right deep link for that channel.
+               */}
+              {(() => {
+                const allChannels: Channel[] = [
+                  "email",
+                  "whatsapp",
+                  "phone",
+                  "instagram",
+                  "linkedin",
+                ];
+                const fallbacks = allChannels
+                  .filter((c) => c !== channel)
+                  .map((c) => ({ ch: c, value: getContactForChannel(lead, c) }))
+                  .filter((f) => !!f.value) as { ch: Channel; value: string }[];
+                if (!fallbacks.length) return null;
+                const chipMeta: Record<
+                  Channel,
+                  { label: string; emoji: string; cls: string }
+                > = {
+                  email: {
+                    label: "Mail",
+                    emoji: "📧",
+                    cls: "border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/15",
+                  },
+                  whatsapp: {
+                    label: "WA",
+                    emoji: "💬",
+                    cls: "border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/15",
+                  },
+                  phone: {
+                    label: "Phone",
+                    emoji: "📞",
+                    cls: "border-amber-400/40 text-amber-300 hover:bg-amber-500/15",
+                  },
+                  instagram: {
+                    label: "IG",
+                    emoji: "📷",
+                    cls: "border-pink-400/40 text-pink-300 hover:bg-pink-500/15",
+                  },
+                  linkedin: {
+                    label: "LinkedIn",
+                    emoji: "💼",
+                    cls: "border-sky-400/40 text-sky-300 hover:bg-sky-500/15",
+                  },
+                };
+                return (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2">
+                    <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                      Ako ne radi · fallback:
+                    </span>
+                    {fallbacks.map(({ ch, value }) => {
+                      const meta = chipMeta[ch];
+                      const href = buildChannelHref(ch, value, draft);
+                      // For WA fallback, copy URL to clipboard instead of
+                      // opening — same proven workflow as the primary WA
+                      // button. For everything else, plain <a> in new tab.
+                      if (ch === "whatsapp" && href) {
+                        return (
+                          <button
+                            key={ch}
+                            onClick={() => {
+                              if (typeof navigator === "undefined" || !navigator.clipboard) return;
+                              navigator.clipboard.writeText(href);
+                            }}
+                            title={`Kopira WA URL za ${value}. Paste u URL bar tvog WA Business tab-a.`}
+                            className={
+                              "flex items-center gap-1 rounded-md border bg-bg-elevated px-2 py-0.5 text-[10px] font-medium transition-all " +
+                              meta.cls
+                            }
+                          >
+                            <span className="text-xs leading-none">{meta.emoji}</span>
+                            {meta.label}
+                            <span className="font-mono text-text-dim">·</span>
+                            <span className="font-mono text-[10px] text-text-dim max-w-[140px] truncate">
+                              {value}
+                            </span>
+                          </button>
+                        );
+                      }
+                      return (
+                        <a
+                          key={ch}
+                          href={href ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`${meta.label} · ${value}`}
+                          className={
+                            "flex items-center gap-1 rounded-md border bg-bg-elevated px-2 py-0.5 text-[10px] font-medium transition-all " +
+                            meta.cls
+                          }
+                        >
+                          <span className="text-xs leading-none">{meta.emoji}</span>
+                          {meta.label}
+                          <span className="font-mono text-text-dim">·</span>
+                          <span className="font-mono text-[10px] text-text-dim max-w-[140px] truncate">
+                            {value}
+                          </span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </motion.div>
         )}
