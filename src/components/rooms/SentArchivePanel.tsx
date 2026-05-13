@@ -31,9 +31,12 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
-  Reply,
   Clock,
   XCircle,
+  ThumbsUp,
+  CalendarCheck,
+  Trophy,
+  Ban,
 } from "lucide-react";
 import type { OutreachArchiveRow } from "@/lib/queries";
 import { addOutreach, updateOutreachStatus } from "@/app/actions/outreach";
@@ -58,6 +61,10 @@ const STATUS_META: Record<
 > = {
   sent: { label: "Sent", cls: "border-success/40 bg-success/10 text-success" },
   replied: { label: "Replied", cls: "border-emerald-400/50 bg-emerald-500/20 text-emerald-200" },
+  replied_positive: { label: "Pozitivno", cls: "border-emerald-400/60 bg-emerald-500/25 text-emerald-100" },
+  replied_booked: { label: "Booked", cls: "border-cyan-400/60 bg-cyan-500/25 text-cyan-100" },
+  replied_won: { label: "Won", cls: "border-amber-400/60 bg-amber-500/25 text-amber-100" },
+  replied_rejected: { label: "Odbijen", cls: "border-stone-400/60 bg-stone-500/20 text-stone-200" },
   no_reply: { label: "No reply", cls: "border-stone-500/40 bg-stone-500/10 text-stone-300" },
   bounced: { label: "Bounced", cls: "border-rose-400/50 bg-rose-500/15 text-rose-200" },
 };
@@ -476,22 +483,44 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                           </span>
                           {(
                             [
-                              { key: "replied", label: "Replied", Icon: Reply, on: "border-emerald-400/60 bg-emerald-500/20 text-emerald-200", off: "border-border bg-bg-elevated text-text-muted hover:border-emerald-400/40 hover:text-emerald-300" },
+                              { key: "replied_positive", label: "Pozitivno", Icon: ThumbsUp, on: "border-emerald-400/70 bg-emerald-500/25 text-emerald-100", off: "border-border bg-bg-elevated text-text-muted hover:border-emerald-400/40 hover:text-emerald-300" },
+                              { key: "replied_booked", label: "Booked", Icon: CalendarCheck, on: "border-cyan-400/70 bg-cyan-500/25 text-cyan-100", off: "border-border bg-bg-elevated text-text-muted hover:border-cyan-400/40 hover:text-cyan-300" },
+                              { key: "replied_won", label: "Won", Icon: Trophy, on: "border-amber-400/70 bg-amber-500/25 text-amber-100", off: "border-border bg-bg-elevated text-text-muted hover:border-amber-400/40 hover:text-amber-300" },
+                              { key: "replied_rejected", label: "Odbijen", Icon: Ban, on: "border-stone-400/70 bg-stone-500/25 text-stone-100", off: "border-border bg-bg-elevated text-text-muted hover:border-stone-400/40 hover:text-stone-300" },
                               { key: "no_reply", label: "No reply", Icon: Clock, on: "border-stone-500/60 bg-stone-500/20 text-stone-200", off: "border-border bg-bg-elevated text-text-muted hover:border-stone-500/40 hover:text-stone-300" },
                               { key: "bounced", label: "Bounced", Icon: XCircle, on: "border-rose-400/60 bg-rose-500/20 text-rose-200", off: "border-border bg-bg-elevated text-text-muted hover:border-rose-400/40 hover:text-rose-300" },
                             ] as const
                           ).map(({ key, label, Icon, on, off }) => {
-                            const active = row.status === key;
+                            // Highlight any "replied*" sub-status when the
+                            // row carries the legacy generic "replied"
+                            // value too, so old rows still light up the
+                            // closest pill instead of looking inactive.
+                            const active =
+                              row.status === key ||
+                              (row.status === "replied" && key === "replied_positive");
                             return (
                               <button
                                 key={key}
                                 onClick={() => {
-                                  if (active) return;
+                                  if (row.status === key) return;
                                   startTransition(async () => {
                                     await updateOutreachStatus(row.id, key);
                                   });
                                 }}
-                                disabled={active}
+                                disabled={row.status === key}
+                                title={
+                                  key === "replied_positive"
+                                    ? "Zainteresirani, traže više info / dogovor"
+                                    : key === "replied_booked"
+                                      ? "Bookirao Zoom / poziv"
+                                      : key === "replied_won"
+                                        ? "Postao klijent / potpisao"
+                                        : key === "replied_rejected"
+                                          ? "Odbijen — 'nismo zainteresirani'"
+                                          : key === "no_reply"
+                                            ? "Tišina nakon 4–7 dana"
+                                            : "Email/broj ne radi"
+                                }
                                 className={
                                   "flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium transition-all " +
                                   (active ? on + " cursor-default" : off)

@@ -144,7 +144,21 @@ export interface OutreachRow {
   lead_name: string | null;
   platform: string | null;
   message: string | null;
-  status: "sent" | "replied" | "no_reply" | "bounced";
+  /**
+   * Outreach status — expanded in migration 0018 to break the generic
+   * "replied" bucket into four pipeline-relevant outcomes. Legacy
+   * "replied" value is preserved for backward compat with rows written
+   * before the sub-statuses existed.
+   */
+  status:
+    | "sent"
+    | "replied"
+    | "replied_positive"
+    | "replied_booked"
+    | "replied_won"
+    | "replied_rejected"
+    | "no_reply"
+    | "bounced";
   sent_at: string;
 }
 

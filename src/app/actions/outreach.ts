@@ -43,8 +43,28 @@ export interface AddOutreachInput {
     | "phone"
     | "other";
   message: string;
-  status?: "sent" | "replied" | "no_reply" | "bounced";
+  status?: OutreachStatus;
 }
+
+/**
+ * Outreach status — expanded in migration 0018 to break the generic
+ * "replied" bucket into four pipeline-relevant outcomes (positive
+ * follow-up vs. booked call vs. closed-won vs. clean rejection). The
+ * Sent Archive UI surfaces these as distinct pill buttons so Leonardo
+ * can see at a glance which mails are alive vs. dead.
+ *
+ * "replied" is kept for backward compat with rows written before the
+ * sub-statuses existed.
+ */
+export type OutreachStatus =
+  | "sent"
+  | "replied"
+  | "replied_positive"
+  | "replied_booked"
+  | "replied_won"
+  | "replied_rejected"
+  | "no_reply"
+  | "bounced";
 
 export interface ActionResult {
   ok: boolean;
@@ -119,7 +139,7 @@ export async function addOutreach(
 
 export async function updateOutreachStatus(
   id: string,
-  status: "sent" | "replied" | "no_reply" | "bounced",
+  status: OutreachStatus,
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase
