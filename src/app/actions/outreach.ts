@@ -62,13 +62,23 @@ export async function addOutreach(
   const leadName = input.leadName.trim();
   if (!leadName) return { ok: false, error: "Lead name je obavezan" };
 
+  // The outreach table currently has a platform CHECK constraint that
+  // rejects "whatsapp" and "phone" — live testing showed silent ok=false
+  // when those values were inserted. Until the constraint is relaxed in
+  // a follow-up migration, map them to "other" at the persistence layer
+  // so callers can keep using the natural channel names in the API.
+  const dbPlatform: "linkedin" | "instagram" | "tiktok" | "email" | "other" =
+    input.platform === "whatsapp" || input.platform === "phone"
+      ? "other"
+      : input.platform;
+
   const { data, error } = await supabase
     .from("outreach")
     .insert({
       user_id: userData.user.id,
       lead_id: input.leadId ?? null,
       lead_name: leadName,
-      platform: input.platform,
+      platform: dbPlatform,
       message: input.message?.trim() || null,
       status: input.status ?? "sent",
     })

@@ -101,16 +101,36 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
   const [, startTransition] = useTransition();
 
   /**
-   * Map of lead_id → most-recent WhatsApp outreach row. Used to
-   * (a) decide whether the "Follow-up WhatsApp" click should log a new
-   * outreach row to the DB or just re-copy the URL, and
-   * (b) render a "+WA · prije X" badge on email rows whose lead also
-   * has a paired WA outreach (multi-touch coverage at a glance).
+   * Marker phrase that uniquely identifies a Sent-Archive WhatsApp
+   * follow-up message. The body text in copyWaFollowUp() always starts
+   * with this string, and no other outreach platform reuses it, so we
+   * can detect WA follow-ups even when they are persisted under
+   * platform="other" (which is the only value the outreach table's
+   * platform CHECK constraint accepts for non-{email,instagram,linkedin}
+   * touchpoints).
+   */
+  const WA_FOLLOWUP_MARKER =
+    "poslao sam vam mail o filtriranju pacijenata prije recepcije";
+
+  /**
+   * Map of lead_id → most-recent WhatsApp follow-up outreach row.
+   * Detection accepts EITHER platform="whatsapp" (forward-compat once
+   * the platform CHECK is relaxed) OR platform="other" with the marker
+   * phrase in the message body. Used to:
+   * (a) skip the addOutreach call on re-clicks so we don't duplicate
+   *     rows, and
+   * (b) render a "+WA · prije X" badge on email rows whose lead has a
+   *     paired WA follow-up (multi-touch coverage at a glance).
    */
   const waOutreachByLead = useMemo(() => {
     const map = new Map<string, OutreachArchiveRow>();
     for (const r of rows) {
-      if (r.platform !== "whatsapp" || !r.lead_id) continue;
+      if (!r.lead_id) continue;
+      const isWa =
+        r.platform === "whatsapp" ||
+        (r.platform === "other" &&
+          (r.message ?? "").includes(WA_FOLLOWUP_MARKER));
+      if (!isWa) continue;
       const existing = map.get(r.lead_id);
       if (!existing || new Date(r.sent_at) > new Date(existing.sent_at)) {
         map.set(r.lead_id, r);
@@ -152,17 +172,21 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
 
     // Optimistically log the WhatsApp outreach (only if this lead doesn't
     // already have a paired WA row — re-copy clicks shouldn't duplicate).
+    //
+    // Persisted as platform="other" because the outreach table's platform
+    // CHECK constraint rejects "whatsapp" today — addOutreach silently
+    // returned ok=false in live testing, leaving the WA row missing.
+    // The waOutreachByLead lookup above detects WA follow-ups by message
+    // body marker, so the badge + state still work end-to-end.
     const alreadyLogged = row.lead_id && waOutreachByLead.has(row.lead_id);
     if (row.lead_id && !alreadyLogged) {
       startTransition(async () => {
         const result = await addOutreach({
           leadName: row.lead_name ?? "(no name)",
           leadId: row.lead_id ?? undefined,
-          platform: "whatsapp",
+          platform: "other",
           message: body,
         });
-        // Surface failures loudly so we can see why the insert
-        // silently didn't appear in the Sent Archive after a click.
         if (!result.ok) {
           // eslint-disable-next-line no-console
           console.error(
