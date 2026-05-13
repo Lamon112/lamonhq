@@ -356,13 +356,30 @@ const SWAPS: Swap[] = [
   // Holmes often labels TikTok heart-counts as "pregleda" (views). Doctor
   // recipient instantly clocks this as wrong (TikTok shows views in
   // millions/thousands; the small number is likes). Auto-replace when
-  // TikTok context is nearby.
+  // TikTok context is nearby OR when no YouTube context is present.
   {
     // "TikTok ... 2.755 pregleda" → "TikTok ... 2.755 interakcija"
     // Multi-line scan: match "pregleda" within 80 chars of "TikTok"
     find: /(TikTok[^.]{0,80}?)\b(\d[\d.,]*)\s+pregleda\b/gi,
     replace: (m, prefix: string, num: string) => `${prefix}${num} interakcija`,
     reason: "TikTok N pregleda → N interakcija (TikTok hearts ≠ views)",
+  },
+  {
+    // CATCH-ALL: any "X pregleda" (where X has 3+ digits — typical
+    // heart-count range) that's NOT preceded by "YouTube" within 60
+    // chars. YouTube is the one platform where "pregleda" unambiguously
+    // means views; everywhere else (TikTok, Instagram, generic social)
+    // the same number is almost always likes/hearts that Holmes
+    // mislabelled. Confidence is high enough that a false positive
+    // ("X interakcija" when it really was views) is still acceptable —
+    // worst case the doctor reads slightly understated engagement.
+    //
+    // Concrete bug this fixes: Štimac dental centar — AI wrote
+    // "42.200 pregleda" when the underlying TT data was 42K aggregate
+    // hearts/likes.
+    find: /(?<!youtube[^.]{0,60})\b(\d[\d.,]{2,})\s+pregleda\b/gi,
+    replace: (_m, num: string) => `${num} interakcija`,
+    reason: "catch-all: N pregleda → N interakcija (only YouTube uses 'pregleda' for views)",
   },
 
   // ── #15 NO VAGUE PROMISES — strip ROI snapshot / audit / analiza filler ──

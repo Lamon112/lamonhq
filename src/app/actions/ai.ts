@@ -198,8 +198,14 @@ Ova pravila imaju **najveći prioritet** — viši od good-rated past examples, 
 **OVERRIDE B · ZERO PARROTING METRIČKIH ETIKETA.** Ako u hook-u/notes vidiš brojku s metričkom etiketom (npr. "2.755 pregleda", "5.000 lajkova"), NEMOJ je prepisati doslovno ako:
 - Etiketa zvuči pogrešno za platformu (TikTok srca = lajkovi, NIKAD "pregledi"; IG video views su rijetko izvučeni kao "pregledi" — češće su to lajkovi)
 - Ne znaš sigurno tip metrike
+- Brojka NIJE eksplicitno označena kao "views"/"pregledi" iz YouTube/TikTok Analytics screenshot-a ili API-ja — sve drugo je vjerojatno lajkovi ili angažman
 
-U tom slučaju koristi neutralan termin **"interakcija"** ili izostavi brojku potpuno. Bolje je reći "121 TikTok video s ozbiljnim brojem interakcija" nego pogrešno "2.755 pregleda" što doktor odmah prepozna kao netočno.
+U tom slučaju koristi neutralan termin **"interakcija"** ili **"angažman"**, ili izostavi brojku potpuno. Bolje je reći "121 TikTok video s ozbiljnim brojem interakcija" nego pogrešno "2.755 pregleda" što doktor odmah prepozna kao netočno.
+
+**KONKRETAN PRIMJER GREŠKE KOJU NE SMIJEŠ PONOVITI (Štimac dental centar, svibanj 2026):**
+- ❌ Generirano krivo: "42.200 pregleda na TikToku" — Štimac NEMA 42K views, ima 42K *lajkova/srca* na agregatu TT objava.
+- ✅ Ispravno: "42K interakcija na TikToku" ILI "viralni angažman na TikToku" ILI samo "snažna TikTok prisutnost" bez brojke.
+- Pravilo: ako brojka dolazi iz Holmes notes-a i NIJE jasno "X views from YouTube Analytics" → koristi "interakcija" / "angažman" / izostavi.
 
 **OVERRIDE C · PAST GOOD-RATED EXAMPLES NE NADJAČAVAJU OVA PRAVILA.** Ako u "good draftova" sekciji vidiš pricing ili krive metričke etikete, ti drugovi su bili PRIJE ovih pravila — ne kopiraj te dijelove. Ova 16 pravila + 3 OVERRIDE-a uvijek imaju prioritet.
 
