@@ -1462,8 +1462,24 @@ function parseDraftSections(
 
   if (channel === "phone") {
     // Phone scripts come with `[0-30s] OPENER` style markers and `---`
-    // separators between blocks. Parse into the 5 canonical phases.
+    // separators between blocks. Parse into the 8 canonical phases (3
+    // gatekeeper-flow sections + 5 doctor-on-line sections).
     const phaseLabels: { match: RegExp; title: string; emoji: string }[] = [
+      {
+        match: /\bJAVLJANJE\b/i,
+        title: "Javljanje (0-5s)",
+        emoji: "📲",
+      },
+      {
+        match: /\b(GATEKEEPER|GATEKEEPER BRIDGE)\b/i,
+        title: "Gatekeeper bridge (5-30s)",
+        emoji: "🛡",
+      },
+      {
+        match: /\b(PRE-?FLIGHT|PREFLIGHT|PAUZA)\b/i,
+        title: "Pre-flight pauza (30-60s)",
+        emoji: "⏸",
+      },
       { match: /\b(OPENER|0-30s)\b/i, title: "Opener (0-30s)", emoji: "📞" },
       { match: /\b(PITCH|30-90s)\b/i, title: "Pitch (30-90s)", emoji: "🎯" },
       {
@@ -1500,9 +1516,14 @@ function parseDraftSections(
         }
         if (matchedIdx >= 0) {
           used.add(matchedIdx);
-          // Strip the bracketed marker line ("[0-30s] OPENER") from body
+          // Strip the bracketed marker line ("[0-30s] OPENER") from body.
+          // Also catch the JAVLJANJE / GATEKEEPER / PRE-FLIGHT headers
+          // that don't always include a [time] bracket.
           const body = block
-            .replace(/^\[?[^\]\n]*\]?\s*(OPENER|PITCH|PROBNA PITANJA|CTA|AKO ODBIJU)[^\n]*\n+/i, "")
+            .replace(
+              /^\[?[^\]\n]*\]?\s*(JAVLJANJE|GATEKEEPER( BRIDGE)?|PRE-?FLIGHT|PREFLIGHT|PAUZA|OPENER|PITCH|PROBNA PITANJA|CTA|AKO ODBIJU)[^\n]*\n+/i,
+              "",
+            )
             .trim();
           tagged.push({
             title: phaseLabels[matchedIdx].title,

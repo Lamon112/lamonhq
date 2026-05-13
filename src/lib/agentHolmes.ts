@@ -131,10 +131,66 @@ Kada evaluiraš "instagram_profile" (ili "social_depth.instagram") za personal_a
 
     - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis, NE "5 stupova"). Spomeni Plima paket mid-message kao rješenje + reci "to je 5 ljudi posla u 1 sustavu — recepcionar 24/7, marketer, brand, PR, analytics — koji bi te u HR koštali 10-15K€/mj bruto, a kod nas je sve to integrirano u jedan sustav". **NIKAD ne pisati konkretnu Plima cijenu (1.497€, 2.500€, 3.500€, 5K, 10K) u mailu — to je discovery-call only.** Voice se ne spominje pre-discovery — to je za demo poziv. Detaljnije nabrajanje 5 stupova ide na discovery call, ne u prvi mail. Sign-off **"Pozdrav,\\nLeonardo"** (samo ime, BEZ prezimena, BEZ "S poštovanjem").
 
-    - **phone** — STROGI FORMAT, NE PORUKA, nego **CALL SCRIPT** s 5 jasno odvojenih sekcija (svaka razdvojena s ---  linijom). Leonardo čita ovo NAGLAS dok zove. FULL REČENICE.
+    - **phone** — STROGI FORMAT, NE PORUKA, nego **CALL SCRIPT** s 8 jasno odvojenih sekcija u 2 phase-a (svaka sekcija razdvojena s ---  linijom). Phase 1 = gatekeeper flow (do nego što doktor dođe na liniju), Phase 2 = razgovor s doktorom. Leonardo čita ovo NAGLAS dok zove. FULL REČENICE.
 
       \`\`\`
       📞 PHONE SCRIPT — [klinika] · prilagodi vlasnika
+
+      ═══ PHASE 1: GATEKEEPER FLOW (do nego što doktor dođe na liniju) ═══
+
+      [0-5s] JAVLJANJE — što čuješ + tvoj prvi response
+
+      🅰 SCENARIJ A — doktor osobno javi (solo praksa, mid-size)
+      Oni: "Halo / Dobar dan."
+      Ti: "Dobar dan, doktor/doktore [Prezime]? Leonardo Lamon ovdje, bavim se razvojem privatnih ordinacija."
+      → Pauza pola sekunde. Kad dobiješ "da" / "izvolite" / "tko?" → preskačeš direktno na PHASE 2 OPENER.
+
+      🅱 SCENARIJ B — recepcionar / sestra / voditelj klinike javi (premium klinike)
+      Oni: "Klinika [naziv], izvolite?"
+      Ti: "Dobar dan. Leonardo Lamon ovdje. Smijem li dobiti doktora/doktoricu [Prezime]?"
+      → Peer-level ton, ne salesman. NIKAD ne pričaš što prodaješ u ovom trenutku. Pauza, pa nastaviš s GATEKEEPER BRIDGE (sljedeća sekcija).
+
+      🅲 SCENARIJ C — IVR / "trenutno nismo dostupni"
+      → Spusti slušalicu, NE ostavljaj poruku (0% reply rate). Nazovi opet u window-u: 8:00-9:00, 13:00-14:00, ili 18:30-19:30.
+
+      ---
+
+      [5-30s] GATEKEEPER BRIDGE — 5 sub-skripti za najčešće objections recepcije
+
+      🛡 OBJECTION 1: "U vezi čega ga trebate?" (60% slučajeva)
+      Ti: "U vezi razvojnih opcija za ordinaciju. Vidio sam njihov [konkretan signal — viralni TikTok post, 13K IG followera, recent intervju u Jutarnjem, premium All on 4 brand] — imam jedno specifično pitanje koje će ga zanimati. Trebam 2-3 minute njegovog vremena."
+      → NIKAD ne kažeš "imam ponudu", "imam usluge", "bavim se marketingom" — to ubija poziv. Ti si "razvojni partner", ne "agencija".
+
+      🛡 OBJECTION 2: "On je s pacijentom / u sali / na operaciji"
+      Ti: "Razumijem, hvala. Kad je njegov najlakši trenutak za 5-minutni razgovor — danas popodne nakon 18h ili sutra ujutro prije 9? Ja ću ga zvati u tom trenutku, samo da znam."
+      → Tražiš KONKRETAN termin (ne "kad može"). Ti zoveš njega, ne obrnuto — preuzimaš inicijativu.
+      Ako kažu "ostavite broj, javit će se" → "Mogu, samo realno — koliko često to bude? Ja bih radije ja njega nazvao u njegovom slobodnom trenutku, ne radim mu pritisak."
+
+      🛡 OBJECTION 3: "Tko ste vi? Što prodajete?"
+      Ti: "Bavim se razvojem privatnih ordinacija — pomažem klinikama vašeg profila da uhvate više pacijenata kroz konkretne signale koje vidim na njihovom marketingu. Nazivam doktora [Prezime] zato što [konkretan razlog: vidio sam njegov post o X, 13K IG je solidno, klinika prima 6 zvjezdica]. Trebam mu pokazati jednu brojku, traje 3 minute."
+      → "Konkretan razlog" je KLJUČ — pokazuješ da nisi cold-spammer, nego target-istraživač.
+
+      🛡 OBJECTION 4: "Pošaljite nam email, on će se javiti ako ga zanima" (klasični brush-off)
+      Ti: "Razumijem, samo realno — koliko često se to dogodi da on otvori cold mail? Da ne gubim oboje vremena: ako je on doslovno nedostupan ovaj tjedan, nazovem ga ponedjeljak u 10. Ako ima 2 minute danas, javite mu — kažite da Leonardo Lamon iz Lamon Agencije nazove u vezi [konkretan signal]. Vidite što kaže."
+      → Humanize ("ne gubim oboje vremena") + give them choice → recepcionar postaje tvoj SOFT ALLY, ne gatekeeper.
+
+      🛡 OBJECTION 5: "Vlasnik se zove [drugi prezime]" (ti si pogrešno mislio tko je vlasnik)
+      Ti: "Aha hvala, dakle [novo prezime]. Smijem dobiti njega/nju? Nazivam baš u vezi tog razvojnog uvida, traje 3 minute."
+      → Pivot brzo. NIKAD ne pokazuj da te to baca iz takta. Peer would just say "aha cool, give me him".
+
+      ---
+
+      [30-60s] PRE-FLIGHT PAUZA — dok te recepcija prebacuje (pickup +30-60s)
+
+      Kad čuješ "samo trenutak, prebacujem ga" → NE čekaš u tišini. Iskoristi 5-10 sekundi:
+      1. Otvori Holmes Bureau za njegov konkretan signal (broj posljednjeg viralnog posta, ime, tier)
+      2. Disanje — 2 sek duboko unutra, 2 van. Snižava glasovne tremor
+      3. Postavi misao — "ja sam mu peer, ne salesman. Ja imam konkretan ROI broj za njegovu kliniku."
+      → Kad čuješ doktora ("halo, izvolite") → kreni s PHASE 2 OPENER.
+
+      ---
+
+      ═══ PHASE 2: DOCTOR ON LINE (clock resetira na 0) ═══
 
       [0-30s] OPENER
       "Dr. [ime], dobar dan. Leonardo Lamon ovdje. Bavim se isključivo razvojem privatnih ordinacija — primijetio sam [konkretan signal: post, brojka, brand] kod [klinika], zato vas zovem direktno. Imate li 2-3 min za kratko pitanje?"
@@ -163,7 +219,7 @@ Kada evaluiraš "instagram_profile" (ili "social_depth.instagram") za personal_a
       Ako i drugi put NE → "U redu, broj imate. Sretno s ordinacijom."
       \`\`\`
 
-      SVE rečenice MORAJU biti pisane kao govor — full sentences koje Leonardo doslovno čita. Bez "[X]" placeholdera u finalnom output-u — popuni konkretno za OVU kliniku (njezino ime, njihov najupečatljiviji signal, ICP-prilagođen pain). Bez bullets bez kratica.
+      SVE rečenice u obje phase MORAJU biti pisane kao govor — full sentences koje Leonardo doslovno čita. Bez "[X]" placeholdera u finalnom output-u — popuni konkretno za OVU kliniku (njezino ime, njihov najupečatljiviji signal, ICP-prilagođen pain). Bez bullets bez kratica. JAVLJANJE i GATEKEEPER BRIDGE sekcije su sub-skripti koje se koriste ovisno o tome tko se javi — ako doktor osobno → Scenarij A pa direktno OPENER, ako recepcija → Scenarij B pa GATEKEEPER BRIDGE pa PRE-FLIGHT pa OPENER.
 
     - **whatsapp** — TWO-STEP FUNNEL, ne single mash. Workflow: poruka → ČEKAJ reply → glasovna s CTA na Zoom poziv.
 
