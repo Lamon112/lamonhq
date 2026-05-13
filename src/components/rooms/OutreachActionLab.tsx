@@ -428,6 +428,7 @@ function LeadActionCard({
   const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const [waCopied, setWaCopied] = useState(false);
   const [gmail, setGmail] = useState<GmailStatus | null>(null);
 
   const report = lead.holmes_report ?? null;
@@ -831,29 +832,52 @@ function LeadActionCard({
                  */}
                 {channel === "email" &&
                   (() => {
-                    const waNum = (lead.holmes_report?.channels?.phone ?? "")
-                      .replace(/[^0-9+]/g, "")
-                      .replace(/^\+/, "");
+                    const waNumRaw = lead.holmes_report?.channels?.phone ?? "";
+                    const waNum = waNumRaw.replace(/[^0-9+]/g, "").replace(/^\+/, "");
                     if (!waNum) return null;
-                    // Short WhatsApp body — different tone than email, more
-                    // conversational. Falls back to the full draft if the
-                    // shortened version is empty.
+                    // Short WhatsApp body — more conversational than email,
+                    // references the email he just sent so the recipient
+                    // bridges the two touchpoints in their head.
                     const waBody =
                       `Pozdrav, poslao sam vam mail o filtriranju pacijenata ` +
                       `prije recepcije — možda ćete kasnije pogledati. Ako ` +
                       `vam je lakše porazgovarati ovdje, samo javite. — Leonardo`;
                     const waHref = `https://web.whatsapp.com/send?phone=${waNum}&text=${encodeURIComponent(waBody)}`;
+                    const handleWaClick = () => {
+                      // Belt-and-suspenders: copy phone + message to
+                      // clipboard so Leonardo can paste into his existing
+                      // logged-in WhatsApp Business tab even if the
+                      // session-conflict spinner blocks the new tab from
+                      // loading. Format: "+38591…\n\n[message]" so pasting
+                      // into WA search jumps to the contact, and a second
+                      // paste into the message box drops the prefilled text.
+                      const clipboardPayload = `+${waNum}\n\n${waBody}`;
+                      if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        navigator.clipboard.writeText(clipboardPayload).then(() => {
+                          setWaCopied(true);
+                          setTimeout(() => setWaCopied(false), 2500);
+                        });
+                      }
+                      // Still attempt to open the named WhatsApp tab — if
+                      // it works, great; if it spins because of an
+                      // existing WA Web session in another tab, Leonardo
+                      // just alt-tabs there and pastes from clipboard.
+                      if (typeof window !== "undefined") {
+                        window.open(waHref, "lamon-whatsapp-web");
+                      }
+                    };
                     return (
-                      <a
-                        href={waHref}
-                        target="lamon-whatsapp-web"
-                        rel="noopener noreferrer"
-                        title={`Pošalji paralelno na WhatsApp (+${waNum})`}
+                      <button
+                        onClick={handleWaClick}
+                        title={
+                          `Kopira +${waNum} + poruku u clipboard i pokušava otvoriti ` +
+                          `WhatsApp tab. Ako tab zapne, idi na svoju WA Business tabu i paste.`
+                        }
                         className="flex items-center gap-1 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
                       >
-                        <span className="text-sm leading-none">💬</span>
-                        i WhatsApp
-                      </a>
+                        <span className="text-sm leading-none">{waCopied ? "✅" : "💬"}</span>
+                        {waCopied ? "Kopirano + WA otvoren" : "i WhatsApp"}
+                      </button>
                     );
                   })()}
               </div>
