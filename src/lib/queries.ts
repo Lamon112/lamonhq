@@ -317,7 +317,7 @@ export async function getOutreachArchive(
   // phones live inside the JSONB fields (holmes_report,
   // person_enrichment) or are pasted into `notes`. Selecting a column
   // that doesn't exist makes the whole join fail silently.
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("outreach")
     .select(
       "id, lead_id, lead_name, platform, message, status, sent_at, " +
@@ -326,6 +326,13 @@ export async function getOutreachArchive(
     .eq("user_id", userData.user.id)
     .order("sent_at", { ascending: false })
     .limit(limit);
+
+  if (error) {
+    // Log the failure loud and clear in server logs so a silent empty
+    // archive doesn't hide a broken FK join again.
+    console.error("[getOutreachArchive] Supabase query failed:", error);
+    return [];
+  }
 
   // Supabase typed the embedded `leads` relation as an array even though
   // the FK is to-one. We collapse it to the first row. EmbeddedLead
