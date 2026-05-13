@@ -31,9 +31,12 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
+  Reply,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import type { OutreachArchiveRow } from "@/lib/queries";
-import { addOutreach } from "@/app/actions/outreach";
+import { addOutreach, updateOutreachStatus } from "@/app/actions/outreach";
 
 type Channel = "all" | "instagram" | "email" | "phone" | "whatsapp" | "linkedin" | "other";
 
@@ -161,9 +164,13 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
       "Pozdrav, poslao sam vam mail o filtriranju pacijenata prije " +
       "recepcije — možda ćete kasnije pogledati. Ako vam je lakše " +
       "porazgovarati ovdje, samo javite. — Leonardo";
-    const url = `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(body)}`;
+    // Format: "+broj\n\nporuka" — designed for WA Business "New chat"
+    // workflow (paste broj → click "Send message to +XXX" → paste body).
+    // The URL approach (web.whatsapp.com/send?...) hung blank on unsaved
+    // numbers due to session re-claim + unknown-phone validation.
+    const payload = `+${num}\n\n${body}`;
 
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(payload).then(() => {
       setWaCopiedId(row.id);
       setTimeout(() => {
         setWaCopiedId((id) => (id === row.id ? null : id));
@@ -455,15 +462,59 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                          * claim. Pasting into the live Business tab works
                          * every time.
                          */}
+                        {/*
+                         * Status update strip — lets Leonardo mark a sent
+                         * outreach as replied / no_reply / bounced after
+                         * the prospect responds. Uses updateOutreachStatus
+                         * server action (already wired to revalidatePath).
+                         * Highlights the current status so the active
+                         * pill is obvious and others read as "promote to".
+                         */}
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                            Status:
+                          </span>
+                          {(
+                            [
+                              { key: "replied", label: "Replied", Icon: Reply, on: "border-emerald-400/60 bg-emerald-500/20 text-emerald-200", off: "border-border bg-bg-elevated text-text-muted hover:border-emerald-400/40 hover:text-emerald-300" },
+                              { key: "no_reply", label: "No reply", Icon: Clock, on: "border-stone-500/60 bg-stone-500/20 text-stone-200", off: "border-border bg-bg-elevated text-text-muted hover:border-stone-500/40 hover:text-stone-300" },
+                              { key: "bounced", label: "Bounced", Icon: XCircle, on: "border-rose-400/60 bg-rose-500/20 text-rose-200", off: "border-border bg-bg-elevated text-text-muted hover:border-rose-400/40 hover:text-rose-300" },
+                            ] as const
+                          ).map(({ key, label, Icon, on, off }) => {
+                            const active = row.status === key;
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => {
+                                  if (active) return;
+                                  startTransition(async () => {
+                                    await updateOutreachStatus(row.id, key);
+                                  });
+                                }}
+                                disabled={active}
+                                className={
+                                  "flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium transition-all " +
+                                  (active ? on + " cursor-default" : off)
+                                }
+                              >
+                                <Icon size={9} />
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+
                         {row.platform === "email" && row.lead_phone && (
                           <div className="flex flex-wrap items-center gap-2 pt-1">
                             <button
                               onClick={() => copyWaFollowUp(row)}
                               title={
                                 pairedWa
-                                  ? `WhatsApp follow-up već poslan ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira URL bez dupliranja.`
-                                  : "Kopira web.whatsapp.com/send URL. " +
-                                    "U WA Business tabu: Ctrl+L → Ctrl+V → Enter."
+                                  ? `WhatsApp follow-up već poslan ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira broj + poruku.`
+                                  : "Kopira +broj + cijelu poruku u clipboard. " +
+                                    "U WA Business: klikni 'New chat' (zelena + ikona, lijevo gore) " +
+                                    "→ paste +broj u search → klikni 'Send message to +XXX' " +
+                                    "→ paste poruku u chat → send."
                               }
                               className={
                                 "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:opacity-90 " +
@@ -480,7 +531,7 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                                     : "💬"}
                               </span>
                               {waCopiedId === row.id
-                                ? "URL kopiran — paste u WA Business (Ctrl+L → V → ⏎)"
+                                ? "Broj + poruka kopirano (paste u WA New chat)"
                                 : pairedWa
                                   ? `WA poslan · ${formatWhen(pairedWa.sent_at)}`
                                   : "Follow-up WhatsApp"}

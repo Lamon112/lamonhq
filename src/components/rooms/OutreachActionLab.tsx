@@ -854,27 +854,37 @@ function LeadActionCard({
                       </a>
                     )}
                   </>
-                ) : channel === "whatsapp" && channelHref ? (
-                  // WhatsApp channel: copy click-to-chat URL to clipboard
-                  // (same pattern as Sent Archive's Follow-up WhatsApp).
-                  // window.open / target=_blank both fail when Leonardo
-                  // already has a logged-in WA Business tab — the new tab
-                  // fights the existing session for the claim and spins
-                  // on the loading screen forever. Clipboard path lets him
-                  // paste the URL into his already-open WA Business tab's
-                  // address bar (Ctrl+L → Ctrl+V → Enter) and land
-                  // directly in the prefilled chat.
+                ) : channel === "whatsapp" && contactValue ? (
+                  // WhatsApp channel: copy "+phone\n\nmessage" to clipboard.
+                  //
+                  // Previous URL approach (web.whatsapp.com/send?phone=...&text=...)
+                  // worked for SAVED contacts but reliably hung on a blank
+                  // loading screen for unsaved numbers — WhatsApp Web has
+                  // to re-claim the session on every full-page navigation
+                  // and the new-number validation adds 30+ seconds of
+                  // gray screen.
+                  //
+                  // Switched to phone+message format that works with WA
+                  // Web's "New chat" panel: click green new-chat icon →
+                  // paste phone into search → click "Send message to
+                  // +XXX" entry → paste message in chat input. Reliable
+                  // for any unsaved cold-outreach number.
                   <button
                     onClick={() => {
                       if (typeof navigator === "undefined" || !navigator.clipboard) return;
-                      navigator.clipboard.writeText(channelHref).then(() => {
+                      const num = contactValue.replace(/[^0-9+]/g, "").replace(/^\+/, "");
+                      if (!num) return;
+                      const payload = `+${num}\n\n${draft}`;
+                      navigator.clipboard.writeText(payload).then(() => {
                         setWaCopied(true);
                         setTimeout(() => setWaCopied(false), 2500);
                       });
                     }}
                     title={
-                      "Kopira web.whatsapp.com/send URL u clipboard. " +
-                      "U WA Business tabu: Ctrl+L → Ctrl+V → Enter."
+                      "Kopira +broj + cijelu poruku u clipboard. " +
+                      "U WA Business: klikni 'New chat' (zelena + ikona, lijevo gore) " +
+                      "→ paste +broj u search → klikni 'Send message to +XXX' " +
+                      "→ paste poruku u chat → send."
                     }
                     className={
                       "flex items-center gap-1.5 rounded-md border-2 bg-gradient-to-br px-3 py-1.5 text-xs font-semibold transition-all hover:scale-[1.03] " +
@@ -884,7 +894,7 @@ function LeadActionCard({
                     }
                   >
                     <span className="text-sm leading-none">{waCopied ? "✅" : "💬"}</span>
-                    {waCopied ? "URL kopiran (Ctrl+L → V → ⏎)" : channelLabel}
+                    {waCopied ? "Broj + poruka kopirano" : channelLabel}
                   </button>
                 ) : (
                   channelHref && (
@@ -980,23 +990,17 @@ function LeadActionCard({
                       `prije recepcije — možda ćete kasnije pogledati. Ako ` +
                       `vam je lakše porazgovarati ovdje, samo javite. — Leonardo`;
                     const handleWaClick = () => {
-                      // Copy a WhatsApp click-to-chat URL to clipboard.
-                      //
-                      // WA Web's New chat / search box only matches saved
-                      // contacts — pasting an unsaved phone number there
-                      // returns "No results found". The official path for
-                      // unsaved-number chats is the click-to-chat URL
-                      // `web.whatsapp.com/send?phone=…&text=…`.
-                      //
-                      // Pasting that URL into the address bar of his
-                      // already-logged-in WA Business tab (Ctrl+L →
-                      // Ctrl+V → Enter) navigates the SAME tab to a fresh
-                      // chat with the unsaved number, message prefilled.
-                      // No new tab, no session conflict, no missing
-                      // contact.
-                      const url = `https://web.whatsapp.com/send?phone=${waNum}&text=${encodeURIComponent(waBody)}`;
+                      // Copy "+phone\n\nmessage" to clipboard for the WA
+                      // Business "New chat" workflow. The URL approach
+                      // (web.whatsapp.com/send?...) hangs on a blank
+                      // loading screen for unsaved cold-outreach numbers
+                      // because WhatsApp Web re-claims the session on
+                      // every navigation and validates the unknown phone.
+                      // Phone+message format works via New chat → paste
+                      // phone → "Send message to +XXX" → paste body.
+                      const payload = `+${waNum}\n\n${waBody}`;
                       if (typeof navigator !== "undefined" && navigator.clipboard) {
-                        navigator.clipboard.writeText(url).then(() => {
+                        navigator.clipboard.writeText(payload).then(() => {
                           setWaCopied(true);
                           setTimeout(() => setWaCopied(false), 2500);
                         });
@@ -1006,14 +1010,15 @@ function LeadActionCard({
                       <button
                         onClick={handleWaClick}
                         title={
-                          `Kopira web.whatsapp.com/send URL za +${waNum}. ` +
-                          `U WA Business tabu: Ctrl+L (URL bar) → Ctrl+V → ` +
-                          `Enter. Otvara chat s prefilled porukom u istoj tabi.`
+                          `Kopira +${waNum} + follow-up poruku u clipboard. ` +
+                          `U WA Business: klikni 'New chat' (zelena + ikona, lijevo gore) ` +
+                          `→ paste +broj u search → klikni 'Send message to +XXX' ` +
+                          `→ paste poruku u chat → send.`
                         }
                         className="flex items-center gap-1 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
                       >
                         <span className="text-sm leading-none">{waCopied ? "✅" : "💬"}</span>
-                        {waCopied ? "URL kopiran (Ctrl+L → V → ⏎ u WA tabu)" : "i WhatsApp"}
+                        {waCopied ? "Broj + poruka kopirano" : "i WhatsApp"}
                       </button>
                     );
                   })()}
