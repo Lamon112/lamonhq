@@ -317,11 +317,18 @@ export async function getOutreachArchive(
   // phones live inside the JSONB fields (holmes_report,
   // person_enrichment) or are pasted into `notes`. Selecting a column
   // that doesn't exist makes the whole join fail silently.
+  // Step-by-step: only add fields that have proven to work. holmes_report
+  // works (the original query verified it returned 25 rows). person_enrichment
+  // and notes together made the join return zero rows — probably an RLS
+  // policy or a Supabase quirk with multiple JSONB columns. Start safe with
+  // holmes_report + notes (both are confirmed real columns on the leads
+  // table from inspecting a live lead's keys), and we can layer in
+  // person_enrichment later behind its own targeted query if needed.
   const { data, error } = await supabase
     .from("outreach")
     .select(
       "id, lead_id, lead_name, platform, message, status, sent_at, " +
-        "leads(icp_score, niche, holmes_report, person_enrichment, notes)",
+        "leads(icp_score, niche, holmes_report, notes)",
     )
     .eq("user_id", userData.user.id)
     .order("sent_at", { ascending: false })
