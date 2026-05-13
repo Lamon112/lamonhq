@@ -36,6 +36,7 @@ import {
   EyeOff,
   Sparkles,
   RefreshCw,
+  Save,
 } from "lucide-react";
 import {
   addOutreach,
@@ -419,7 +420,23 @@ function LeadActionCard({
       channel === "email" ? splitSubjectFromBody(raw).body : raw;
     return cleanPremiumLanguage(bodyOnly);
   }, [lead, channel]);
-  const [draft, setDraft] = useState(initialResult.cleaned);
+  // Persisted edit recovery: if Leonardo edited this lead's draft before
+  // and clicked Save, we stored it under a per-lead+channel key in
+  // localStorage. Restore it on mount so reopening the modal doesn't
+  // wipe his hand-tuned copy. Falls back to the AI-cleaned initial
+  // draft when there's no saved version.
+  const draftStorageKey = `outreach_draft_${lead.id}_${channel}`;
+  const [draft, setDraft] = useState(() => {
+    if (typeof window === "undefined") return initialResult.cleaned;
+    try {
+      const saved = window.localStorage.getItem(draftStorageKey);
+      return saved ?? initialResult.cleaned;
+    } catch {
+      return initialResult.cleaned;
+    }
+  });
+  const [savedDraft, setSavedDraft] = useState(draft);
+  const [draftJustSaved, setDraftJustSaved] = useState(false);
   // Sent state is local-only — the moment Mark sent inserts an outreach
   // row, revalidatePath fires and the parent re-renders without this lead
   // in the list (filter is now sentLeadIds-based). Local state shows the
@@ -470,6 +487,26 @@ function LeadActionCard({
       setTimeout(() => setCopied(false), 1800);
     });
   }
+
+  /**
+   * Persist the edited draft to localStorage so it survives a modal
+   * close + reopen. Without this, every reopen regenerates the draft
+   * from the AI initial template and Leonardo's hand-tuning is lost.
+   */
+  function saveDraftEdit() {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(draftStorageKey, draft);
+    } catch {
+      // localStorage can throw in private mode / over quota — ignore,
+      // the in-memory draft still works for the current session.
+    }
+    setSavedDraft(draft);
+    setDraftJustSaved(true);
+    setTimeout(() => setDraftJustSaved(false), 2000);
+  }
+
+  const draftIsDirty = draft !== savedDraft;
 
   async function markSent(message: string, channelId: Channel) {
     // addOutreach now accepts whatsapp and phone directly so the channel
@@ -733,12 +770,49 @@ function LeadActionCard({
                   </button>
                 </div>
                 {showFullDraft ? (
-                  <textarea
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    rows={6}
-                    className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 font-mono text-xs text-text focus:border-border-strong focus:outline-none"
-                  />
+                  <div className="space-y-2">
+                    <textarea
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      rows={6}
+                      className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 font-mono text-xs text-text focus:border-border-strong focus:outline-none"
+                    />
+                    {/*
+                     * Save edit affordance. Without this, Leonardo's
+                     * hand-tuned copy is lost as soon as he closes the
+                     * card — the draft regenerates from the AI template
+                     * on remount. Click persists to localStorage; the
+                     * button label flips to "✓ Spremljeno" for 2s as
+                     * confirmation, and goes back to "Save edit" if the
+                     * textarea drifts again from the saved version.
+                     */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={saveDraftEdit}
+                        disabled={!draftIsDirty && !draftJustSaved}
+                        className={
+                          "flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-medium transition-all disabled:cursor-default disabled:opacity-50 " +
+                          (draftJustSaved
+                            ? "border-success/50 bg-success/15 text-success"
+                            : draftIsDirty
+                              ? "border-amber-400/50 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+                              : "border-border bg-bg-elevated text-text-dim")
+                        }
+                      >
+                        {draftJustSaved ? <Check size={10} /> : <Save size={10} />}
+                        {draftJustSaved
+                          ? "Spremljeno"
+                          : draftIsDirty
+                            ? "Spremi izmjenu"
+                            : "Spremljeno (no changes)"}
+                      </button>
+                      {draftIsDirty && !draftJustSaved && (
+                        <span className="text-[10px] text-amber-300/80">
+                          Imaš nespremljene izmjene
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div className="max-h-28 overflow-y-auto rounded-md border border-border bg-bg-elevated/40 px-3 py-2 font-mono text-xs leading-relaxed text-text-dim">
                     {draft}
@@ -780,21 +854,43 @@ function LeadActionCard({
                       </a>
                     )}
                   </>
+                ) : channel === "whatsapp" && channelHref ? (
+                  // WhatsApp channel: copy click-to-chat URL to clipboard
+                  // (same pattern as Sent Archive's Follow-up WhatsApp).
+                  // window.open / target=_blank both fail when Leonardo
+                  // already has a logged-in WA Business tab — the new tab
+                  // fights the existing session for the claim and spins
+                  // on the loading screen forever. Clipboard path lets him
+                  // paste the URL into his already-open WA Business tab's
+                  // address bar (Ctrl+L → Ctrl+V → Enter) and land
+                  // directly in the prefilled chat.
+                  <button
+                    onClick={() => {
+                      if (typeof navigator === "undefined" || !navigator.clipboard) return;
+                      navigator.clipboard.writeText(channelHref).then(() => {
+                        setWaCopied(true);
+                        setTimeout(() => setWaCopied(false), 2500);
+                      });
+                    }}
+                    title={
+                      "Kopira web.whatsapp.com/send URL u clipboard. " +
+                      "U WA Business tabu: Ctrl+L → Ctrl+V → Enter."
+                    }
+                    className={
+                      "flex items-center gap-1.5 rounded-md border-2 bg-gradient-to-br px-3 py-1.5 text-xs font-semibold transition-all hover:scale-[1.03] " +
+                      channelMeta.bg +
+                      " " +
+                      channelMeta.accent
+                    }
+                  >
+                    <span className="text-sm leading-none">{waCopied ? "✅" : "💬"}</span>
+                    {waCopied ? "URL kopiran (Ctrl+L → V → ⏎)" : channelLabel}
+                  </button>
                 ) : (
                   channelHref && (
                     <a
                       href={channelHref}
-                      // For WhatsApp, reuse a single named tab across clicks so
-                      // we don't spawn multiple web.whatsapp.com tabs that
-                      // fight over the same WhatsApp Web session (WA Web only
-                      // allows one active claim per browser — extra tabs get
-                      // stuck on the loading spinner). For everything else,
-                      // open in a fresh tab as before.
-                      target={
-                        channel === "whatsapp"
-                          ? "lamon-whatsapp-web"
-                          : "_blank"
-                      }
+                      target="_blank"
                       rel="noopener noreferrer"
                       className={
                         "flex items-center gap-1.5 rounded-md border-2 bg-gradient-to-br px-3 py-1.5 text-xs font-semibold transition-all hover:scale-[1.03] " +
