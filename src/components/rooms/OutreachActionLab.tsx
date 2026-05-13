@@ -803,16 +803,59 @@ function LeadActionCard({
                   {copied ? "Copied" : "Copy poruku"}
                 </button>
 
-                {channel !== "email" && (
-                  <button
-                    onClick={() => markSent(draft, channel)}
-                    disabled={pending}
-                    className="flex items-center gap-1 rounded-md border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/20 disabled:opacity-50"
-                  >
-                    <Check size={12} />
-                    Mark sent
-                  </button>
-                )}
+                <button
+                  onClick={() => markSent(draft, channel)}
+                  disabled={pending}
+                  title={
+                    channel === "email"
+                      ? "Use this when you sent the email externally (Gmail web/app) instead of clicking 'Pošalji preko Gmail'"
+                      : undefined
+                  }
+                  className="flex items-center gap-1 rounded-md border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/20 disabled:opacity-50"
+                >
+                  <Check size={12} />
+                  Mark sent
+                </button>
+
+                {/*
+                 * Parallel WhatsApp quick-send button on the email card.
+                 * Multi-touch outreach (email + WhatsApp same day) roughly
+                 * triples response rate, so when Leonardo sends an email
+                 * to a lead that ALSO has a phone number, surface a one-
+                 * click WhatsApp shortcut right next to "Pošalji preko
+                 * Gmail" instead of forcing him to scroll to the WA card.
+                 *
+                 * Uses the same named-tab target as the WhatsApp card so
+                 * subsequent clicks reuse the existing WhatsApp Web tab
+                 * (no session-conflict spinner).
+                 */}
+                {channel === "email" &&
+                  (() => {
+                    const waNum = (lead.holmes_report?.channels?.phone ?? "")
+                      .replace(/[^0-9+]/g, "")
+                      .replace(/^\+/, "");
+                    if (!waNum) return null;
+                    // Short WhatsApp body — different tone than email, more
+                    // conversational. Falls back to the full draft if the
+                    // shortened version is empty.
+                    const waBody =
+                      `Pozdrav, poslao sam vam mail o filtriranju pacijenata ` +
+                      `prije recepcije — možda ćete kasnije pogledati. Ako ` +
+                      `vam je lakše porazgovarati ovdje, samo javite. — Leonardo`;
+                    const waHref = `https://web.whatsapp.com/send?phone=${waNum}&text=${encodeURIComponent(waBody)}`;
+                    return (
+                      <a
+                        href={waHref}
+                        target="lamon-whatsapp-web"
+                        rel="noopener noreferrer"
+                        title={`Pošalji paralelno na WhatsApp (+${waNum})`}
+                        className="flex items-center gap-1 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                      >
+                        <span className="text-sm leading-none">💬</span>
+                        i WhatsApp
+                      </a>
+                    );
+                  })()}
               </div>
             </div>
           </motion.div>
