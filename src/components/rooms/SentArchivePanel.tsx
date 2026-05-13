@@ -155,12 +155,22 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
     const alreadyLogged = row.lead_id && waOutreachByLead.has(row.lead_id);
     if (row.lead_id && !alreadyLogged) {
       startTransition(async () => {
-        await addOutreach({
+        const result = await addOutreach({
           leadName: row.lead_name ?? "(no name)",
           leadId: row.lead_id ?? undefined,
           platform: "whatsapp",
           message: body,
         });
+        // Surface failures loudly so we can see why the insert
+        // silently didn't appear in the Sent Archive after a click.
+        if (!result.ok) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[SentArchive] addOutreach failed for WhatsApp follow-up:",
+            result.error,
+            { leadId: row.lead_id, leadName: row.lead_name },
+          );
+        }
       });
     }
   }
