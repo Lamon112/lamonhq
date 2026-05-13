@@ -96,6 +96,36 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
   const [channel, setChannel] = useState<Channel>("all");
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [waCopiedId, setWaCopiedId] = useState<string | null>(null);
+
+  /**
+   * Multi-touch follow-up: copy a short WhatsApp message referencing the
+   * email Leonardo already sent to clipboard. He pastes into his existing
+   * logged-in WhatsApp Business tab (no window.open here — that's what
+   * caused the session-conflict spinner before).
+   *
+   * Clipboard payload format: "+38591…\n\n[message]" so the first paste
+   * lands in WA Web's new-chat / search field (which accepts the bare
+   * phone), and a second paste drops the prefilled body into the chat
+   * input.
+   */
+  function copyWaFollowUp(row: OutreachArchiveRow) {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    if (!row.lead_phone) return;
+    const num = row.lead_phone.replace(/[^0-9+]/g, "").replace(/^\+/, "");
+    if (!num) return;
+    const body =
+      "Pozdrav, poslao sam vam mail o filtriranju pacijenata prije " +
+      "recepcije — možda ćete kasnije pogledati. Ako vam je lakše " +
+      "porazgovarati ovdje, samo javite. — Leonardo";
+    const payload = `+${num}\n\n${body}`;
+    navigator.clipboard.writeText(payload).then(() => {
+      setWaCopiedId(row.id);
+      setTimeout(() => {
+        setWaCopiedId((id) => (id === row.id ? null : id));
+      }, 2500);
+    });
+  }
 
   // Count rows per channel for the pill badges. Always computed from the
   // full list so the badges show real totals regardless of current filter.
@@ -324,6 +354,44 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                         <pre className="whitespace-pre-wrap break-words rounded-md border border-border bg-bg-card/60 px-3 py-2 font-mono text-xs leading-relaxed text-text">
                           {row.message ?? "(no message)"}
                         </pre>
+
+                        {/*
+                         * Multi-touch action row.
+                         *
+                         * If this row was an email AND we have a phone
+                         * number on the lead, surface a one-click WhatsApp
+                         * follow-up. Pure clipboard copy — no window.open —
+                         * because every previous attempt to open a new
+                         * web.whatsapp.com tab got stuck on the loading
+                         * spinner whenever Leonardo's existing WhatsApp
+                         * Business tab was already holding the session
+                         * claim. Pasting into the live Business tab works
+                         * every time.
+                         */}
+                        {row.platform === "email" && row.lead_phone && (
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <button
+                              onClick={() => copyWaFollowUp(row)}
+                              title={
+                                "Kopira broj + follow-up poruku u clipboard. " +
+                                "Idi na svoju WhatsApp Business tabu i paste — " +
+                                "prvi paste u pretragu pronalazi broj, drugi u " +
+                                "message field stavlja poruku."
+                              }
+                              className="flex items-center gap-1.5 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                            >
+                              <span className="text-sm leading-none">
+                                {waCopiedId === row.id ? "✅" : "💬"}
+                              </span>
+                              {waCopiedId === row.id
+                                ? "Kopirano (paste u WA Business)"
+                                : "Follow-up WhatsApp"}
+                            </button>
+                            <span className="font-mono text-[10px] text-text-dim">
+                              +{row.lead_phone.replace(/[^0-9+]/g, "").replace(/^\+/, "")}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}

@@ -842,15 +842,24 @@ function LeadActionCard({
                       `Pozdrav, poslao sam vam mail o filtriranju pacijenata ` +
                       `prije recepcije — možda ćete kasnije pogledati. Ako ` +
                       `vam je lakše porazgovarati ovdje, samo javite. — Leonardo`;
-                    const waHref = `https://web.whatsapp.com/send?phone=${waNum}&text=${encodeURIComponent(waBody)}`;
                     const handleWaClick = () => {
-                      // Belt-and-suspenders: copy phone + message to
-                      // clipboard so Leonardo can paste into his existing
-                      // logged-in WhatsApp Business tab even if the
-                      // session-conflict spinner blocks the new tab from
-                      // loading. Format: "+38591…\n\n[message]" so pasting
-                      // into WA search jumps to the contact, and a second
-                      // paste into the message box drops the prefilled text.
+                      // Pure clipboard copy — no window.open.
+                      //
+                      // Every previous attempt to open a new
+                      // web.whatsapp.com/send tab got stuck on the loading
+                      // spinner because Leonardo already has a logged-in
+                      // WhatsApp Business tab claiming the WA Web session
+                      // (WA Web allows only one active session per
+                      // browser). The named-tab trick can't bypass that —
+                      // it just creates a new tab that fights the existing
+                      // one for the claim.
+                      //
+                      // Solution: don't open any tab at all. Copy phone +
+                      // message to clipboard. Leonardo alt-tabs to his
+                      // already-logged-in Business tab, pastes the number
+                      // in the search/new-chat field to find the contact,
+                      // then pastes the message into the chat input. Works
+                      // every time, no session disruption.
                       const clipboardPayload = `+${waNum}\n\n${waBody}`;
                       if (typeof navigator !== "undefined" && navigator.clipboard) {
                         navigator.clipboard.writeText(clipboardPayload).then(() => {
@@ -858,25 +867,20 @@ function LeadActionCard({
                           setTimeout(() => setWaCopied(false), 2500);
                         });
                       }
-                      // Still attempt to open the named WhatsApp tab — if
-                      // it works, great; if it spins because of an
-                      // existing WA Web session in another tab, Leonardo
-                      // just alt-tabs there and pastes from clipboard.
-                      if (typeof window !== "undefined") {
-                        window.open(waHref, "lamon-whatsapp-web");
-                      }
                     };
                     return (
                       <button
                         onClick={handleWaClick}
                         title={
-                          `Kopira +${waNum} + poruku u clipboard i pokušava otvoriti ` +
-                          `WhatsApp tab. Ako tab zapne, idi na svoju WA Business tabu i paste.`
+                          `Kopira +${waNum} + follow-up poruku u clipboard. ` +
+                          `Idi na svoju WhatsApp Business tabu, paste broj u ` +
+                          `pretragu/novi chat, otvori chat, paste poruku, ` +
+                          `pošalji. Bez session konflikta.`
                         }
                         className="flex items-center gap-1 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
                       >
                         <span className="text-sm leading-none">{waCopied ? "✅" : "💬"}</span>
-                        {waCopied ? "Kopirano + WA otvoren" : "i WhatsApp"}
+                        {waCopied ? "Kopirano (paste u WA Business)" : "i WhatsApp"}
                       </button>
                     );
                   })()}

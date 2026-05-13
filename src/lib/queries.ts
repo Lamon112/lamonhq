@@ -234,6 +234,13 @@ export async function getOutreachedLeadIds(): Promise<Set<string>> {
 export interface OutreachArchiveRow extends OutreachRow {
   lead_icp_score: number | null;
   lead_niche: string | null;
+  /**
+   * Phone number extracted from the lead's holmes_report.channels.phone.
+   * Used by the Sent Archive UI to surface a WhatsApp follow-up button
+   * for leads that were emailed first (multi-touch pattern: email →
+   * WhatsApp same day).
+   */
+  lead_phone: string | null;
 }
 
 export async function getOutreachArchive(
@@ -244,10 +251,12 @@ export async function getOutreachArchive(
   if (!userData.user) return [];
 
   // Single round-trip: pull outreach rows + lead refs together via FK.
+  // Pull holmes_report so we can extract the phone number for the WA
+  // follow-up button surfaced in the Sent Archive.
   const { data } = await supabase
     .from("outreach")
     .select(
-      "id, lead_id, lead_name, platform, message, status, sent_at, leads(icp_score, niche)",
+      "id, lead_id, lead_name, platform, message, status, sent_at, leads(icp_score, niche, holmes_report)",
     )
     .eq("user_id", userData.user.id)
     .order("sent_at", { ascending: false })
@@ -255,11 +264,13 @@ export async function getOutreachArchive(
 
   // Supabase typed the embedded `leads` relation as an array even though
   // the FK is to-one. We collapse it to the first row.
+  type EmbeddedLead = {
+    icp_score: number | null;
+    niche: string | null;
+    holmes_report: { channels?: { phone?: string | null } | null } | null;
+  };
   type RawRow = OutreachRow & {
-    leads?:
-      | { icp_score: number | null; niche: string | null }[]
-      | { icp_score: number | null; niche: string | null }
-      | null;
+    leads?: EmbeddedLead[] | EmbeddedLead | null;
   };
   return ((data ?? []) as unknown as RawRow[]).map((r) => {
     const lead = Array.isArray(r.leads) ? r.leads[0] : r.leads;
@@ -273,6 +284,7 @@ export async function getOutreachArchive(
       sent_at: r.sent_at,
       lead_icp_score: lead?.icp_score ?? null,
       lead_niche: lead?.niche ?? null,
+      lead_phone: lead?.holmes_report?.channels?.phone ?? null,
     };
   });
 }
