@@ -770,7 +770,17 @@ function LeadActionCard({
                   channelHref && (
                     <a
                       href={channelHref}
-                      target="_blank"
+                      // For WhatsApp, reuse a single named tab across clicks so
+                      // we don't spawn multiple web.whatsapp.com tabs that
+                      // fight over the same WhatsApp Web session (WA Web only
+                      // allows one active claim per browser — extra tabs get
+                      // stuck on the loading spinner). For everything else,
+                      // open in a fresh tab as before.
+                      target={
+                        channel === "whatsapp"
+                          ? "lamon-whatsapp-web"
+                          : "_blank"
+                      }
                       rel="noopener noreferrer"
                       className={
                         "flex items-center gap-1.5 rounded-md border-2 bg-gradient-to-br px-3 py-1.5 text-xs font-semibold transition-all hover:scale-[1.03] " +
