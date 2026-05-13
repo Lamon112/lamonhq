@@ -871,7 +871,23 @@ function LeadActionCard({
                       if (typeof navigator === "undefined" || !navigator.clipboard) return;
                       const num = contactValue.replace(/[^0-9+]/g, "").replace(/^\+/, "");
                       if (!num) return;
-                      const url = `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(draft)}`;
+                      // Trim the AI draft to the first paragraph (and cap
+                      // at 280 chars) before stuffing it into the
+                      // web.whatsapp.com/send URL. The full draft can
+                      // exceed 1500 chars — when URL-encoded that yields
+                      // a 2500+ char URL which WhatsApp Web silently
+                      // refuses to load, hanging on the gray "WhatsApp"
+                      // splash forever. The Sent Archive follow-up
+                      // workflow that Leonardo says "always works"
+                      // succeeds because its body is only ~165 chars.
+                      // First-paragraph + 280-char cap puts us in the
+                      // same safe zone while keeping the AI hook.
+                      const firstParagraph = (draft.split(/\n\s*\n/)[0] ?? draft).trim();
+                      const trimmedBody =
+                        firstParagraph.length > 280
+                          ? firstParagraph.slice(0, 277).trimEnd() + "…"
+                          : firstParagraph;
+                      const url = `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(trimmedBody)}`;
                       navigator.clipboard.writeText(url).then(() => {
                         setWaCopied(true);
                         setTimeout(() => setWaCopied(false), 2500);
