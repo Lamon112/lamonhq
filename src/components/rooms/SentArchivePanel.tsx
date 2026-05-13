@@ -19,7 +19,7 @@
  *   - No edit actions — this is an archive, not a workspace
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AtSign,
@@ -33,6 +33,7 @@ import {
   Search,
 } from "lucide-react";
 import type { OutreachArchiveRow } from "@/lib/queries";
+import { addOutreach } from "@/app/actions/outreach";
 
 type Channel = "all" | "instagram" | "email" | "phone" | "whatsapp" | "linkedin" | "other";
 
@@ -97,20 +98,39 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [waCopiedId, setWaCopiedId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   /**
-   * Multi-touch follow-up: copy a click-to-chat URL to clipboard.
+   * Map of lead_id → most-recent WhatsApp outreach row. Used to
+   * (a) decide whether the "Follow-up WhatsApp" click should log a new
+   * outreach row to the DB or just re-copy the URL, and
+   * (b) render a "+WA · prije X" badge on email rows whose lead also
+   * has a paired WA outreach (multi-touch coverage at a glance).
+   */
+  const waOutreachByLead = useMemo(() => {
+    const map = new Map<string, OutreachArchiveRow>();
+    for (const r of rows) {
+      if (r.platform !== "whatsapp" || !r.lead_id) continue;
+      const existing = map.get(r.lead_id);
+      if (!existing || new Date(r.sent_at) > new Date(existing.sent_at)) {
+        map.set(r.lead_id, r);
+      }
+    }
+    return map;
+  }, [rows]);
+
+  /**
+   * Multi-touch follow-up.
    *
-   * The previous attempt copied "+phone\n\nmessage" hoping it could be
-   * pasted into WA Web's New chat search field — but that field only
-   * matches saved contacts, never unsaved numbers, so the paste returned
-   * "No results found".
-   *
-   * The reliable path is WhatsApp's official click-to-chat URL
-   * `web.whatsapp.com/send?phone=...&text=...`. Pasting that into the
-   * URL bar (Ctrl+L → Ctrl+V → Enter) navigates the existing logged-in
-   * tab to a fresh chat with the unsaved number and the message
-   * prefilled. Same tab, same session — no conflict.
+   * 1. Copies WhatsApp click-to-chat URL to clipboard so Leonardo can
+   *    paste it into his already-logged-in WA Business tab's URL bar
+   *    (Ctrl+L → Ctrl+V → Enter) and land on the prefilled chat without
+   *    spawning a new tab.
+   * 2. Optimistically logs an outreach row with platform="whatsapp" so
+   *    the multi-touch pattern (email → WhatsApp same day) shows up in
+   *    the channel filter and feeds the "+WA" badge on the email row.
+   *    Skipped if there's already a paired WA row for this lead so
+   *    re-clicking to re-copy the URL doesn't create duplicates.
    */
   function copyWaFollowUp(row: OutreachArchiveRow) {
     if (typeof navigator === "undefined" || !navigator.clipboard) return;
@@ -122,12 +142,27 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
       "recepcije — možda ćete kasnije pogledati. Ako vam je lakše " +
       "porazgovarati ovdje, samo javite. — Leonardo";
     const url = `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(body)}`;
+
     navigator.clipboard.writeText(url).then(() => {
       setWaCopiedId(row.id);
       setTimeout(() => {
         setWaCopiedId((id) => (id === row.id ? null : id));
       }, 2500);
     });
+
+    // Optimistically log the WhatsApp outreach (only if this lead doesn't
+    // already have a paired WA row — re-copy clicks shouldn't duplicate).
+    const alreadyLogged = row.lead_id && waOutreachByLead.has(row.lead_id);
+    if (row.lead_id && !alreadyLogged) {
+      startTransition(async () => {
+        await addOutreach({
+          leadName: row.lead_name ?? "(no name)",
+          leadId: row.lead_id ?? undefined,
+          platform: "whatsapp",
+          message: body,
+        });
+      });
+    }
   }
 
   // Count rows per channel for the pill badges. Always computed from the
@@ -269,6 +304,12 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
             const Icon = meta.icon;
             const isExpanded = expandedId === row.id;
             const statusMeta = STATUS_META[row.status];
+            // Multi-touch badge: only meaningful on EMAIL rows that
+            // already have a paired WhatsApp follow-up on the same lead.
+            const pairedWa =
+              row.platform === "email" && row.lead_id
+                ? waOutreachByLead.get(row.lead_id)
+                : null;
             return (
               <div
                 key={row.id}
@@ -296,6 +337,15 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                       {row.lead_icp_score != null && (
                         <span className="rounded border border-border bg-bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-text-dim">
                           ICP {row.lead_icp_score}
+                        </span>
+                      )}
+                      {pairedWa && (
+                        <span
+                          title={`WhatsApp follow-up poslan ${formatWhen(pairedWa.sent_at)}`}
+                          className="flex items-center gap-1 rounded border border-emerald-400/50 bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[10px] text-emerald-300"
+                        >
+                          <MessageCircle size={9} />
+                          +WA · {formatWhen(pairedWa.sent_at)}
                         </span>
                       )}
                     </div>
@@ -376,19 +426,30 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                             <button
                               onClick={() => copyWaFollowUp(row)}
                               title={
-                                "Kopira web.whatsapp.com/send URL s brojem i porukom. " +
-                                "U WA Business tabu: Ctrl+L (fokus URL bar) → Ctrl+V → " +
-                                "Enter. Otvara chat s prefilled porukom u istoj tabi, " +
-                                "bez session konflikta."
+                                pairedWa
+                                  ? `WhatsApp follow-up već loggiran ${formatWhen(pairedWa.sent_at)}. Klik samo re-kopira URL bez dupliranja outreach row-a.`
+                                  : "Kopira web.whatsapp.com/send URL + logira WhatsApp outreach. " +
+                                    "U WA Business tabu: Ctrl+L → Ctrl+V → Enter."
                               }
-                              className="flex items-center gap-1.5 rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                              className={
+                                "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium hover:opacity-90 " +
+                                (pairedWa
+                                  ? "border-stone-500/40 bg-stone-500/10 text-stone-300"
+                                  : "border-emerald-400/50 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20")
+                              }
                             >
                               <span className="text-sm leading-none">
-                                {waCopiedId === row.id ? "✅" : "💬"}
+                                {waCopiedId === row.id
+                                  ? "✅"
+                                  : pairedWa
+                                    ? "🔁"
+                                    : "💬"}
                               </span>
                               {waCopiedId === row.id
-                                ? "URL kopiran — paste u WA Business URL bar (Ctrl+L → Ctrl+V → Enter)"
-                                : "Follow-up WhatsApp"}
+                                ? "URL kopiran — paste u WA Business (Ctrl+L → V → ⏎)"
+                                : pairedWa
+                                  ? `Re-copy URL (WA već loggiran ${formatWhen(pairedWa.sent_at)})`
+                                  : "Follow-up WhatsApp + log"}
                             </button>
                             <span className="font-mono text-[10px] text-text-dim">
                               +{row.lead_phone.replace(/[^0-9+]/g, "").replace(/^\+/, "")}

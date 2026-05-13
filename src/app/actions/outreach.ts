@@ -27,7 +27,21 @@ export interface AddOutreachInput {
    * filters for discovery-stage leads with holmes_report).
    */
   leadId?: string;
-  platform: "linkedin" | "instagram" | "tiktok" | "email" | "other";
+  /**
+   * "whatsapp" and "phone" are stored verbatim so the Sent Archive's
+   * channel filter pills count them under the right column. The earlier
+   * restriction to {linkedin, instagram, tiktok, email, other} forced
+   * those touchpoints into "Ostalo", which hid multi-touch follow-ups
+   * (email → WhatsApp the same day) from the natural channel view.
+   */
+  platform:
+    | "linkedin"
+    | "instagram"
+    | "tiktok"
+    | "email"
+    | "whatsapp"
+    | "phone"
+    | "other";
   message: string;
   status?: "sent" | "replied" | "no_reply" | "bounced";
 }

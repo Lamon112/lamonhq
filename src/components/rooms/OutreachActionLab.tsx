@@ -472,9 +472,22 @@ function LeadActionCard({
   }
 
   async function markSent(message: string, channelId: Channel) {
-    // addOutreach platform field is restricted — map phone/whatsapp → "other"
-    const platform: "linkedin" | "instagram" | "tiktok" | "email" | "other" =
-      channelId === "linkedin" || channelId === "instagram" || channelId === "email"
+    // addOutreach now accepts whatsapp and phone directly so the channel
+    // filter in Sent Archive counts each touchpoint under its native
+    // pill (instead of dumping everything non-email into "Ostalo").
+    const platform:
+      | "linkedin"
+      | "instagram"
+      | "tiktok"
+      | "email"
+      | "whatsapp"
+      | "phone"
+      | "other" =
+      channelId === "linkedin" ||
+      channelId === "instagram" ||
+      channelId === "email" ||
+      channelId === "whatsapp" ||
+      channelId === "phone"
         ? channelId
         : "other";
     startTransition(async () => {
