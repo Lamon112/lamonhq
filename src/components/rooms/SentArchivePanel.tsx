@@ -20,6 +20,7 @@
  */
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AtSign,
@@ -104,11 +105,34 @@ function formatWhen(iso: string): string {
 }
 
 export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
+  const router = useRouter();
   const [channel, setChannel] = useState<Channel>("all");
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [waCopiedId, setWaCopiedId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  // Optimistic status overrides. updateOutreachStatus + revalidatePath
+  // invalidates server cache, but the modal's `rows` prop is captured
+  // at parent-render time and doesn't auto-refresh until the parent
+  // re-renders. router.refresh() forces a re-fetch; in the meantime we
+  // patch the changed status into this local map so the UI flips
+  // instantly when Leonardo clicks Pozitivno / Odbijen / etc.
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, OutreachArchiveRow["status"]>
+  >({});
+
+  // Apply overrides on every row so all downstream code (filters,
+  // counts, expanded view, status pills, +WA badges) sees the latest
+  // status the moment the click resolves.
+  const effectiveRows = useMemo(
+    () =>
+      rows.map((r) =>
+        statusOverrides[r.id] !== undefined
+          ? { ...r, status: statusOverrides[r.id] }
+          : r,
+      ),
+    [rows, statusOverrides],
+  );
 
   /**
    * Marker phrase that uniquely identifies a Sent-Archive WhatsApp
@@ -134,7 +158,7 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
    */
   const waOutreachByLead = useMemo(() => {
     const map = new Map<string, OutreachArchiveRow>();
-    for (const r of rows) {
+    for (const r of effectiveRows) {
       if (!r.lead_id) continue;
       const isWa =
         r.platform === "whatsapp" ||
@@ -224,13 +248,13 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
       linkedin: 0,
       other: 0,
     };
-    for (const r of rows) counts[platformToChannel(r.platform)]++;
+    for (const r of effectiveRows) counts[platformToChannel(r.platform)]++;
     return counts;
-  }, [rows]);
+  }, [effectiveRows]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return rows.filter((r) => {
+    return effectiveRows.filter((r) => {
       if (channel !== "all" && platformToChannel(r.platform) !== channel) {
         return false;
       }
@@ -243,7 +267,7 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
       }
       return true;
     });
-  }, [rows, channel, query]);
+  }, [effectiveRows, channel, query]);
 
   const channelTabs: Channel[] = [
     "all",
@@ -282,7 +306,7 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                       : "bg-bg-elevated text-text-dim")
                   }
                 >
-                  {rows.length}
+                  {effectiveRows.length}
                 </span>
               </button>
             );
@@ -336,12 +360,12 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
         {filtered.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border bg-bg-card/40 px-6 py-8 text-center text-sm">
             <p className="mb-2 text-text">
-              {rows.length === 0
+              {effectiveRows.length === 0
                 ? "Još nisi poslao nijedan outreach."
                 : "Nema rezultata za odabran filter."}
             </p>
             <p className="mx-auto max-w-md text-xs leading-relaxed text-text-muted">
-              {rows.length === 0
+              {effectiveRows.length === 0
                 ? "Otvori Outreach Lab → odaberi kanal → klikni Mark sent na neku poruku. Poslane poruke automatski idu ovdje."
                 : "Probaj drugi kanal ili obriši pretragu."}
             </p>
@@ -503,8 +527,36 @@ export function SentArchivePanel({ rows }: { rows: OutreachArchiveRow[] }) {
                                 key={key}
                                 onClick={() => {
                                   if (row.status === key) return;
+                                  // Optimistic flip — UI updates
+                                  // instantly without waiting for the
+                                  // server round-trip + revalidate.
+                                  setStatusOverrides((m) => ({
+                                    ...m,
+                                    [row.id]: key,
+                                  }));
                                   startTransition(async () => {
-                                    await updateOutreachStatus(row.id, key);
+                                    const res = await updateOutreachStatus(
+                                      row.id,
+                                      key,
+                                    );
+                                    if (!res.ok) {
+                                      // eslint-disable-next-line no-console
+                                      console.error(
+                                        "[SentArchive] updateOutreachStatus failed:",
+                                        res.error,
+                                      );
+                                      // Revert optimistic update.
+                                      setStatusOverrides((m) => {
+                                        const next = { ...m };
+                                        delete next[row.id];
+                                        return next;
+                                      });
+                                      return;
+                                    }
+                                    // Force parent server component to
+                                    // re-fetch so other consumers (count
+                                    // pills, +WA badges) see the latest.
+                                    router.refresh();
                                   });
                                 }}
                                 disabled={row.status === key}
