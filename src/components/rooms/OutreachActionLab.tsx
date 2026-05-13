@@ -832,8 +832,38 @@ function LeadActionCard({
                  */}
                 {channel === "email" &&
                   (() => {
-                    const waNumRaw = lead.holmes_report?.channels?.phone ?? "";
-                    const waNum = waNumRaw.replace(/[^0-9+]/g, "").replace(/^\+/, "");
+                    // Walk every known phone source — Holmes / Apollo / top-
+                    // level column / notes — so the WhatsApp button shows for
+                    // leads that didn't go through the Holmes pipeline (e.g.
+                    // manually added premium clinic prospects).
+                    type LeadWithPhone = typeof lead & {
+                      phone?: string | null;
+                      person_enrichment?: {
+                        owner?: {
+                          phone?: string | null;
+                          phone_numbers?: string[] | null;
+                          channels?: { phone?: string | null } | null;
+                        } | null;
+                        organization?: { phone?: string | null } | null;
+                      } | null;
+                      notes?: string | null;
+                    };
+                    const l = lead as LeadWithPhone;
+                    const notesPhoneMatch = (l.notes ?? "").match(
+                      /(\+?385[\s\-./]?\d[\d\s\-./]{6,12}|\b0\d{1,2}[\s\-./]?\d[\d\s\-./]{5,10})/,
+                    );
+                    const waNumRaw =
+                      l.phone ??
+                      l.holmes_report?.channels?.phone ??
+                      l.person_enrichment?.owner?.channels?.phone ??
+                      l.person_enrichment?.owner?.phone ??
+                      l.person_enrichment?.owner?.phone_numbers?.[0] ??
+                      l.person_enrichment?.organization?.phone ??
+                      notesPhoneMatch?.[0] ??
+                      "";
+                    const waNum = waNumRaw
+                      .replace(/[^0-9+]/g, "")
+                      .replace(/^\+/, "");
                     if (!waNum) return null;
                     // Short WhatsApp body — more conversational than email,
                     // references the email he just sent so the recipient

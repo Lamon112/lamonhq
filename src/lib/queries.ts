@@ -243,6 +243,67 @@ export interface OutreachArchiveRow extends OutreachRow {
   lead_phone: string | null;
 }
 
+/**
+ * Resolve a phone number for a lead by walking every known source.
+ *
+ * Different lead sources populate different fields:
+ *   - Holmes-discovered leads: holmes_report.channels.phone (cleanest)
+ *   - Apollo-enriched leads: person_enrichment.owner.phone or
+ *     person_enrichment.organization.phone
+ *   - Manually imported / warm leads: phone column on the row itself
+ *     (top-level) OR a phone number in the free-form notes field
+ *
+ * Without walking all four, the Sent Archive's WhatsApp follow-up
+ * button silently never renders for the leads Leonardo most needs to
+ * follow up with (premium clinic prospects he hand-added).
+ */
+function resolvePhoneFromLead(lead: {
+  phone?: string | null;
+  holmes_report?: { channels?: { phone?: string | null } | null } | null;
+  person_enrichment?: {
+    owner?: {
+      phone?: string | null;
+      phone_numbers?: string[] | null;
+      channels?: { phone?: string | null } | null;
+    } | null;
+    organization?: { phone?: string | null } | null;
+  } | null;
+  notes?: string | null;
+} | null): string | null {
+  if (!lead) return null;
+
+  // 1. Top-level phone column
+  if (lead.phone) return lead.phone;
+
+  // 2. Holmes-extracted channels
+  const hPhone = lead.holmes_report?.channels?.phone;
+  if (hPhone) return hPhone;
+
+  // 3. Apollo owner channels / direct phone
+  const ownerPhone =
+    lead.person_enrichment?.owner?.channels?.phone ??
+    lead.person_enrichment?.owner?.phone ??
+    lead.person_enrichment?.owner?.phone_numbers?.[0] ??
+    null;
+  if (ownerPhone) return ownerPhone;
+
+  // 4. Apollo organization phone
+  const orgPhone = lead.person_enrichment?.organization?.phone;
+  if (orgPhone) return orgPhone;
+
+  // 5. Phone-shaped string in the free-form notes (matches Croatian
+  // formats like "+385 1 366 8936", "+385 91 234 5678", "01 234 5678"
+  // or "091/234-5678"). Tightened to require a country-code or 2-3
+  // digit area code start so we don't false-positive on years or IDs.
+  const notes = lead.notes ?? "";
+  const phoneMatch = notes.match(
+    /(\+?385[\s\-./]?\d[\d\s\-./]{6,12}|\b0\d{1,2}[\s\-./]?\d[\d\s\-./]{5,10})/,
+  );
+  if (phoneMatch) return phoneMatch[0].trim();
+
+  return null;
+}
+
 export async function getOutreachArchive(
   limit = 500,
 ): Promise<OutreachArchiveRow[]> {
@@ -251,23 +312,37 @@ export async function getOutreachArchive(
   if (!userData.user) return [];
 
   // Single round-trip: pull outreach rows + lead refs together via FK.
-  // Pull holmes_report so we can extract the phone number for the WA
-  // follow-up button surfaced in the Sent Archive.
+  // Pull every field that might hold a phone so the WhatsApp follow-up
+  // button surfaces for leads regardless of which pipeline they came
+  // through (Holmes / Apollo / manual / CSV import).
   const { data } = await supabase
     .from("outreach")
     .select(
-      "id, lead_id, lead_name, platform, message, status, sent_at, leads(icp_score, niche, holmes_report)",
+      "id, lead_id, lead_name, platform, message, status, sent_at, " +
+        "leads(icp_score, niche, phone, holmes_report, person_enrichment, notes)",
     )
     .eq("user_id", userData.user.id)
     .order("sent_at", { ascending: false })
     .limit(limit);
 
   // Supabase typed the embedded `leads` relation as an array even though
-  // the FK is to-one. We collapse it to the first row.
+  // the FK is to-one. We collapse it to the first row. EmbeddedLead
+  // intentionally includes every field the phone resolver might walk;
+  // each field is optional to match the resolver's permissive shape.
   type EmbeddedLead = {
-    icp_score: number | null;
-    niche: string | null;
-    holmes_report: { channels?: { phone?: string | null } | null } | null;
+    icp_score?: number | null;
+    niche?: string | null;
+    phone?: string | null;
+    holmes_report?: { channels?: { phone?: string | null } | null } | null;
+    person_enrichment?: {
+      owner?: {
+        phone?: string | null;
+        phone_numbers?: string[] | null;
+        channels?: { phone?: string | null } | null;
+      } | null;
+      organization?: { phone?: string | null } | null;
+    } | null;
+    notes?: string | null;
   };
   type RawRow = OutreachRow & {
     leads?: EmbeddedLead[] | EmbeddedLead | null;
@@ -284,7 +359,7 @@ export async function getOutreachArchive(
       sent_at: r.sent_at,
       lead_icp_score: lead?.icp_score ?? null,
       lead_niche: lead?.niche ?? null,
-      lead_phone: lead?.holmes_report?.channels?.phone ?? null,
+      lead_phone: resolvePhoneFromLead(lead ?? null),
     };
   });
 }
