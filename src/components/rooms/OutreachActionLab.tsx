@@ -33,6 +33,8 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
+  Maximize2,
+  X,
   EyeOff,
   Sparkles,
   RefreshCw,
@@ -436,6 +438,12 @@ function LeadActionCard({
     }
   });
   const [savedDraft, setSavedDraft] = useState(draft);
+  // Per-section copy feedback (so each Copy button can show its own
+  // "✓ Kopirano" without all of them flipping at once).
+  const [copiedSectionIdx, setCopiedSectionIdx] = useState<number | null>(null);
+  // Fullscreen modal for reading aloud (voice memo / phone script).
+  // null = no fullscreen open; number = which section index is open.
+  const [fullscreenSectionIdx, setFullscreenSectionIdx] = useState<number | null>(null);
   const [draftJustSaved, setDraftJustSaved] = useState(false);
   // Sent state is local-only — the moment Mark sent inserts an outreach
   // row, revalidatePath fires and the parent re-renders without this lead
@@ -814,11 +822,141 @@ function LeadActionCard({
                     </div>
                   </div>
                 ) : (
-                  <div className="max-h-28 overflow-y-auto rounded-md border border-border bg-bg-elevated/40 px-3 py-2 font-mono text-xs leading-relaxed text-text-dim">
-                    {draft}
-                  </div>
+                  // Sectioned read-only preview. For WhatsApp and Phone
+                  // channels, the AI now emits structured drafts with
+                  // labelled blocks (📝 PORUKA + 🎙 GLASOVNA on WA, 5
+                  // phone phases) and the parser splits them so each
+                  // gets its own copy button + fullscreen-read-aloud
+                  // affordance. For other channels (email / IG / LI)
+                  // we just render the whole draft as a single block.
+                  (() => {
+                    const sections = parseDraftSections(draft, channel);
+                    if (sections.length <= 1) {
+                      return (
+                        <div className="max-h-28 overflow-y-auto rounded-md border border-border bg-bg-elevated/40 px-3 py-2 font-mono text-xs leading-relaxed text-text-dim">
+                          {sections[0]?.body ?? draft}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-2">
+                        {sections.map((s, idx) => {
+                          const isCopied = copiedSectionIdx === idx;
+                          return (
+                            <div
+                              key={idx}
+                              className="rounded-md border border-border bg-bg-elevated/40"
+                            >
+                              <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-1.5">
+                                <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-text-muted">
+                                  <span className="text-sm leading-none">
+                                    {s.emoji}
+                                  </span>
+                                  {s.title}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      if (typeof navigator === "undefined") return;
+                                      navigator.clipboard.writeText(s.body).then(() => {
+                                        setCopiedSectionIdx(idx);
+                                        setTimeout(
+                                          () => setCopiedSectionIdx((cur) => (cur === idx ? null : cur)),
+                                          1800,
+                                        );
+                                      });
+                                    }}
+                                    title={`Copy ${s.title}`}
+                                    className="flex items-center gap-1 rounded border border-border bg-bg-elevated px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-text-muted hover:border-border-strong hover:text-text"
+                                  >
+                                    {isCopied ? (
+                                      <Check size={9} />
+                                    ) : (
+                                      <Copy size={9} />
+                                    )}
+                                    {isCopied ? "Kopirano" : "Copy"}
+                                  </button>
+                                  <button
+                                    onClick={() => setFullscreenSectionIdx(idx)}
+                                    title={`Otvori ${s.title} fullscreen za čitanje`}
+                                    className="flex items-center gap-1 rounded border border-border bg-bg-elevated px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-text-muted hover:border-border-strong hover:text-text"
+                                  >
+                                    <Maximize2 size={9} />
+                                    Read
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="max-h-36 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed text-text-dim whitespace-pre-wrap">
+                                {s.body}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()
                 )}
               </div>
+
+              {/* Fullscreen read-aloud modal for voice memo / phone script */}
+              <AnimatePresence>
+                {fullscreenSectionIdx !== null && (() => {
+                  const sections = parseDraftSections(draft, channel);
+                  const section = sections[fullscreenSectionIdx];
+                  if (!section) return null;
+                  return (
+                    <motion.div
+                      key="fullscreen"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setFullscreenSectionIdx(null)}
+                      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-8"
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl border-2 border-border-strong bg-bg-card p-8 shadow-2xl"
+                      >
+                        <button
+                          onClick={() => setFullscreenSectionIdx(null)}
+                          className="absolute right-4 top-4 flex items-center gap-1 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-muted hover:border-border-strong hover:text-text"
+                        >
+                          <X size={14} />
+                          Zatvori (Esc)
+                        </button>
+                        <div className="mb-6 flex items-center gap-3">
+                          <span className="text-3xl leading-none">
+                            {section.emoji}
+                          </span>
+                          <div>
+                            <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+                              {lead.name}
+                            </p>
+                            <h2 className="text-xl font-bold text-text">
+                              {section.title}
+                            </h2>
+                          </div>
+                        </div>
+                        <pre className="whitespace-pre-wrap break-words text-lg leading-relaxed text-text font-sans">
+                          {section.body}
+                        </pre>
+                        <div className="mt-6 flex items-center justify-end gap-2 border-t border-border pt-4">
+                          <button
+                            onClick={() => {
+                              if (typeof navigator === "undefined") return;
+                              navigator.clipboard.writeText(section.body);
+                            }}
+                            className="flex items-center gap-1.5 rounded-md border border-border bg-bg-elevated px-3 py-2 text-xs text-text hover:border-border-strong"
+                          >
+                            <Copy size={12} />
+                            Copy
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })()}
+              </AnimatePresence>
 
               {/* Action buttons */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -1159,6 +1297,120 @@ function LeadActionCard({
 // =====================================================================
 // Helpers
 // =====================================================================
+
+/**
+ * Parse a structured AI draft into named sections.
+ *
+ * The Holmes prompt now emits drafts with explicit sectioning per
+ * channel — WhatsApp gets `📝 PORUKA` + `🎙 GLASOVNA`, phone gets the
+ * `[0-30s] OPENER` / `[30-90s] PITCH` / `[90-150s] 2 PROBNA PITANJA` /
+ * `[150-180s] CTA` / `AKO ODBIJU` blocks. UI renders one card per
+ * section with its own copy button so Leonardo never has to mentally
+ * separate "what I paste in WA" from "what I read aloud as a voice
+ * memo" or "what I say if they reject".
+ *
+ * Best-effort fallback: if a draft doesn't have the expected
+ * markers (e.g. older Holmes runs), the whole draft is returned as
+ * one untitled section so nothing is hidden.
+ */
+type DraftSection = { title: string; emoji: string; body: string };
+
+function parseDraftSections(
+  draft: string,
+  channel: Channel,
+): DraftSection[] {
+  if (!draft.trim()) return [];
+
+  if (channel === "whatsapp") {
+    // Split on a stand-alone "---" separator line.
+    const parts = draft.split(/^\s*---\s*$/m);
+    // Helper: strip the leading header line ("📝 PORUKA (…):") so the
+    // copy buffer is pure body text.
+    const stripHeader = (text: string, pattern: RegExp) =>
+      text.replace(pattern, "").trim();
+    if (parts.length >= 2) {
+      const poruka = stripHeader(
+        parts[0] ?? "",
+        /^[\s\S]*?📝[^\n]*\n+/,
+      );
+      const glasovna = stripHeader(
+        parts.slice(1).join("\n---\n"),
+        /^[\s\S]*?🎙[^\n]*\n+/,
+      );
+      return [
+        { title: "Poruka (copy-paste u WA)", emoji: "📝", body: poruka },
+        {
+          title: "Glasovna — čitaj naglas (60-90 sek)",
+          emoji: "🎙",
+          body: glasovna,
+        },
+      ];
+    }
+    return [{ title: "Draft", emoji: "💬", body: draft }];
+  }
+
+  if (channel === "phone") {
+    // Phone scripts come with `[0-30s] OPENER` style markers and `---`
+    // separators between blocks. Parse into the 5 canonical phases.
+    const phaseLabels: { match: RegExp; title: string; emoji: string }[] = [
+      { match: /\b(OPENER|0-30s)\b/i, title: "Opener (0-30s)", emoji: "📞" },
+      { match: /\b(PITCH|30-90s)\b/i, title: "Pitch (30-90s)", emoji: "🎯" },
+      {
+        match: /\b(2 PROBNA PITANJA|2 PITANJA|90-150s)\b/i,
+        title: "Probna pitanja (90-150s)",
+        emoji: "❓",
+      },
+      { match: /\b(CTA|150-180s)\b/i, title: "CTA (150-180s)", emoji: "🤝" },
+      {
+        match: /\b(AKO ODBIJU|AKO ODBIJE|ako odbiju)\b/i,
+        title: "Ako odbiju",
+        emoji: "🛑",
+      },
+    ];
+    // Split on `---` first.
+    const blocks = draft.split(/^\s*---\s*$/m).map((b) => b.trim()).filter(
+      Boolean,
+    );
+    if (blocks.length >= 2) {
+      // Tag each block by which phase its header matches.
+      const tagged: DraftSection[] = [];
+      const used = new Set<number>();
+      for (const block of blocks) {
+        // Skip the title line at the very top of the first block
+        // (e.g. "📞 PHONE SCRIPT — Bagatin")
+        if (/^📞\s*PHONE SCRIPT/i.test(block) && tagged.length === 0) continue;
+        let matchedIdx = -1;
+        for (let i = 0; i < phaseLabels.length; i++) {
+          if (used.has(i)) continue;
+          if (phaseLabels[i].match.test(block)) {
+            matchedIdx = i;
+            break;
+          }
+        }
+        if (matchedIdx >= 0) {
+          used.add(matchedIdx);
+          // Strip the bracketed marker line ("[0-30s] OPENER") from body
+          const body = block
+            .replace(/^\[?[^\]\n]*\]?\s*(OPENER|PITCH|PROBNA PITANJA|CTA|AKO ODBIJU)[^\n]*\n+/i, "")
+            .trim();
+          tagged.push({
+            title: phaseLabels[matchedIdx].title,
+            emoji: phaseLabels[matchedIdx].emoji,
+            body,
+          });
+        } else {
+          // Unrecognized block — keep as additional context section.
+          tagged.push({ title: "Dodatak", emoji: "📋", body: block });
+        }
+      }
+      if (tagged.length) return tagged;
+    }
+    return [{ title: "Call script", emoji: "📞", body: draft }];
+  }
+
+  // Email / IG / LinkedIn — single block, no parsing.
+  return [{ title: "Draft", emoji: "✉", body: draft }];
+}
 
 function inferPrimaryChannel(lead: LeadRow): Channel | null {
   const r = lead.holmes_report;

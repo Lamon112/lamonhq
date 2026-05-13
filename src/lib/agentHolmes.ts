@@ -88,27 +88,60 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
     - **email** (full V8 ~1500-2000 znakova): koristi outreach_draft formatu. Plus subject line uključen kao prva linija "Subject: [naslov]". Naslov primjer: "Koliko [klinika] gubi mjesečno na propuštene pozive?" ili "Riva — niti jedan pacijent ne prolazi pored vas". Prva rečenica = ROI brojka (NE tech opis, NE "5 stupova"). Spomeni Plima paket mid-message kao rješenje + reci "to je 5 ljudi posla u 1 sustavu — recepcionar 24/7, marketer, brand, PR, analytics — koji bi te u HR koštali 10-15K€/mj bruto, dobivate za 1.497€/mj". Voice se ne spominje pre-discovery — to je za demo poziv. Detaljnije nabrajanje 5 stupova ide na discovery call, ne u prvi mail. Sign-off "S poštovanjem, Leonardo Lamon".
 
-    - **phone** — POSEBNI FORMAT, NE PORUKA, nego **CALL SCRIPT** (3 min):
+    - **phone** — STROGI FORMAT, NE PORUKA, nego **CALL SCRIPT** s 5 jasno odvojenih sekcija (svaka razdvojena s ---  linijom). Leonardo čita ovo NAGLAS dok zove. FULL REČENICE.
+
       \`\`\`
-      📞 PHONE SCRIPT (3 min, prilagodi vlasnika)
+      📞 PHONE SCRIPT — [klinika] · prilagodi vlasnika
 
-      [0-30s OPENER]
-      "Dr. [ime], dobar dan. Leonardo Lamon ovdje. Bavim se isključivo razvojem privatnih ordinacija — primijetio sam [konkretni signal] kod [klinika], zato vas zovem direktno. Imate li 2-3 min za kratko pitanje?"
+      [0-30s] OPENER
+      "Dr. [ime], dobar dan. Leonardo Lamon ovdje. Bavim se isključivo razvojem privatnih ordinacija — primijetio sam [konkretan signal: post, brojka, brand] kod [klinika], zato vas zovem direktno. Imate li 2-3 min za kratko pitanje?"
 
-      [30-90s PITCH]
-      "[Industry stat + njihova procjena gubitka]. Razlog što vas zovem: vidim da [pain konkretan]. To realno znači [€ raspon] godišnje izgubljenog prihoda."
+      ---
 
-      [90-150s 2 QUESTIONS]
+      [30-90s] PITCH
+      "[Industry stat za njihov tier + njihova procjena gubitka]. Razlog što vas zovem: vidim da [konkretan pain]. To realno znači [€ raspon] godišnje izgubljenog prihoda. Plima sustav s AI asistenticom Rivom dize svaki poziv 24/7, kvalificira pacijenta, zakazuje termin."
+
+      ---
+
+      [90-150s] 2 PROBNA PITANJA
       Q1: "Kako trenutno hvatate pozive izvan radnog vremena?"
-      Q2: "Tko trenutno odlučuje o [marketing / automatizacija / web]?"
+      Q2: "Tko kod vas odlučuje o [marketingu / automatizaciji / web-u]? Vi ili netko drugi?"
 
-      [150-180s CTA]
-      "Predlažem 15 min Zoom u srijedu u 10:30 ili četvrtak 18h — pokazat ću vam konkretnu mehaniku za [pain]. Šaljem invite na koji email?"
+      ---
 
-      [Ako odbiju] "Razumijem. Mogu li poslati kratki email s 2-3 brojke koje će vam možda promijeniti pristup?"
+      [150-180s] CTA
+      "Predlažem 15-minutni Zoom razgovor u srijedu u 10:30 ili četvrtak nakon 18h — pokazat ću vam konkretnu mehaniku za [vaš pain]. Na koji vam email šaljem Zoom invite?"
+
+      ---
+
+      AKO ODBIJU
+      "Razumijem, hvala na vremenu. Smijem li poslati kratki email s 2-3 brojke koje će vam možda promijeniti pristup? Pitam jer prosječna ordinacija na vašoj razini gubi [€] mjesečno na propuštene termine — vrijedi vam imati te brojke barem za referencu."
+
+      Ako i drugi put NE → "U redu, broj imate. Sretno s ordinacijom."
       \`\`\`
 
-    - **whatsapp** (kombinacija text + voice memo prep): kratki opener text (3-4 line) + bullet-list "Voice memo (60s) talking points:" — jer voice memo na WA daje osobni vibe + autoritet.
+      SVE rečenice MORAJU biti pisane kao govor — full sentences koje Leonardo doslovno čita. Bez "[X]" placeholdera u finalnom output-u — popuni konkretno za OVU kliniku (njezino ime, njihov najupečatljiviji signal, ICP-prilagođen pain). Bez bullets bez kratica.
+
+    - **whatsapp** — STROGI FORMAT s dva odvojena bloka razdvojena s linijom --- :
+
+      \`\`\`
+      📝 PORUKA (copy-paste, max 280 znakova, ends with "Šaljem 60s glasovnu odmah ispod ako je u redu."):
+      [3-4 rečenice — konkretan observation hook iz njihovog sadržaja + 1 ROI brojka + soft tease za voice memo + jedna meka CTA]
+
+      ---
+
+      🎙 GLASOVNA (60-90 sekundi — Leonardo čita NAGLAS u WA, FULL REČENICE ne bullets):
+      [Otvori s: "Bok [ime], ovo je Leonardo iz Lamon Agencije. Šaljem ovo kao glasovnu jer je puno brže nego pisati."]
+      [Onda 4 dijela kroz full rečenice]:
+      1. OBSERVATION (15s): "Pogledao sam vaš profil — vidim [konkretan signal: broj objava, viral post, premium positioning]. To što ste izgradili je ozbiljno."
+      2. PAIN-POINT BRIDGE (15s): "Iz prakse razvoja privatnih ordinacija — kad klinika ima [signal X], obično se gubi [konkretan pain: 35% poziva, no-show 20%, konverzija galerije]. To realno znači [€ raspon] godišnje."
+      3. SOLUTION TEASE (20s): "Razvili smo Plima sustav s AI asistenticom Rivom koja diže svaki poziv 24/7, kvalificira pacijenta, zakazuje termin. Sve to integrirano s [njihov konkretan kanal]."
+      4. ASSUMPTIVE CTA (10s): "Trebam 15 minuta vašeg vremena da vam pokažem konkretno na vašoj klinici. Jeste li slobodni u srijedu u 10:30 ili četvrtak nakon 18h?"
+
+      KRAJ: "Javite na poruku gore — ja sam tu cijeli dan."
+      \`\`\`
+
+      Glasovna MORA biti pisana kao govorni tekst koji se čita naglas (rečenice, ne bullets, ne kratice). To je SKRIPTA, ne talking-points lista. Leonardo doslovno čita u svoj mikrofon.
 
     Generiraj samo za kanale koji su u TOP 3 reachability. Skip dead/blocked kanale. Ako jedan kanal nije relevantan (npr. nema phone broj), izostavi ga.
 
