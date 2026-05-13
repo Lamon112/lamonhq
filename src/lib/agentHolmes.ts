@@ -122,26 +122,51 @@ Tvoj outreach_draft i best_angle MORAJU se prilagoditi tieru:
 
       SVE rečenice MORAJU biti pisane kao govor — full sentences koje Leonardo doslovno čita. Bez "[X]" placeholdera u finalnom output-u — popuni konkretno za OVU kliniku (njezino ime, njihov najupečatljiviji signal, ICP-prilagođen pain). Bez bullets bez kratica.
 
-    - **whatsapp** — STROGI FORMAT s dva odvojena bloka razdvojena s linijom --- :
+    - **whatsapp** — TWO-STEP FUNNEL, ne single mash. Workflow: poruka → ČEKAJ reply → glasovna s CTA na Zoom poziv.
+
+      STROGI FORMAT s dva odvojena bloka razdvojena s linijom --- :
 
       \`\`\`
-      📝 PORUKA (copy-paste, max 280 znakova, ends with "Šaljem 60s glasovnu odmah ispod ako je u redu."):
-      [3-4 rečenice — konkretan observation hook iz njihovog sadržaja + 1 ROI brojka + soft tease za voice memo + jedna meka CTA]
+      📝 PORUKA (max 280 znakova, OPENING TOUCH koji izaziva reply):
+
+      Cilj poruke: catchy hook + zaintrigirati ih dovoljno da odgovore. Završi s ASSERTIVE tease za glasovnu — NE PITAJ PERMISSION, NE pisati "Mogu poslati ako je u redu" / "Volio bih" / bilo šta submissive.
+
+      Format (3-4 rečenice):
+      1. Hook iz njihovog konkretnog sadržaja/brand-a (1 rečenica, konkretna observacija — ne general compliment).
+      2. Pitanje ili teza koja izaziva reply (1 rečenica — npr. "Pitam se: koliko od tih [interakcija] postaje termin?" ili "Vidim X, ali nedostaje Y — primijetili ste?").
+      3. Tease za glasovnu: "Imam 60-sek glasovnu sa konkretnom analizom za vašu kliniku — javite kad stignete, šaljem." ILI "Pripremio sam 60-sek glasovnu specifično za [klinika] — javite jednu riječ, ide odmah." ILI assertive varijanta — direktna, peer-level, bez permission ask.
+
+      ZABRANJENE FRAZE u poruci:
+      ❌ "Mogu poslati ako je u redu" / "ako vam odgovara" / "ako se slažete"
+      ❌ "Volio bih" / "želio bih" / "smio bih"
+      ❌ "Ako biste bili tako ljubazni"
+      ❌ "Nadam se da ne smetam"
 
       ---
 
-      🎙 GLASOVNA (60-90 sekundi — Leonardo čita NAGLAS u WA, FULL REČENICE ne bullets):
-      [Otvori s: "Bok [ime], ovo je Leonardo iz Lamon Agencije. Šaljem ovo kao glasovnu jer je puno brže nego pisati."]
-      [Onda 4 dijela kroz full rečenice]:
-      1. OBSERVATION (15s): "Pogledao sam vaš profil — vidim [konkretan signal: broj objava, viral post, premium positioning]. To što ste izgradili je ozbiljno."
-      2. PAIN-POINT BRIDGE (15s): "Iz prakse razvoja privatnih ordinacija — kad klinika ima [signal X], obično se gubi [konkretan pain: 35% poziva, no-show 20%, konverzija galerije]. To realno znači [€ raspon] godišnje."
-      3. SOLUTION TEASE (20s): "Razvili smo Plima sustav s AI asistenticom Rivom koja diže svaki poziv 24/7, kvalificira pacijenta, zakazuje termin. Sve to integrirano s [njihov konkretan kanal]."
-      4. ASSUMPTIVE CTA (10s): "Trebam 15 minuta vašeg vremena da vam pokažem konkretno na vašoj klinici. Jeste li slobodni u srijedu u 10:30 ili četvrtak nakon 18h?"
+      🎙 GLASOVNA (60-90 sekundi — RIJEČ-DO-RIJEČI SKRIPTA koju Leonardo čita NAGLAS bez improvizacije):
 
-      KRAJ: "Javite na poruku gore — ja sam tu cijeli dan."
+      Ova skripta se šalje TEK NAKON što oni odgovore na poruku. Sadrži cijelu vrijednost + Zoom CTA. NEMA submissive frase. Pisana kao govor — FULL REČENICE, koristi prirodne pauze.
+
+      Format (60-90s = ~140-200 riječi):
+
+      OTVORI (10s): "Bok [ime], Leonardo iz Lamon Agencije. Šaljem ovo glasovnom jer je puno brže nego sve ovo pisati — slušaj kad stigneš."
+
+      OBSERVATION (15s): "Pogledao sam vaš profil — [konkretan signal: 543 TT videa, X.XXX followera, premium All on 4 brand, viral post o Y]. To što ste izgradili je ozbiljno."
+
+      PAIN BRIDGE (15-20s): "Iz prakse razvoja privatnih ordinacija — kad klinika ima [signal X], obično se događa [konkretan pain: 35% poziva neodgovorenih, no-show 20%, konverzija galerije ispod 10%]. Za vašu razinu prihoda to realno znači [€ raspon] godišnje koje teče kroz vrata."
+
+      SOLUTION (15-20s): "Razvili smo Plima sustav s AI asistenticom Rivom koja diže svaki poziv 24/7, kvalificira pacijenta po vašem ICP-u, i zakazuje termin u kalendar. Sve integrirano s [njihov konkretan kanal: IG inbox / web chat / TT DM]."
+
+      ASSUMPTIVE CTA (10-15s): "Trebam 15 minuta vašeg vremena da vam pokažem KONKRETNU mehaniku na vašoj klinici. Predlažem srijedu u 10:30 ili četvrtak nakon 18h — javite koji vam termin paše, šaljem Zoom link."
+
+      ZABRANJENE FRAZE u skripti:
+      ❌ "Mogu poslati ako je u redu" — već su pristali na glasovnu
+      ❌ "Volio bih vam predložiti" — autoritetni si, predlažeš direktno
+      ❌ "Nadam se da je u redu" / "Hvala što ste se javili" (groveling)
       \`\`\`
 
-      Glasovna MORA biti pisana kao govorni tekst koji se čita naglas (rečenice, ne bullets, ne kratice). To je SKRIPTA, ne talking-points lista. Leonardo doslovno čita u svoj mikrofon.
+      Glasovna MORA biti pisana kao govorni tekst koji se čita naglas (rečenice, ne bullets, ne kratice). Leonardo DOSLOVNO čita riječ-do-riječi u svoj mikrofon. Ako napišeš "[ime]" kao placeholder, popuni KONKRETNO ime iz recommended_contact. Ako napišeš "[€ raspon]", popuni KONKRETNO procjenu temeljenu na njihovom tier-u.
 
     Generiraj samo za kanale koji su u TOP 3 reachability. Skip dead/blocked kanale. Ako jedan kanal nije relevantan (npr. nema phone broj), izostavi ga.
 

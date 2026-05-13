@@ -334,24 +334,33 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
         </button>
       </div>
 
-      {/* ── Channel philosophy reminder ── */}
-      <div
+      {/*
+       * Channel philosophy reminder — collapsed by default so it doesn't
+       * eat lead-card real-estate. Leonardo already knows the why for
+       * each channel; the expand affordance is there for first-visit
+       * onboarding + occasional reference, not constant display.
+       */}
+      <details
         className={
-          "mb-4 rounded-lg border bg-gradient-to-br p-3 backdrop-blur-sm " +
+          "group mb-4 rounded-lg border bg-gradient-to-br backdrop-blur-sm " +
           activeMeta.bg
         }
       >
-        <div className="mb-2 flex items-start gap-2">
-          <span className={"mt-0.5 text-[11px] font-bold uppercase tracking-wider " + activeMeta.accent}>
-            ▸ Zašto {activeMeta.label}
-          </span>
-          <p className="flex-1 text-xs leading-relaxed text-text">
+        <summary
+          className={
+            "flex cursor-pointer items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-wider list-none " +
+            activeMeta.accent
+          }
+        >
+          <ChevronRight
+            size={11}
+            className="transition-transform group-open:rotate-90"
+          />
+          Zašto {activeMeta.label}? · style hints
+        </summary>
+        <div className="space-y-2 border-t border-white/5 px-3 py-2">
+          <p className="text-xs leading-relaxed text-text">
             {activeMeta.philosophy}
-          </p>
-        </div>
-        <div className="border-t border-white/5 pt-2">
-          <p className={"mb-1 text-[10px] font-mono uppercase tracking-wider " + activeMeta.accent}>
-            Style hints
           </p>
           <ul className="space-y-0.5 text-[11px] text-text-dim">
             {activeMeta.styleHints.map((hint, i) => (
@@ -362,7 +371,7 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
             ))}
           </ul>
         </div>
-      </div>
+      </details>
 
       {/* ── Lead cards ── */}
       <div className="flex-1 space-y-3 overflow-y-auto pb-4">
@@ -842,19 +851,31 @@ function LeadActionCard({
                       <div className="space-y-2">
                         {sections.map((s, idx) => {
                           const isCopied = copiedSectionIdx === idx;
+                          // Only the FIRST section (📝 Poruka on WA, the
+                          // Opener on phone, the email body etc.) is
+                          // expanded by default. Voice memo, pitch,
+                          // follow-up phases all live behind a click so
+                          // the card stays compact and the action button
+                          // is one scroll away.
+                          const defaultOpen = idx === 0;
                           return (
-                            <div
+                            <details
                               key={idx}
-                              className="rounded-md border border-border bg-bg-elevated/40"
+                              open={defaultOpen}
+                              className="group rounded-md border border-border bg-bg-elevated/40"
                             >
-                              <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-1.5">
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-b border-border/40 px-3 py-1.5">
                                 <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-text-muted">
+                                  <ChevronRight
+                                    size={11}
+                                    className="transition-transform group-open:rotate-90"
+                                  />
                                   <span className="text-sm leading-none">
                                     {s.emoji}
                                   </span>
                                   {s.title}
                                 </span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={() => {
                                       if (typeof navigator === "undefined") return;
@@ -885,11 +906,11 @@ function LeadActionCard({
                                     Read
                                   </button>
                                 </div>
-                              </div>
+                              </summary>
                               <div className="max-h-36 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed text-text-dim whitespace-pre-wrap">
                                 {s.body}
                               </div>
-                            </div>
+                            </details>
                           );
                         })}
                       </div>
