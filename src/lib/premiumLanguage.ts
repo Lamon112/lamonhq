@@ -352,6 +352,48 @@ const SWAPS: Swap[] = [
     reason: "stripped: lone €-range/mj pricing",
   },
 
+  // ── #13.5 NUCLEAR ANTI-PRICING ── kill any Plima-price leak ──
+  //
+  // After the Dental Gmaz incident on 2026-05-13 — where the AI wrote
+  // "kao zaposleni tim koštale 10.000€ do 15.000€ mjesečno bruto, a
+  // dostupno je za 1.497€ mjesečno" — we need defense-in-depth on the
+  // exact patterns the AI keeps re-inventing for revealing the Plima
+  // price. The model loves to chain the HR-cost anchor (allowed) with
+  // "a dostupno za X€" / "dobivate za X€" / "samo X€" (NOT allowed).
+  //
+  // The HR cost reference itself ("10-15K€/mj bruto", "10.000€ do
+  // 15.000€ mjesečno bruto") is a permitted value anchor per OVERRIDE A
+  // — we ONLY strip the trailing "a dostupno za…" / "dobivate za…"
+  // tail-end. Match starts at the connector word and consumes to the
+  // sentence end.
+  {
+    // "..., a dostupno (je) za 1.497€/mj." → strip
+    find: /,?\s*(a\s+)?(dostupno\s+(je\s+)?za|dobivate\s+(ga\s+)?za|samo\s+za|već\s+za|već\s+od)\s+[\d.,]+\s*€[^.\n]*\.?/gi,
+    replace: "",
+    reason: "stripped: 'a dostupno za X€/mj' pricing tail",
+  },
+  {
+    // Hardcoded specific Plima price values that the AI keeps emitting.
+    // Catches the whole sentence containing them. Belt-and-suspenders
+    // in case the connector pattern above misses a novel phrasing.
+    find: /[^.\n]*\b1[.,]?497\s*€[^.\n]*\.?/gi,
+    replace: "",
+    reason: "stripped: any sentence with 1.497€ (Plima price)",
+  },
+  {
+    find: /[^.\n]*\b2[.,]?500\s*[-–]\s*3[.,]?500\s*€[^.\n]*\.?/gi,
+    replace: "",
+    reason: "stripped: any sentence with 2.500-3.500€ (Plima Distribution+ price)",
+  },
+  {
+    // Catch "X.XXX€ mjesečno" outside HR-cost context. The HR salary
+    // anchor uses K-suffix ("10-15K€") or explicit "bruto" / "u HR" /
+    // "koštao" within ~30 chars. Anything else is suspicious.
+    find: /(?<!K€|K |bruto|u HR|koštao|koštali|koštalo)[^.\n]{0,30}\b\d{1}[.,]\d{3}\s*€\s*(mj|mjesečno|na mjesec)[^.\n]*\.?/gi,
+    replace: "",
+    reason: "stripped: bare 'X.XXX€/mj' outside HR-cost anchor",
+  },
+
   // ── #14 KRIVE METRIKE ── TikTok srca = lajkovi, NIKAD pregledi ──
   // Holmes often labels TikTok heart-counts as "pregleda" (views). Doctor
   // recipient instantly clocks this as wrong (TikTok shows views in
