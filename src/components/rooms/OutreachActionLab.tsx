@@ -977,8 +977,12 @@ function buildChannelHref(
     case "phone":
       return `tel:${contact.replace(/\s+/g, "")}`;
     case "whatsapp": {
-      const num = contact.replace(/[^0-9+]/g, "");
-      return `https://wa.me/${num}?text=${encoded}`;
+      // Use web.whatsapp.com/send directly so the chat opens inside the user's
+      // existing WhatsApp Web session (which can be linked to a WhatsApp
+      // Business phone account). wa.me/ redirects through a landing page that
+      // can mis-route to a different WhatsApp session.
+      const num = contact.replace(/[^0-9+]/g, "").replace(/^\+/, "");
+      return `https://web.whatsapp.com/send?phone=${num}&text=${encoded}`;
     }
   }
 }
