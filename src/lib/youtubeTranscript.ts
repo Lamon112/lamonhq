@@ -10,15 +10,19 @@
  */
 
 /**
- * Two-tier transcript fetch:
- *   1. youtubei.js (InnerTube — YouTube's internal mobile API, less
- *      aggressively IP-blocked than the public scrape route used by
- *      youtube-transcript)
- *   2. Fallback to youtube-transcript scrape if InnerTube returns nothing
+ * Three-tier transcript fetch — primary path on Vercel uses a 3rd-party
+ * relay that fetches YouTube from its OWN residential IP, so it bypasses
+ * the data-center block we hit directly:
  *
- * On Vercel (data-center IP), tier 1 is the primary path — YouTube
- * blocks the watch-page scrape but allows InnerTube auth flows.
- * On residential IPs (local dev, Render with proxy), both work.
+ *   1. youtube-transcript-api (relays through youtube-transcript.io's
+ *      backend — Firebase creds scraped at init; no API key needed).
+ *      Works on Vercel because the actual YouTube call happens server-side
+ *      at their end, on a residential pool.
+ *   2. youtubei.js (InnerTube — YouTube's internal mobile API). Lower
+ *      latency, but transcript endpoint is still sometimes IP-blocked.
+ *   3. youtube-transcript scrape — last-resort residential-only path.
+ *
+ * Same VideoTranscript shape returned from all three.
  */
 
 import { YoutubeTranscript } from "youtube-transcript";
@@ -32,6 +36,67 @@ export interface VideoTranscript {
 }
 
 const PREFERRED_LANGS = ["en", "hr", "sr", "bs", "de", "ru", "ro"];
+
+// Lazy-init the youtube-transcript-api relay client (scrapes Firebase
+// creds from youtube-transcript.io on first use)
+let _relayClient: unknown | null = null;
+async function getRelayClient() {
+  if (_relayClient) return _relayClient;
+  // @ts-expect-error — youtube-transcript-api ships no .d.ts
+  const mod = (await import("youtube-transcript-api")) as unknown as {
+    default: new () => { ready: Promise<void>; getTranscript: (id: string) => Promise<unknown> };
+  };
+  const Client = mod.default;
+  const c = new Client();
+  await c.ready;
+  _relayClient = c;
+  return c;
+}
+
+interface RelaySegment {
+  text?: string;
+  duration?: number;
+  offset?: number;
+}
+
+interface RelayResult {
+  tracks?: Array<{
+    transcript?: RelaySegment[];
+    language?: string;
+    languageCode?: string;
+  }>;
+  // Fallback shape — sometimes returned as direct array
+  transcript?: RelaySegment[];
+}
+
+async function fetchViaRelay(videoId: string): Promise<VideoTranscript | null> {
+  try {
+    const c = (await getRelayClient()) as { getTranscript: (id: string) => Promise<RelayResult> };
+    const result = await c.getTranscript(videoId);
+    // Try several shapes — the lib's response format varies
+    const track = result?.tracks?.[0];
+    const segs: RelaySegment[] = track?.transcript ?? result?.transcript ?? [];
+    if (!segs || segs.length === 0) return null;
+    const text = segs
+      .map((s) => (s.text ?? "").replace(/&amp;/g, "&").replace(/&#39;/g, "'").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (!text) return null;
+    return {
+      videoId,
+      text,
+      language: track?.languageCode ?? track?.language ?? "auto",
+      word_count: text.split(/\s+/).filter(Boolean).length,
+      segments: segs.map((s) => ({
+        start: s.offset ?? 0,
+        duration: s.duration ?? 0,
+        text: s.text ?? "",
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
 
 // Lazy-init the Innertube client so module load doesn't slow cold start
 let _innertube: unknown | null = null;
@@ -137,10 +202,13 @@ async function fetchViaScrape(videoId: string): Promise<VideoTranscript | null> 
 export async function fetchTranscript(
   videoId: string,
 ): Promise<VideoTranscript | null> {
-  // Tier 1: Innertube (works on Vercel)
+  // Tier 1: 3rd-party relay (bypasses Vercel data-center IP block)
+  const fromRelay = await fetchViaRelay(videoId);
+  if (fromRelay) return fromRelay;
+  // Tier 2: Innertube
   const fromInner = await fetchViaInnertube(videoId);
   if (fromInner) return fromInner;
-  // Tier 2: scrape fallback (works on residential IP)
+  // Tier 3: direct scrape (residential only)
   return fetchViaScrape(videoId);
 }
 
