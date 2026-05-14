@@ -26,6 +26,9 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@capsizecss/metrics": "^3.7.0",
+    "@fontsource/inter": "^5.2.8",
+    "@loaderkit/resolve": "^1.0.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pdfkit": "^0.17.6",

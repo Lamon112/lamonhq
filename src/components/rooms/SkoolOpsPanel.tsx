@@ -82,11 +82,11 @@ const CHANNELS: ChannelStat[] = [
   },
   {
     platform: "Skool",
-    handle: "skool.com/sidehustlebalkan",
+    handle: "skool.com/sidehustlehr",
     emoji: "🎓",
     followers: "165 paid",
     unanswered: 0,
-    url: "https://skool.com/sidehustlebalkan",
+    url: "https://skool.com/sidehustlehr",
   },
 ];
 

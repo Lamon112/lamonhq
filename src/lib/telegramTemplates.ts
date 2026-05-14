@@ -127,17 +127,22 @@ Iskren odgovor — PDF je 5% posla. 95% je SAMOSTALNA primjena.
 
 Najbrže ćeš stići do ${goalLine} unutar PREMIUM grupe gdje radimo svaki tjedan na ovome konkretno. Trenutno €50/mj — već 165 ljudi unutra, neki zarađuju i $15K+/mj.
 
-→ Pridruži se: https://www.skool.com/sidehustlebalkan
+→ Pridruži se: https://www.skool.com/sidehustlehr
 
 Imaš li bilo kakvo pitanje prije nego se prijaviš?`,
-    // PDF hosted at Vercel /public — we control the file, last-page CTA
-    // points at skool.com/sidehustlebalkan (the old Drive PDF had a
-    // lamon.io B2B CTA that confused B2C SideHustle users).
-    // Regenerate with: node scripts/generate-zlatna-knjiga.mjs
+    // PDF hosted on Google Drive. Source PDF is regenerated locally
+    // (scripts/generate-zlatna-knjiga.mjs) and uploaded as a new version
+    // of the existing Drive file via the UI ("Manage versions"). Drive
+    // keeps the same fileId/URL, so the bot picks up the new content
+    // without a code change.
+    //
+    // Last-page CTA: skool.com/sidehustlehr (PREMIUM grupa €50/mj).
+    // Old Drive PDF pointed at lamon.io (B2B) which contradicted the
+    // reverse-funnel rule and the B2C SideHustle audience.
     attachments: [
       {
         type: "url",
-        url: "https://lamon-hq.vercel.app/zlatna-knjiga.pdf",
+        url: "https://drive.google.com/file/d/1cT2CkPLGrf2SOKguRAc1Tf1u1hZEpwm2/view?usp=drivesdk",
         label: "📄 10 Zlatnih Pravila — PDF",
       },
     ],
@@ -165,7 +170,7 @@ export function tplPremiumDetail(_vars: TemplateVars): RenderedTemplate {
 
 Krećeš = 50€. Otkažeš kad god hoćeš, bez papirologije.
 
-→ Pridruži se: https://www.skool.com/sidehustlebalkan`,
+→ Pridruži se: https://www.skool.com/sidehustlehr`,
   };
 }
 

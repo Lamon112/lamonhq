@@ -382,7 +382,7 @@ const DEDUP_TESTS = [
   },
   {
     name: "completely different template NOT flagged",
-    draft: "Top Patrick! Šaljem ti PDF — 10 Zlatnih Pravila. Pridruži se: https://skool.com/sidehustlebalkan",
+    draft: "Top Patrick! Šaljem ti PDF — 10 Zlatnih Pravila. Pridruži se: https://skool.com/sidehustlehr",
     recent: [
       { id: "1", body: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan." },
     ],

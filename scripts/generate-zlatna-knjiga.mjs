@@ -3,7 +3,7 @@
  * Drive file whose last-page CTA still pointed at lamon.io (B2B).
  *
  * Output: public/zlatna-knjiga.pdf (served at https://lamon-hq.vercel.app/zlatna-knjiga.pdf)
- * CTA: skool.com/sidehustlebalkan (PREMIUM grupa, €50/mj)
+ * CTA: skool.com/sidehustlehr (PREMIUM grupa, €50/mj)
  *
  * Run: node scripts/generate-zlatna-knjiga.mjs
  */
@@ -11,6 +11,13 @@
 import PDFDocument from "pdfkit";
 import fs from "node:fs";
 import path from "node:path";
+
+// Inter TTF embed — required for Croatian diacritics (č, š, ž, đ, ć)
+// and Unicode symbols (→, •) that PDFKit's default Helvetica doesn't
+// support. Without this, output looks like "Pro O—F ò 6'" instead of
+// "Pročitao 10 pravila".
+const FONT_REG = path.resolve("./scripts/fonts/Inter-Regular.ttf");
+const FONT_BOLD = path.resolve("./scripts/fonts/Inter-Bold.ttf");
 
 const PRAVILA = [
   {
@@ -97,6 +104,11 @@ const outPath = path.resolve("./public/zlatna-knjiga.pdf");
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 doc.pipe(fs.createWriteStream(outPath));
 
+// Register Inter Regular + Bold — we then refer to them as "Inter" / "InterBold"
+// throughout the doc instead of pdfkit's broken default Inter.
+doc.registerFont("Inter", FONT_REG);
+doc.registerFont("InterBold", FONT_BOLD);
+
 function drawBackground() {
   doc.rect(0, 0, doc.page.width, doc.page.height).fill(COLORS.bg);
 }
@@ -105,7 +117,7 @@ function drawBackground() {
 drawBackground();
 doc
   .fillColor(COLORS.accent)
-  .font("Helvetica-Bold")
+  .font("InterBold")
   .fontSize(42)
   .text("10 ZLATNIH", 50, 200, { align: "center" })
   .text("PRAVILA", { align: "center" });
@@ -114,7 +126,7 @@ doc
   .moveDown(0.5)
   .fillColor(COLORS.text)
   .fontSize(18)
-  .font("Helvetica")
+  .font("Inter")
   .text("Viralni Content Framework", { align: "center" });
 
 doc
@@ -157,14 +169,14 @@ for (const p of PRAVILA) {
 
   doc
     .fillColor(COLORS.bg)
-    .font("Helvetica-Bold")
+    .font("InterBold")
     .fontSize(56)
     .text(String(p.n), 50, 60, { width: 80, align: "center" });
 
   // Title
   doc
     .fillColor(COLORS.accent)
-    .font("Helvetica-Bold")
+    .font("InterBold")
     .fontSize(28)
     .text(p.title, 50, 170, { width: doc.page.width - 100 });
 
@@ -179,7 +191,7 @@ for (const p of PRAVILA) {
   // Body
   doc
     .fillColor(COLORS.text)
-    .font("Helvetica")
+    .font("Inter")
     .fontSize(14)
     .text(p.body, 50, 260, {
       width: doc.page.width - 100,
@@ -192,7 +204,7 @@ for (const p of PRAVILA) {
     .fillColor(COLORS.muted)
     .fontSize(9)
     .text(
-      `${p.n} / 10 · SideHustle™ Balkan · skool.com/sidehustlebalkan`,
+      `${p.n} / 10 · SideHustle™ Balkan · skool.com/sidehustlehr`,
       50,
       doc.page.height - 60,
       { width: doc.page.width - 100, align: "center" },
@@ -205,14 +217,14 @@ drawBackground();
 
 doc
   .fillColor(COLORS.accent)
-  .font("Helvetica-Bold")
+  .font("InterBold")
   .fontSize(36)
   .text("ŠTO SAD?", 50, 100, { align: "center" });
 
 doc
   .moveDown(1)
   .fillColor(COLORS.text)
-  .font("Helvetica")
+  .font("Inter")
   .fontSize(16)
   .text(
     "Pročitao si 10 pravila. Sad dolazi 95% posla — samostalna primjena.",
@@ -230,7 +242,7 @@ doc
 
 doc
   .fillColor(COLORS.accent)
-  .font("Helvetica-Bold")
+  .font("InterBold")
   .fontSize(20)
   .text("→ PREMIUM grupa", 80, boxY + 25, {
     width: doc.page.width - 160,
@@ -238,7 +250,7 @@ doc
 
 doc
   .fillColor(COLORS.text)
-  .font("Helvetica")
+  .font("Inter")
   .fontSize(13)
   .text(
     "165 ljudi koji rade isto — svaki tjedan radimo na ovome konkretno. Tjedni live pozivi sa mnom, svi kursevi (YT Shorts, TikTok, AI alati, niche-finder), bi-weekly viralni niche drop.",
@@ -249,7 +261,7 @@ doc
 
 doc
   .fillColor(COLORS.accent)
-  .font("Helvetica-Bold")
+  .font("InterBold")
   .fontSize(15)
   .text("€50/mj · otkaži kad god", 80, boxY + 155, {
     width: doc.page.width - 160,
@@ -258,16 +270,16 @@ doc
 // Main CTA URL
 doc
   .fillColor(COLORS.accent)
-  .font("Helvetica-Bold")
+  .font("InterBold")
   .fontSize(22)
-  .text("skool.com/sidehustlebalkan", 50, 540, {
+  .text("skool.com/sidehustlehr", 50, 540, {
     width: doc.page.width - 100,
     align: "center",
   });
 
 doc
   .fillColor(COLORS.muted)
-  .font("Helvetica")
+  .font("Inter")
   .fontSize(11)
   .text(
     "Pridruži se danas i vidimo se na sljedećem live pozivu (srijeda 20:00 Zagreb time).",

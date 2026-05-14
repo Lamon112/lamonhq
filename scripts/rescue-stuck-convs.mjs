@@ -46,7 +46,7 @@ Sorry — bila je tehnička greška u našem sustavu pa sam te pitao istu stvar 
 
 PDF je 5% posla. 95% je samostalna primjena. Najbrže ćeš stići do cilja unutar PREMIUM grupe gdje radimo svaki tjedan na ovome konkretno — €50/mj, 165 ljudi unutra, neki zarađuju i $15K+/mj.
 
-→ Pridruži se: https://www.skool.com/sidehustlebalkan
+→ Pridruži se: https://www.skool.com/sidehustlehr
 
 Vidimo se unutra,
 Leonardo`;
