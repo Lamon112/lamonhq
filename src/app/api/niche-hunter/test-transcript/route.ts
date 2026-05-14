@@ -1,41 +1,64 @@
 /**
- * Diagnostic — verify youtube-transcript actually works in Vercel serverless.
- * Returns transcript text length + language for one hardcoded video.
+ * Diagnostic — show exactly what each tier of fetchTranscript does.
  */
 import { NextResponse } from "next/server";
-import { fetchTranscript } from "@/lib/youtubeTranscript";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function GET() {
-  const start = Date.now();
+  const out: Record<string, unknown> = {};
+
+  // Tier 1: youtubei.js InnerTube
+  const t1Start = Date.now();
   try {
-    // Carl Faceless video — known to have English captions
-    const tx = await fetchTranscript("OJ9WQy0Dt40");
-    const elapsed = Date.now() - start;
-    if (!tx) {
-      return NextResponse.json({
-        ok: false,
-        elapsed_ms: elapsed,
-        error: "fetchTranscript returned null",
-      });
-    }
-    return NextResponse.json({
-      ok: true,
-      elapsed_ms: elapsed,
-      videoId: tx.videoId,
-      language: tx.language,
-      word_count: tx.text.split(/\s+/).length,
-      preview: tx.text.slice(0, 200),
-    });
+    const ytModule = (await import("youtubei.js")) as unknown as {
+      Innertube: { create: (opts?: Record<string, unknown>) => Promise<unknown> };
+    };
+    const yt = (await ytModule.Innertube.create({
+      cache: undefined,
+      generate_session_locally: true,
+    })) as { getInfo: (id: string) => Promise<unknown> };
+    out.tier1_innertube_create_ms = Date.now() - t1Start;
+
+    const infoStart = Date.now();
+    const info = (await yt.getInfo("OJ9WQy0Dt40")) as {
+      basic_info?: { title?: string };
+      getTranscript: () => Promise<unknown>;
+    };
+    out.tier1_get_info_ms = Date.now() - infoStart;
+    out.tier1_video_title = info.basic_info?.title ?? "?";
+
+    const txStart = Date.now();
+    const transcript = (await info.getTranscript()) as {
+      transcript?: { content?: { body?: { initial_segments?: Array<unknown> } } };
+    };
+    out.tier1_transcript_ms = Date.now() - txStart;
+    const segments = transcript?.transcript?.content?.body?.initial_segments ?? [];
+    out.tier1_segment_count = segments.length;
+    out.tier1_first_segment = segments[0] ?? null;
+    out.tier1_ok = segments.length > 0;
   } catch (e) {
-    return NextResponse.json({
-      ok: false,
-      elapsed_ms: Date.now() - start,
-      error: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack?.slice(0, 500) : null,
-    });
+    out.tier1_error = e instanceof Error ? e.message : String(e);
+    out.tier1_stack = e instanceof Error ? e.stack?.slice(0, 500) : null;
   }
+
+  // Tier 2: youtube-transcript scrape
+  const t2Start = Date.now();
+  try {
+    const { YoutubeTranscript } = (await import("youtube-transcript")) as {
+      YoutubeTranscript: {
+        fetchTranscript: (id: string, opts?: { lang?: string }) => Promise<Array<{ text: string }>>;
+      };
+    };
+    const items = await YoutubeTranscript.fetchTranscript("OJ9WQy0Dt40", { lang: "en" });
+    out.tier2_scrape_ms = Date.now() - t2Start;
+    out.tier2_item_count = items?.length ?? 0;
+    out.tier2_ok = items?.length > 0;
+  } catch (e) {
+    out.tier2_error = e instanceof Error ? e.message : String(e);
+  }
+
+  return NextResponse.json(out);
 }
