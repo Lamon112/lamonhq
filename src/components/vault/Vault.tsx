@@ -17,9 +17,22 @@ import {
   type ActiveRaid,
 } from "@/app/actions/raids";
 import type { RaidSeverity } from "@/lib/raids";
-import { Swords, Dices } from "lucide-react";
+import { Swords, Dices, X } from "lucide-react";
 import { AudioController } from "@/components/audio/AudioController";
 import { playSfx } from "@/lib/audio/sfx";
+import { SkoolOpsPanel } from "../rooms/SkoolOpsPanel";
+import { NicheHunterPanel } from "../rooms/NicheHunterPanel";
+
+/*
+ * Direct-render map for agents whose primary surface is a full dashboard
+ * panel (not an action picker). Clicking these in vault opens the panel
+ * inline as a modal — bypassing the "actions stižu u sljedećoj fazi"
+ * empty state that confused Leonardo on 2026-05-14.
+ */
+const AGENT_DIRECT_PANEL: Partial<Record<AgentId, () => React.ReactElement>> = {
+  scholar: () => <SkoolOpsPanel />,
+  hunter: () => <NicheHunterPanel />,
+};
 
 interface VaultProps {
   data: RoomData;
@@ -47,6 +60,7 @@ interface ActiveJob {
 export function Vault({}: VaultProps) {
   const floors = vaultFloors();
   const [openRoom, setOpenRoom] = useState<Agent | null>(null);
+  const [openDirectPanel, setOpenDirectPanel] = useState<Agent | null>(null);
   const [drawerActionId, setDrawerActionId] = useState<string | null>(null);
   const [dataView, setDataView] = useState<{ key: RoomDataViewKey; title: string } | null>(null);
   // active jobs keyed by room id → progress text (allows multiple rooms
@@ -325,7 +339,15 @@ export function Vault({}: VaultProps) {
                 index={fi}
                 active={active}
                 raidsByRoom={raidsByRoom}
-                onRoomClick={(agent) => setOpenRoom(agent)}
+                onRoomClick={(agent) => {
+                  // Direct-panel agents (Scholar/Hunter) skip the
+                  // empty action console and open their dashboard inline.
+                  if (AGENT_DIRECT_PANEL[agent.id]) {
+                    setOpenDirectPanel(agent);
+                  } else {
+                    setOpenRoom(agent);
+                  }
+                }}
                 onRaidBadgeClick={(roomId) => openRaidModalForRoom(roomId)}
               />
             ))}
@@ -336,6 +358,43 @@ export function Vault({}: VaultProps) {
           ▸ Lamon Vault · Alt+V → Classic · klik na sobu = AI akcije
         </p>
       </div>
+
+      {/* Direct-panel modal — for agents whose primary surface is a
+          full dashboard (Scholar=SkoolOps, Hunter=NicheHunter). */}
+      {openDirectPanel && AGENT_DIRECT_PANEL[openDirectPanel.id] && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => setOpenDirectPanel(null)}
+        >
+          <div
+            className="scrollbar-thin relative max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gold/30 bg-bg-elevated p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setOpenDirectPanel(null)}
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border bg-bg-elevated text-text-dim transition-colors hover:border-gold/50 hover:text-text"
+              aria-label="Zatvori"
+            >
+              <X size={16} />
+            </button>
+            <div className="mb-5 flex items-start gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-3xl">
+                {openDirectPanel.emoji}
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-text-muted">
+                  Vault Agent · Floor {openDirectPanel.floor}
+                </div>
+                <h2 className="text-2xl font-semibold text-text">
+                  {openDirectPanel.room}
+                </h2>
+                <p className="text-sm text-text-dim">{openDirectPanel.role}</p>
+              </div>
+            </div>
+            {AGENT_DIRECT_PANEL[openDirectPanel.id]!()}
+          </div>
+        </div>
+      )}
 
       {/* Action picker modal */}
       <RoomActionConsole

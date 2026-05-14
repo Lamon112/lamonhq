@@ -22,7 +22,10 @@ import { telegramUserbotPoller } from "@/lib/inngest/functions/telegramUserbotPo
 import { nicheHunterCron } from "@/lib/inngest/functions/nicheHunterCron";
 import { videoIntelImport } from "@/lib/inngest/functions/videoIntelImport";
 import { scriptGenerator } from "@/lib/inngest/functions/scriptGenerator";
-import { clinicCallerCron } from "@/lib/inngest/functions/clinicCallerCron";
+// NOTE: clinicCallerCron (AI Vapi voice) was a misunderstanding of
+// Leonardov 2026-05-14 plan. Real plan = HIRE HUMAN COLD CALLER paid
+// €200/close. The cron + Vapi webhook are kept in repo but NOT registered
+// because they'd waste Inngest slots and we don't have Vapi env anyway.
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -37,7 +40,6 @@ export const { GET, POST, PUT } = serve({
     nicheHunterCron,
     videoIntelImport,
     scriptGenerator,
-    clinicCallerCron,
   ],
   // Allow long-running steps without Vercel cutting them off — Inngest
   // takes over execution; this route only sends/receives step signals.
