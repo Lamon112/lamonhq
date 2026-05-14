@@ -44,6 +44,7 @@ import {
   addOutreach,
   refreshOutreachDraftsWithCurrentRules,
 } from "@/app/actions/outreach";
+import { captureDraftEdit } from "@/app/actions/auditorEdits";
 import { sendViaGmail, getGmailStatus, type GmailStatus } from "@/app/actions/gmail";
 import { cleanPremiumLanguage } from "@/lib/premiumLanguage";
 import {
@@ -672,6 +673,30 @@ function LeadActionCard({
     setSavedDraft(draft);
     setDraftJustSaved(true);
     setTimeout(() => setDraftJustSaved(false), 2000);
+
+    /*
+     * AUDITOR LEARNING LOOP — capture the diff between the AI's
+     * original draft and Leonardo's hand-edited final, summarize via
+     * Haiku, and persist as a `shared_insights` entry that gets
+     * injected into the Holmes system prompt automatically. So after
+     * 30-50 edits the AI starts producing pre-corrected drafts and
+     * Leonardo's review loop collapses toward zero.
+     *
+     * Fire-and-forget — we don't block the UI on the API call. Errors
+     * are silent (auditor learning is bonus, not critical path).
+     */
+    void (async () => {
+      try {
+        await captureDraftEdit({
+          leadId: lead.id,
+          channel,
+          aiVersion: initialResult.cleaned,
+          finalVersion: draft,
+        });
+      } catch {
+        /* silent */
+      }
+    })();
   }
 
   const draftIsDirty = draft !== savedDraft;

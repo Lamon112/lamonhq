@@ -75,8 +75,20 @@ export async function renderInsightsForPrompt(
     i.action_type.toLowerCase().includes("council") ||
     (i.tags ?? []).some((t) => /strateg|council/i.test(t));
 
+  /*
+   * Auditor edit patterns — captured every time Leonardo saves a hand-
+   * tuned change to an AI-generated draft. These are FIRST-CLASS
+   * prescriptive context: "user already corrected this exact pattern
+   * once, do it that way next time". They get a dedicated prompt
+   * section so the LLM treats them as commands, not background.
+   */
+  const isEditPattern = (i: SharedInsight) =>
+    i.room === "auditor" &&
+    i.action_type === "leonardo.edit_pattern";
+
   const council = insights.filter(isCouncil);
-  const others = insights.filter((i) => !isCouncil(i));
+  const editPatterns = insights.filter(isEditPattern);
+  const others = insights.filter((i) => !isCouncil(i) && !isEditPattern(i));
 
   const fmt = (i: SharedInsight) => {
     const date = new Date(i.completed_at).toISOString().slice(0, 10);
@@ -84,11 +96,25 @@ export async function renderInsightsForPrompt(
     return `- [${date}] **${i.title}** (${i.room}${tags ? ` · ${tags}` : ""}): ${i.summary}`;
   };
 
+  const fmtEdit = (i: SharedInsight) => {
+    const tags = (i.tags ?? [])
+      .filter((t) => t !== "learned-edit")
+      .slice(0, 2)
+      .join(", ");
+    return `- ${i.summary}${tags ? ` _(${tags})_` : ""}`;
+  };
+
   const sections: string[] = [];
 
   if (council.length > 0) {
     sections.push(
       `## 🎯 STRATEGIC DECISIONS — AI Council recommendations Leonardo has already heard\n\nThese are Council/strategic outputs Leonardo paid for. They MUST shape today's plan — when you propose actions, prefer ones that execute on these recommendations over generic best-practice. Reference the recommendation directly in the "why" field when relevant.\n\n${council.map(fmt).join("\n")}`,
+    );
+  }
+
+  if (editPatterns.length > 0) {
+    sections.push(
+      `## 📚 LEONARDOVI EDIT PATTERNS — primjeni AUTOMATSKI u svaki draft\n\nLeonardo je već ručno ispravio ove fraze u prošlim draftovima. Apliciraj ISTA pravila u svakom novom draftu. Ovo nisu sugestije — to su prescriptive corrections koje je on napravio, ako ne prijaniš na njih on će ponovo morati editirati.\n\n${editPatterns.map(fmtEdit).join("\n")}`,
     );
   }
 
