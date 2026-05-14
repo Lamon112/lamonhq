@@ -23,7 +23,7 @@
  * file → next deploy → renders here. v2 wires real-time API.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   TrendingUp,
   Users,
@@ -35,7 +35,16 @@ import {
   Target,
   DollarSign,
   Zap,
+  Activity,
+  Bot,
 } from "lucide-react";
+import {
+  listInboxConversations,
+  getInboxStats,
+  type InboxConversation,
+  type InboxStats,
+  type TelegramStage,
+} from "@/app/actions/telegramInbox";
 
 interface ChannelStat {
   platform: string;
@@ -291,75 +300,246 @@ function OverviewTab({ channels }: { channels: ChannelStat[] }) {
   );
 }
 
-function InboxTab({ channels }: { channels: ChannelStat[] }) {
-  const channelsWithInbox = channels.filter((c) => c.unanswered > 0);
+function InboxTab({ channels: _channels }: { channels: ChannelStat[] }) {
+  const [convs, setConvs] = useState<InboxConversation[] | null>(null);
+  const [stats, setStats] = useState<InboxStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [c, s] = await Promise.all([
+          listInboxConversations(50),
+          getInboxStats(),
+        ]);
+        if (cancelled) return;
+        setConvs(c);
+        setStats(s);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "load failed");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    // Refresh every 20s — bot runs every 60s, this gives fast UI feel
+    const interval = setInterval(load, 20_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (loading && !convs) {
+    return (
+      <div className="rounded-lg border border-border bg-bg-card/40 p-6 text-center text-xs text-text-muted">
+        Učitavam Telegram inbox...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-3 text-xs text-rose-200">
+        Greška: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-3">
-        <p className="text-xs font-semibold text-rose-100">
-          🚨 50 unanswered DMs = direktan revenue leak
-        </p>
-        <p className="mt-1 text-[11px] text-rose-200/80">
-          Math: 50 unanswered × 30% close rate × €50/mj entry = ~€750/mj
-          propušteno trenutno + sve buduće DMs koje ne stigneš odgovoriti.
-          Auto-responder (P0) gasi ovaj leak.
-        </p>
-      </div>
+      {/* ── Bot heartbeat ── */}
+      {stats && <PollerHeartbeat stats={stats} />}
 
-      <div className="space-y-2">
-        {channelsWithInbox.map((c) => (
-          <div
-            key={c.platform}
-            className="rounded-md border border-border bg-bg-card/40 p-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{c.emoji}</span>
-                <div>
-                  <p className="text-sm font-semibold text-text">
-                    {c.platform}
-                  </p>
-                  <p className="text-[10px] font-mono text-text-dim">
-                    {c.handle}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-rose-200">
-                  {c.unanswered}
-                </p>
-                <p className="text-[10px] text-text-dim">unanswered</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* ── Stage breakdown ── */}
+      {stats && <StageBreakdown stats={stats} />}
 
-      <div className="rounded-lg border border-border bg-bg-card/40 p-3">
+      {/* ── Conversation list ── */}
+      <div>
         <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-          🤖 Auto-responder triggeri (radi se inventory + build)
+          💬 Posljednji DM-ovi ({convs?.length ?? 0})
         </h4>
-        <ul className="space-y-1 text-xs text-text">
-          <li>
-            <span className="font-mono text-amber-300">ZLATNA KNJIGA</span>{" "}
-            → free PDF (SideHustle_Free_Vodic.pdf) + soft Skool join CTA
-          </li>
-          <li>
-            <span className="font-mono text-amber-300">INFO</span> →
-            PREMIUM grupa (€50/mj) + community link · mentor option mention SAMO ako user eksplicitno traži više
-          </li>
-          <li>
-            <span className="font-mono text-amber-300">MENTORSTVO</span>{" "}
-            → onboarding form (Google Forms) + 24h fit-check timeline
-          </li>
-          <li className="text-text-dim italic">
-            + dodatni CTA triggeri se identificiraju iz video scan-a
-            (180 dana inventory)
-          </li>
-        </ul>
+        {convs && convs.length === 0 && (
+          <div className="rounded-md border border-border bg-bg-card/40 p-4 text-xs text-text-muted">
+            Bot još nije primio nijedan DM. Čeka prvi inbound.
+          </div>
+        )}
+        <div className="space-y-2">
+          {convs?.map((c) => (
+            <ConversationRow key={c.id} conv={c} />
+          ))}
+        </div>
       </div>
     </div>
   );
+}
+
+function PollerHeartbeat({ stats }: { stats: InboxStats }) {
+  const hb = stats.pollerHeartbeat;
+  const isFresh = hb.secondsAgo !== null && hb.secondsAgo < 90;
+  const tone = isFresh ? "emerald" : "rose";
+  return (
+    <div
+      className={`rounded-lg border p-3 ${
+        isFresh
+          ? "border-emerald-400/40 bg-emerald-500/10"
+          : "border-rose-400/40 bg-rose-500/10"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Bot
+            size={16}
+            className={isFresh ? "text-emerald-200" : "text-rose-200"}
+          />
+          <div>
+            <p className={`text-xs font-semibold text-${tone}-100`}>
+              {isFresh
+                ? "@lamonleonardo bot ALIVE"
+                : "@lamonleonardo bot SILENT"}
+            </p>
+            <p className={`text-[10px] text-${tone}-200/80`}>
+              Last poll{" "}
+              {hb.secondsAgo === null
+                ? "never"
+                : hb.secondsAgo < 60
+                  ? `${hb.secondsAgo}s ago`
+                  : `${Math.floor(hb.secondsAgo / 60)}m ${hb.secondsAgo % 60}s ago`}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p className="text-[9px] uppercase text-text-dim">polled</p>
+            <p className="font-mono text-sm font-bold text-text">
+              {hb.totalPolled}
+            </p>
+          </div>
+          <div>
+            <p className="text-[9px] uppercase text-text-dim">replied</p>
+            <p className="font-mono text-sm font-bold text-emerald-200">
+              {hb.totalReplied}
+            </p>
+          </div>
+          <div>
+            <p className="text-[9px] uppercase text-text-dim">hot</p>
+            <p className="font-mono text-sm font-bold text-rose-200">
+              {hb.totalEscalated}
+            </p>
+          </div>
+        </div>
+      </div>
+      {hb.notes && (
+        <p className="mt-2 truncate font-mono text-[10px] text-amber-200/80">
+          ⚠ {hb.notes}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StageBreakdown({ stats }: { stats: InboxStats }) {
+  const stages: { key: TelegramStage; label: string; color: string }[] = [
+    { key: "new", label: "NEW", color: "sky" },
+    { key: "qualifying", label: "QUALIFYING", color: "amber" },
+    { key: "awaiting", label: "AWAITING", color: "violet" },
+    { key: "member", label: "MEMBER", color: "emerald" },
+    { key: "handover", label: "HOT 🔥", color: "rose" },
+    { key: "nurture", label: "NURTURE", color: "stone" },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      {stages.map((s) => (
+        <div
+          key={s.key}
+          className={`rounded-md border border-${s.color}-400/30 bg-${s.color}-500/5 p-2 text-center`}
+        >
+          <p className={`text-[9px] uppercase text-${s.color}-300`}>{s.label}</p>
+          <p className="font-mono text-lg font-bold text-text">
+            {stats.byStage[s.key]}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConversationRow({ conv }: { conv: InboxConversation }) {
+  const stageStyle: Record<TelegramStage, string> = {
+    new: "border-sky-400/40 bg-sky-500/10 text-sky-200",
+    qualifying: "border-amber-400/40 bg-amber-500/10 text-amber-200",
+    pitch: "border-violet-400/40 bg-violet-500/10 text-violet-200",
+    awaiting: "border-violet-400/40 bg-violet-500/10 text-violet-200",
+    member: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200",
+    handover: "border-rose-400/40 bg-rose-500/10 text-rose-200",
+    nurture: "border-stone-400/40 bg-stone-500/10 text-stone-200",
+    dead: "border-stone-400/30 bg-stone-500/5 text-stone-300",
+  };
+  const handle = conv.telegramUsername
+    ? `@${conv.telegramUsername}`
+    : `id:${conv.telegramUserId}`;
+  const name = [conv.firstName, conv.lastName].filter(Boolean).join(" ") || handle;
+  const tgUrl = conv.telegramUsername
+    ? `https://t.me/${conv.telegramUsername}`
+    : `tg://user?id=${conv.telegramUserId}`;
+
+  return (
+    <a
+      href={tgUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-md border border-border bg-bg-card/40 p-3 transition-colors hover:border-sky-400/50"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-text">{name}</p>
+            <span className="truncate font-mono text-[10px] text-text-dim">
+              {handle}
+            </span>
+          </div>
+          {conv.lastInboundPreview && (
+            <p className="mt-1 line-clamp-2 text-[11px] italic text-text-muted">
+              👤 {conv.lastInboundPreview}
+            </p>
+          )}
+          {conv.lastOutboundPreview && (
+            <p className="mt-1 line-clamp-2 text-[11px] text-emerald-200/80">
+              🤖 {conv.lastOutboundPreview}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1 text-right">
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase ${stageStyle[conv.stage]}`}
+          >
+            {conv.stage}
+          </span>
+          <span className="text-[9px] text-text-dim">
+            {formatRelativeTime(conv.lastMessageAt)}
+          </span>
+          <span className="text-[9px] text-text-dim">
+            {conv.messageCount} msg
+          </span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function formatRelativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}d`;
 }
 
 function MentorshipTab({ slots }: { slots: MentorshipSlot[] }) {
