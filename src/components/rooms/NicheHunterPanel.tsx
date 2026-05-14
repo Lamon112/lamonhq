@@ -228,12 +228,54 @@ export function NicheHunterPanel() {
     }
   }
 
+  // Compute current progress percent + label from latest run state
+  function deriveProgress(): { percent: number; label: string } | null {
+    const r = runs[0];
+    if (!r) return null;
+    if (r.status === "success" || r.status === "partial") {
+      return { percent: 100, label: `Gotovo · ${r.niches_extracted} ${r.niches_extracted === 1 ? "niche" : "niše"} ekstraktirano` };
+    }
+    if (r.status === "failed") {
+      return { percent: 100, label: "Run failed (provjeri Inngest dashboard)" };
+    }
+    // status === 'running'
+    if (r.videos_fetched === 0) return { percent: 5, label: "Pokrećem... resolveam guru kanale..." };
+    if (r.transcripts_pulled === 0) {
+      const expected = 4 * 5; // 4 gurus × 5 videos
+      const pct = 10 + Math.min(20, Math.round((r.videos_fetched / expected) * 20));
+      return { percent: pct, label: `Skidam videa · ${r.videos_fetched}/${expected}` };
+    }
+    if (r.transcripts_pulled < r.videos_fetched) {
+      const txProgress = r.videos_fetched > 0 ? r.transcripts_pulled / r.videos_fetched : 0;
+      const pct = 30 + Math.round(txProgress * 30);
+      return {
+        percent: pct,
+        label: `Skidam transkripte · ${r.transcripts_pulled}/${r.videos_fetched}`,
+      };
+    }
+    if (r.niches_extracted === 0) {
+      return {
+        percent: 70,
+        label: `Transkripti gotovi (${r.transcripts_pulled}/${r.videos_fetched}). Claude analizira niše...`,
+      };
+    }
+    return { percent: 92, label: `Zapisujem ${r.niches_extracted} ${r.niches_extracted === 1 ? "niche" : "niše"} u bazu...` };
+  }
+
   useEffect(() => {
     refresh();
-    // Auto-refresh every 30s while a run is in progress
-    const interval = setInterval(refresh, 30_000);
-    return () => clearInterval(interval);
-  }, []);
+    // Fast poll while a run is in progress (every 3s); slow when idle (every 30s)
+    const fastInterval = setInterval(() => {
+      if (runs[0]?.status === "running") refresh();
+    }, 3_000);
+    const slowInterval = setInterval(refresh, 30_000);
+    return () => {
+      clearInterval(fastInterval);
+      clearInterval(slowInterval);
+    };
+  }, [runs]);
+
+  const progress = deriveProgress();
 
   function triggerRunNow() {
     setTriggerStatus("Pokrećem...");
@@ -302,8 +344,47 @@ export function NicheHunterPanel() {
                 {isRunning ? "Pokrenut..." : "Run NOW"}
               </button>
             </div>
-            {triggerStatus && (
+            {triggerStatus && !isRunning && (
               <p className="mt-2 text-[11px] text-amber-200/80">{triggerStatus}</p>
+            )}
+
+            {/* ── Live progress bar (only while a run is active) ── */}
+            {progress && isRunning && (
+              <div className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/5 p-3">
+                <div className="mb-1 flex items-center justify-between text-[11px]">
+                  <span className="flex items-center gap-1.5 font-semibold text-amber-200">
+                    <Loader2 size={11} className="animate-spin" />
+                    {progress.label}
+                  </span>
+                  <span className="font-mono text-amber-300">
+                    {progress.percent}%
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-bg-elevated">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-500"
+                    style={{ width: `${progress.percent}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-[10px] text-text-muted">
+                  Pipeline: resolve channels → fetch videos → pull transcripts →
+                  Claude extracts niches → save & notify
+                </p>
+              </div>
+            )}
+
+            {/* ── Last completed run summary ── */}
+            {progress && !isRunning && latestRun?.status === "success" && (
+              <div className="mt-3 rounded-md border border-emerald-400/40 bg-emerald-500/5 p-2 text-[11px]">
+                <span className="flex items-center gap-1.5 text-emerald-200">
+                  <CheckCircle size={11} />
+                  Zadnji run: {latestRun.niches_extracted}{" "}
+                  {latestRun.niches_extracted === 1 ? "niche" : "niše"} ·{" "}
+                  {latestRun.transcripts_pulled}/{latestRun.videos_fetched}{" "}
+                  transkripata · $
+                  {latestRun.total_cost_usd?.toFixed(3) ?? "0.000"}
+                </span>
+              </div>
             )}
           </div>
         </div>

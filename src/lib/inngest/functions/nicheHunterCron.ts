@@ -139,27 +139,47 @@ export const nicheHunterCron = inngest.createFunction(
     const supabase = getServiceSupabase();
     const cycleId = `nh-${new Date().toISOString().slice(0, 16).replace(/[:T-]/g, "")}`;
 
-    // Step 0: open run row
+    // Step 0: open run row. Use existing counter columns to track progress
+    // (videos_fetched, transcripts_pulled, niches_extracted) — panel derives
+    // % client-side from these. Avoids needing a new migration before the
+    // user can see progress bars.
     await step.run("open-run", async () => {
       await supabase.from("niche_hunter_runs").upsert(
         {
           cycle_id: cycleId,
           started_at: new Date().toISOString(),
           status: "running",
+          gurus_scanned: 0,
+          videos_fetched: 0,
+          transcripts_pulled: 0,
+          niches_extracted: 0,
         },
         { onConflict: "cycle_id" },
       );
     });
 
-    // Step 1: resolve channels + fetch videos
+    // Step 1: resolve channels + fetch videos (write count as we go)
     const allVideos = await step.run("fetch-videos", async () => {
       const out: YouTubeVideo[] = [];
+      let gurusDone = 0;
       for (const guru of YOUTUBE_GURUS) {
         try {
           const ch = await resolveChannel(guru.id);
-          if (!ch) continue;
+          if (!ch) {
+            gurusDone++;
+            continue;
+          }
           const videos = await fetchRecentVideos(ch, 5);
           out.push(...videos);
+          gurusDone++;
+          // Push intermediate counter so panel can render progress
+          await supabase
+            .from("niche_hunter_runs")
+            .update({
+              gurus_scanned: gurusDone,
+              videos_fetched: out.length,
+            })
+            .eq("cycle_id", cycleId);
         } catch (e) {
           console.warn(`[niche-hunter] ${guru.name}:`, e instanceof Error ? e.message : e);
         }
@@ -179,13 +199,18 @@ export const nicheHunterCron = inngest.createFunction(
       return { ok: false, reason: "no videos fetched" };
     }
 
-    // Step 2: fetch transcripts (with concurrency limit)
+    // Step 2: fetch transcripts (with concurrency limit + progress updates)
     const transcripts = await step.run("fetch-transcripts", async () => {
       const ids = allVideos.map((v) => v.videoId);
       const tx = await fetchTranscriptsBatch(ids, {
         concurrency: 3,
         perVideoTimeoutMs: 25_000,
       });
+      const successCount = tx.filter((t) => t).length;
+      await supabase
+        .from("niche_hunter_runs")
+        .update({ transcripts_pulled: successCount })
+        .eq("cycle_id", cycleId);
       return tx;
     });
 
