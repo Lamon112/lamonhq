@@ -18,6 +18,7 @@ import { dailyExpenseCron } from "@/lib/inngest/functions/dailyExpenseCron";
 import { raidScanner } from "@/lib/inngest/functions/raidScanner";
 import { autoReplyPoller } from "@/lib/inngest/functions/autoReplyPoller";
 import { auditorCron } from "@/lib/inngest/functions/auditorCron";
+import { telegramUserbotPoller } from "@/lib/inngest/functions/telegramUserbotPoller";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -28,6 +29,7 @@ export const { GET, POST, PUT } = serve({
     raidScanner,
     autoReplyPoller,
     auditorCron,
+    telegramUserbotPoller,
   ],
   // Allow long-running steps without Vercel cutting them off — Inngest
   // takes over execution; this route only sends/receives step signals.
