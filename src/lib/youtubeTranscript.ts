@@ -10,19 +10,21 @@
  */
 
 /**
- * Three-tier transcript fetch — primary path on Vercel uses a 3rd-party
- * relay that fetches YouTube from its OWN residential IP, so it bypasses
- * the data-center block we hit directly:
+ * Multi-tier transcript fetch.
  *
- *   1. youtube-transcript-api (relays through youtube-transcript.io's
- *      backend — Firebase creds scraped at init; no API key needed).
- *      Works on Vercel because the actual YouTube call happens server-side
- *      at their end, on a residential pool.
- *   2. youtubei.js (InnerTube — YouTube's internal mobile API). Lower
- *      latency, but transcript endpoint is still sometimes IP-blocked.
- *   3. youtube-transcript scrape — last-resort residential-only path.
+ * Tier 1 (PRIMARY on Vercel): Supadata.ai paid API
+ *   - Set SUPADATA_API_KEY env var
+ *   - 100 free requests/mo (well above our Niche Hunter cycle of ~40)
+ *   - Reliable — they handle IP rotation server-side
  *
- * Same VideoTranscript shape returned from all three.
+ * Tier 2 (FALLBACK): youtube-transcript-api npm — relays through
+ *   youtube-transcript.io, no key needed but Firebase scrape can fail
+ *   on Vercel data-center IPs.
+ *
+ * Tier 3 (LAST): youtube-transcript scrape — works only on residential
+ *   IP (local dev).
+ *
+ * Same VideoTranscript shape returned from all tiers.
  */
 
 import { YoutubeTranscript } from "youtube-transcript";
@@ -37,8 +39,45 @@ export interface VideoTranscript {
 
 const PREFERRED_LANGS = ["en", "hr", "sr", "bs", "de", "ru", "ro"];
 
-// Lazy-init the youtube-transcript-api relay client (scrapes Firebase
-// creds from youtube-transcript.io on first use)
+// Tier 1: Supadata.ai paid API. Set SUPADATA_API_KEY in env.
+async function fetchViaSupadata(videoId: string): Promise<VideoTranscript | null> {
+  const key = process.env.SUPADATA_API_KEY;
+  if (!key) return null;
+  try {
+    const url = `https://api.supadata.ai/v1/transcript?url=https://youtu.be/${videoId}`;
+    const res = await fetch(url, {
+      headers: { "x-api-key": key },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      lang?: string;
+      content?: Array<{ text: string; offset: number; duration: number }>;
+    };
+    const segs = data.content ?? [];
+    if (segs.length === 0) return null;
+    const text = segs
+      .map((s) => (s.text ?? "").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (!text) return null;
+    return {
+      videoId,
+      text,
+      language: data.lang ?? "auto",
+      word_count: text.split(/\s+/).filter(Boolean).length,
+      segments: segs.map((s) => ({
+        start: (s.offset ?? 0) / 1000,
+        duration: (s.duration ?? 0) / 1000,
+        text: s.text,
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Tier 2: Lazy-init the youtube-transcript-api relay client
 let _relayClient: unknown | null = null;
 async function getRelayClient() {
   if (_relayClient) return _relayClient;
@@ -202,13 +241,16 @@ async function fetchViaScrape(videoId: string): Promise<VideoTranscript | null> 
 export async function fetchTranscript(
   videoId: string,
 ): Promise<VideoTranscript | null> {
-  // Tier 1: 3rd-party relay (bypasses Vercel data-center IP block)
+  // Tier 1: Supadata paid API (primary on Vercel)
+  const fromSupadata = await fetchViaSupadata(videoId);
+  if (fromSupadata) return fromSupadata;
+  // Tier 2: youtube-transcript.io relay (no key, but Firebase scrape can fail)
   const fromRelay = await fetchViaRelay(videoId);
   if (fromRelay) return fromRelay;
-  // Tier 2: Innertube
+  // Tier 3: Innertube
   const fromInner = await fetchViaInnertube(videoId);
   if (fromInner) return fromInner;
-  // Tier 3: direct scrape (residential only)
+  // Tier 4: direct scrape (residential only)
   return fetchViaScrape(videoId);
 }
 
