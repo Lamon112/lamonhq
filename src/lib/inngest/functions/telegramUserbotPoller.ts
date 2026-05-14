@@ -30,6 +30,8 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { TelegramClient, Api } from "telegram";
+import { StringSession } from "telegram/sessions/index.js";
 import { inngest } from "../client";
 import { classifyIntent } from "@/lib/telegramIntent";
 import { routeTemplate } from "@/lib/telegramTemplates";
@@ -56,75 +58,177 @@ interface IncomingDM {
 }
 
 /*
- * Placeholder for the GramJS poll. When TELEGRAM_API_ID/HASH/SESSION
- * are configured, this becomes a real GramJS client.connect() +
- * iterMessages() call. Until then, returns empty array so the rest of
- * the pipeline (state machine, audit, send) can be tested with seeded
- * data via SQL inserts to telegram_messages.
+ * GramJS client lifecycle.
  *
- * Phase 2 implementation sketch:
+ * We open a fresh connection per poll cycle (every 60 sec). Yes, this
+ * is wasteful — ideal would be a long-lived process listening for
+ * updates in real time — but Inngest+Vercel are serverless, so each
+ * invocation is its own runtime. Connect overhead is ~1.5-2 sec, which
+ * is fine for a 60-sec poll budget.
  *
- *   import { TelegramClient } from "telegram";
- *   import { StringSession } from "telegram/sessions";
- *
- *   const session = new StringSession(process.env.TELEGRAM_SESSION);
- *   const client = new TelegramClient(
- *     session,
- *     parseInt(process.env.TELEGRAM_API_ID!, 10),
- *     process.env.TELEGRAM_API_HASH!,
- *     { connectionRetries: 3 },
- *   );
- *   await client.connect();
- *
- *   const lastSeenId = await getLastUpdateId();
- *   const updates = await client.invoke(
- *     new Api.updates.GetDifference({
- *       pts: lastSeenId,
- *       date: ...,
- *       qts: 0,
- *     }),
- *   );
- *   // parse new private messages, return as IncomingDM[]
+ * Phase 3 (if poll latency becomes an issue): host a long-running
+ * Node.js worker on Railway/Render that listens via client.addEventHandler
+ * and writes incoming DMs to a Supabase queue; this Inngest function
+ * then just processes the queue.
  */
-async function pollNewDMs(): Promise<IncomingDM[]> {
-  if (
-    !process.env.TELEGRAM_API_ID ||
-    !process.env.TELEGRAM_API_HASH ||
-    !process.env.TELEGRAM_SESSION
-  ) {
-    // Credentials not yet configured — graceful no-op.
-    return [];
+function isConfigured(): boolean {
+  return Boolean(
+    process.env.TELEGRAM_API_ID &&
+      process.env.TELEGRAM_API_HASH &&
+      process.env.TELEGRAM_SESSION,
+  );
+}
+
+async function withClient<T>(
+  fn: (client: TelegramClient) => Promise<T>,
+): Promise<T> {
+  const session = new StringSession(process.env.TELEGRAM_SESSION!);
+  const client = new TelegramClient(
+    session,
+    parseInt(process.env.TELEGRAM_API_ID!, 10),
+    process.env.TELEGRAM_API_HASH!,
+    { connectionRetries: 3 },
+  );
+  await client.connect();
+  try {
+    return await fn(client);
+  } finally {
+    await client.disconnect();
   }
-  // TODO Phase 2: real GramJS poll. Stub for now.
-  return [];
 }
 
 /*
- * Send a reply AS @lamonleonardo via GramJS. Phase 2 implementation
- * will use client.sendMessage(targetPeer, { message }).
+ * Poll for new DMs since last_update_id.
+ *
+ * GramJS approach: iterate user dialogs (1-on-1 chats), check unread
+ * messages, return any inbound (`!message.out`) text messages with
+ * id > lastSeenMessageId. We track the highest seen message_id PER
+ * user (telegram_messages dedup index handles re-poll idempotency at
+ * the DB level too).
+ */
+async function pollNewDMs(lastSeenMessageId: number): Promise<{
+  dms: IncomingDM[];
+  highestMessageId: number;
+}> {
+  if (!isConfigured()) return { dms: [], highestMessageId: lastSeenMessageId };
+  return withClient(async (client) => {
+    const dms: IncomingDM[] = [];
+    let highestSeen = lastSeenMessageId;
+
+    // Iterate over recent dialogs (private chats only). Limit to 50
+    // most recent to keep poll cost bounded; users with backlog of
+    // >50 unread chats need to be addressed manually.
+    for await (const dialog of client.iterDialogs({ limit: 50 })) {
+      // Skip non-private (channels, groups). Private = entity is User.
+      if (!dialog.isUser) continue;
+      if (!dialog.unreadCount || dialog.unreadCount <= 0) continue;
+
+      // Fetch unread messages from this peer
+      const messages = await client.getMessages(dialog.entity, {
+        limit: dialog.unreadCount,
+      });
+      for (const msg of messages) {
+        // Inbound only (out = false), text only, and newer than cursor.
+        if (msg.out) continue;
+        if (!msg.message || typeof msg.message !== "string") continue;
+        const msgId = Number(msg.id);
+        if (msgId <= lastSeenMessageId) continue;
+
+        // GramJS' Entity type is a wide union (User | Chat | Channel | …)
+        // — we only care about User shape here. Cast through unknown to
+        // satisfy TS since GramJS BigInteger ≠ bigint exactly.
+        const sender = (msg.sender ?? dialog.entity) as unknown as {
+          id: { value: bigint } | bigint | { toString(): string };
+          firstName?: string;
+          lastName?: string;
+          username?: string;
+        };
+        // BigInteger from GramJS — toString() then parseInt to be safe
+        const rawId = sender.id;
+        const senderId =
+          typeof rawId === "object" && "value" in rawId
+            ? Number(rawId.value)
+            : typeof rawId === "object" && "toString" in rawId
+              ? parseInt(rawId.toString(), 10)
+              : Number(rawId);
+
+        dms.push({
+          telegramUserId: senderId,
+          telegramUsername: sender.username,
+          firstName: sender.firstName,
+          lastName: sender.lastName,
+          messageId: msgId,
+          body: msg.message,
+          receivedAt: new Date(Number(msg.date) * 1000).toISOString(),
+        });
+
+        if (msgId > highestSeen) highestSeen = msgId;
+      }
+    }
+
+    return { dms, highestMessageId: highestSeen };
+  });
+}
+
+/*
+ * Send a reply AS @lamonleonardo via GramJS. Optionally includes
+ * attachments — image (sent as photo) or URL (appended as link in
+ * message body, which Telegram auto-previews).
  */
 async function sendReplyAsLeonardo(
   telegramUserId: number,
   body: string,
   attachments?: Array<{ type: "url" | "image"; url: string; label?: string }>,
 ): Promise<{ ok: boolean; messageId?: number; error?: string }> {
-  if (
-    !process.env.TELEGRAM_API_ID ||
-    !process.env.TELEGRAM_API_HASH ||
-    !process.env.TELEGRAM_SESSION
-  ) {
-    return {
-      ok: false,
-      error: "Telegram userbot not configured (waiting api credentials)",
-    };
+  if (!isConfigured()) {
+    return { ok: false, error: "Telegram userbot not configured" };
   }
-  // TODO Phase 2: real GramJS send.
-  // For now, log so we can verify routing locally with seeded conversations.
-  console.log(`[telegram-userbot] would send to ${telegramUserId}:`, body);
-  if (attachments?.length) {
-    console.log(`[telegram-userbot] attachments:`, attachments);
-  }
-  return { ok: true, messageId: Date.now() };
+
+  return withClient(async (client) => {
+    try {
+      // Resolve user entity by ID. GramJS accepts numeric peer ID directly.
+      const peer = await client.getInputEntity(telegramUserId);
+
+      // Append URL attachments to body (Telegram auto-previews link).
+      // For image attachments, send separately as photo after the text.
+      let finalBody = body;
+      const imageAttachments =
+        attachments?.filter((a) => a.type === "image") ?? [];
+      const urlAttachments =
+        attachments?.filter((a) => a.type === "url") ?? [];
+
+      if (urlAttachments.length > 0) {
+        finalBody +=
+          "\n\n" +
+          urlAttachments
+            .map((a) => (a.label ? `${a.label}: ${a.url}` : a.url))
+            .join("\n");
+      }
+
+      const sent = await client.sendMessage(peer, { message: finalBody });
+
+      // Send images as separate photo messages (Telegram limitation:
+      // can't combine text + remote-URL photo in single message via
+      // sendMessage — would need uploadFile flow for that).
+      for (const img of imageAttachments) {
+        try {
+          await client.sendFile(peer, {
+            file: img.url,
+            caption: img.label,
+          });
+        } catch (e) {
+          console.warn(`[telegram-userbot] image attach failed: ${img.url}`, e);
+        }
+      }
+
+      return { ok: true, messageId: Number(sent.id) };
+    } catch (e) {
+      return {
+        ok: false,
+        error: e instanceof Error ? e.message : "send failed",
+      };
+    }
+  });
 }
 
 export const telegramUserbotPoller = inngest.createFunction(
@@ -137,10 +241,22 @@ export const telegramUserbotPoller = inngest.createFunction(
   async ({ step }) => {
     const supabase = getServiceSupabase();
 
-    // Step 1: poll for new DMs since last_update_id
-    const newDMs = await step.run("poll-telegram-dms", async () => {
-      return pollNewDMs();
+    // Step 0: load cursor (highest message ID we've already processed)
+    const cursorRow = await step.run("load-cursor", async () => {
+      const { data } = await supabase
+        .from("telegram_poller_state")
+        .select("last_update_id")
+        .eq("id", 1)
+        .maybeSingle();
+      return Number(data?.last_update_id ?? 0);
     });
+
+    // Step 1: poll for new DMs since cursor
+    const pollResult = await step.run("poll-telegram-dms", async () => {
+      return pollNewDMs(cursorRow);
+    });
+    const newDMs = pollResult.dms;
+    const newCursor = pollResult.highestMessageId;
 
     if (newDMs.length === 0) {
       // Update heartbeat + return
@@ -326,15 +442,23 @@ export const telegramUserbotPoller = inngest.createFunction(
       if (r.escalated) escalatedCount++;
     }
 
-    // Update poller heartbeat + counters
+    // Update poller heartbeat + counters + persist new cursor so we
+    // don't re-process these DMs next minute.
     await step.run("update-heartbeat", async () => {
+      // Pull current counters to avoid clobbering (we accumulate, not overwrite)
+      const { data: cur } = await supabase
+        .from("telegram_poller_state")
+        .select("total_polled, total_replied, total_escalated")
+        .eq("id", 1)
+        .maybeSingle();
       await supabase
         .from("telegram_poller_state")
         .update({
+          last_update_id: newCursor,
           last_poll_at: new Date().toISOString(),
-          total_polled: processedCount,
-          total_replied: repliedCount,
-          total_escalated: escalatedCount,
+          total_polled: Number(cur?.total_polled ?? 0) + processedCount,
+          total_replied: Number(cur?.total_replied ?? 0) + repliedCount,
+          total_escalated: Number(cur?.total_escalated ?? 0) + escalatedCount,
         })
         .eq("id", 1);
     });
