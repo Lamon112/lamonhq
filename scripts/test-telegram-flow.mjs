@@ -25,6 +25,7 @@
 
 import { classifyRegex, extractQualifyingFields } from "../src/lib/telegramIntent.ts";
 import { routeTemplate } from "../src/lib/telegramTemplates.ts";
+import { checkDuplicate, jaccardSimilarity, normalizeForCompare } from "../src/lib/telegramDedup.ts";
 
 // ── Stage transition map (mirrors routeTemplate's stageAfter logic) ──
 function nextStage(currentStage, template) {
@@ -351,6 +352,82 @@ for (const scenario of SCENARIOS) {
   }
 }
 
+// ───── Dedup unit tests — Leonardo's "ista poruka NIKAD" rule ─────
+console.log("\n── Dedup unit tests ──");
+
+const DEDUP_TESTS = [
+  {
+    name: "exact same body caught",
+    draft: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan.",
+    recent: [
+      { id: "1", body: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan." },
+    ],
+    expectDup: true,
+  },
+  {
+    name: "punctuation/case difference still caught",
+    draft: "TOP, jedna stvar još— koliko sati tjedno možeš?!! Onda šaljem PDF + custom plan...",
+    recent: [
+      { id: "1", body: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan." },
+    ],
+    expectDup: true,
+  },
+  {
+    name: "different nudge wording but same intent caught (fuzzy)",
+    draft: "Top, jedna stvar još — koliko sati tjedno možeš + realan cilj zarade za 6 mj? Onda šaljem PDF + custom plan.",
+    recent: [
+      { id: "1", body: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan." },
+    ],
+    expectDup: true,
+  },
+  {
+    name: "completely different template NOT flagged",
+    draft: "Top Patrick! Šaljem ti PDF — 10 Zlatnih Pravila. Pridruži se: https://skool.com/sidehustlebalkan",
+    recent: [
+      { id: "1", body: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan." },
+    ],
+    expectDup: false,
+  },
+  {
+    name: "opening_v1 vs qualifying_nudge NOT flagged (legit stage transition)",
+    draft: "Top, jedna stvar još — koliko sati tjedno možeš? Onda šaljem PDF + custom plan.",
+    recent: [
+      {
+        id: "1",
+        body: "Hej Marko! 🙏 Šaljem ti odmah PDF s 10 zlatnih pravila — ali prvo 3 brza pitanja da odmah vidim koja od dvije priče je tvoja: 1-2K/mj side income ili 5-15K/mj zamjena plaće. 1) Odakle si i koliko godina imaš? 2) Već radiš na YT/TT/AI biznisu ili tek krećeš + koliko sati tjedno možeš dati? 3) Realan cilj — koliko želiš zaraditi mjesečno za sljedećih 6 mj?",
+      },
+    ],
+    expectDup: false,
+  },
+  {
+    name: "empty draft = not dup",
+    draft: "",
+    recent: [{ id: "1", body: "anything" }],
+    expectDup: false,
+  },
+  {
+    name: "empty recent = not dup",
+    draft: "Hej Marko!",
+    recent: [],
+    expectDup: false,
+  },
+];
+
+for (const t of DEDUP_TESTS) {
+  const result = checkDuplicate(t.draft, t.recent);
+  const ok = result.isDuplicate === t.expectDup;
+  if (ok) {
+    console.log(`✅ ${t.name}`);
+    totalPassed++;
+  } else {
+    console.log(
+      `❌ ${t.name} — expected dup=${t.expectDup}, got dup=${result.isDuplicate} (similarity=${result.similarTo?.similarity ?? "n/a"})`,
+    );
+    totalFailed++;
+  }
+}
+
+const totalTests = SCENARIOS.length + DEDUP_TESTS.length;
 console.log("");
-console.log(`Passed: ${totalPassed}/${SCENARIOS.length}`);
+console.log(`Passed: ${totalPassed}/${totalTests}`);
 process.exit(totalFailed > 0 ? 1 : 0);

@@ -34,6 +34,7 @@ import { inngest } from "../client";
 import { classifyIntent, extractQualifyingFields } from "@/lib/telegramIntent";
 import { routeTemplate } from "@/lib/telegramTemplates";
 import { auditDraft } from "@/lib/draftAuditor";
+import { checkDuplicate } from "@/lib/telegramDedup";
 import { pushTelegramNotification } from "@/app/actions/telegram";
 
 function getServiceSupabase() {
@@ -417,23 +418,57 @@ async function runPollCycle(cursor: number): Promise<{
           continue;
         }
 
+        // Build final body (text + URL attachments inline)
+        const imageAttachments =
+          reply.attachments?.filter((a) => a.type === "image") ?? [];
+        const urlAttachments =
+          reply.attachments?.filter((a) => a.type === "url") ?? [];
+        let finalBody = reply.body;
+        if (urlAttachments.length > 0) {
+          finalBody +=
+            "\n\n" +
+            urlAttachments
+              .map((a) => (a.label ? `${a.label}: ${a.url}` : a.url))
+              .join("\n");
+        }
+
+        // ── 2f-bis. DEDUPE GUARD (pre-send) ────────────────────────
+        // Leonardo's zero-tolerance rule: bot must NEVER send the same
+        // message twice in a conversation. Pull the last 10 outbound
+        // messages and run the dedupe check before we touch Telegram.
+        const { data: recentOutPre } = await supabase
+          .from("telegram_messages")
+          .select("id, body, sent_at")
+          .eq("conversation_id", conv.id)
+          .eq("direction", "out")
+          .is("deleted_at", null)
+          .order("sent_at", { ascending: false })
+          .limit(10);
+
+        const dupePre = checkDuplicate(finalBody, recentOutPre ?? []);
+        if (dupePre.isDuplicate) {
+          // Escalate + alert. We do NOT send.
+          await supabase
+            .from("telegram_conversations")
+            .update({
+              stage: "handover",
+              escalated_at: new Date().toISOString(),
+              escalation_reason: `dedupe pre-send: ${dupePre.similarTo?.matchKind ?? "?"} match (${(dupePre.similarTo?.similarity ?? 0).toFixed(2)})`,
+            })
+            .eq("id", conv.id);
+
+          void pushTelegramNotification(
+            "followups",
+            `🚨 DEDUPE PRE-SEND: bot je htio poslati duplikat za ${dm.firstName ?? "user"} (@${dm.telegramUsername ?? "?"}).\n\nDraft (${dupePre.similarTo?.matchKind}): "${finalBody.slice(0, 150)}"\n\nMatch (sim ${(dupePre.similarTo?.similarity ?? 0).toFixed(2)}): "${(dupePre.similarTo?.body ?? "").slice(0, 150)}"\n\nBot STAO. Preuzmi razgovor.\n\n— Jarvis`,
+          );
+          escalated++;
+          processed++;
+          continue;
+        }
+
         // 2g. Send reply USING THE LIVE PEER (no second resolution)
         let sentMessageId: number | null = null;
         try {
-          let finalBody = reply.body;
-          const imageAttachments =
-            reply.attachments?.filter((a) => a.type === "image") ?? [];
-          const urlAttachments =
-            reply.attachments?.filter((a) => a.type === "url") ?? [];
-
-          if (urlAttachments.length > 0) {
-            finalBody +=
-              "\n\n" +
-              urlAttachments
-                .map((a) => (a.label ? `${a.label}: ${a.url}` : a.url))
-                .join("\n");
-          }
-
           const sent = await client.sendMessage(peer, { message: finalBody });
           sentMessageId = Number(sent.id);
 
@@ -462,16 +497,70 @@ async function runPollCycle(cursor: number): Promise<{
         }
 
         // 2h. Log outbound
-        await supabase.from("telegram_messages").insert({
-          conversation_id: conv.id,
-          telegram_message_id: sentMessageId,
-          direction: "out",
-          body: reply.body,
-          template_id: reply.templateId,
-          stage_before: conv.stage,
-          stage_after: reply.stageAfter,
-          audit_result: { issues: auditIssues, passes: true },
-        });
+        const { data: outboundRow } = await supabase
+          .from("telegram_messages")
+          .insert({
+            conversation_id: conv.id,
+            telegram_message_id: sentMessageId,
+            direction: "out",
+            body: finalBody,
+            template_id: reply.templateId,
+            stage_before: conv.stage,
+            stage_after: reply.stageAfter,
+            audit_result: { issues: auditIssues, passes: true },
+          })
+          .select("id")
+          .single();
+
+        // ── 2h-bis. DEDUPE GUARD (post-send) ───────────────────────
+        // Last line of defence. Re-pull outbound EXCLUDING the row we
+        // just inserted and run dedupe. If we somehow sent a duplicate
+        // (timing race, pre-check missed an edge case), we delete the
+        // Telegram message via GramJS deleteMessages with revoke:true
+        // so the recipient never sees it (or sees it disappear quickly).
+        const { data: recentOutPost } = await supabase
+          .from("telegram_messages")
+          .select("id, body, sent_at")
+          .eq("conversation_id", conv.id)
+          .eq("direction", "out")
+          .is("deleted_at", null)
+          .neq("id", outboundRow?.id ?? "00000000-0000-0000-0000-000000000000")
+          .order("sent_at", { ascending: false })
+          .limit(10);
+
+        const dupePost = checkDuplicate(finalBody, recentOutPost ?? []);
+        if (dupePost.isDuplicate && outboundRow) {
+          // RETRACT — delete from Telegram + mark row deleted.
+          try {
+            // GramJS deleteMessages: revoke:true unsends from recipient's view.
+            await client.deleteMessages(peer, [sentMessageId], { revoke: true });
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : "delete threw";
+            errors.push(`post-send-delete ${dm.telegramUserId}: ${msg}`);
+          }
+          await supabase
+            .from("telegram_messages")
+            .update({
+              deleted_at: new Date().toISOString(),
+              delete_reason: `dedupe-post-send: ${dupePost.similarTo?.matchKind} ${(dupePost.similarTo?.similarity ?? 0).toFixed(2)}`,
+            })
+            .eq("id", outboundRow.id);
+          await supabase
+            .from("telegram_conversations")
+            .update({
+              stage: "handover",
+              escalated_at: new Date().toISOString(),
+              escalation_reason: `dedupe post-send: retracted Telegram msg ${sentMessageId}`,
+            })
+            .eq("id", conv.id);
+          void pushTelegramNotification(
+            "followups",
+            `🚨 DEDUPE POST-SEND: poslana poruka je bila duplikat, RETRAKTIRANO iz Telegrama.\n\nUser: ${dm.firstName ?? "?"} (@${dm.telegramUsername ?? "?"})\n\nBody koji je RETRAKTIRAN: "${finalBody.slice(0, 150)}"\n\nMatch (${dupePost.similarTo?.matchKind} ${(dupePost.similarTo?.similarity ?? 0).toFixed(2)}): "${(dupePost.similarTo?.body ?? "").slice(0, 150)}"\n\nBot STAO. Preuzmi razgovor.\n\n— Jarvis`,
+          );
+          escalated++;
+          processed++;
+          continue;
+        }
 
         // 2i. Advance stage
         if (reply.stageAfter && reply.stageAfter !== conv.stage) {
