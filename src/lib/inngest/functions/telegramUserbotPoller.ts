@@ -31,7 +31,7 @@ import { TelegramClient } from "telegram";
 import type { Api } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import { inngest } from "../client";
-import { classifyIntent } from "@/lib/telegramIntent";
+import { classifyIntent, extractQualifyingFields } from "@/lib/telegramIntent";
 import { routeTemplate } from "@/lib/telegramTemplates";
 import { auditDraft } from "@/lib/draftAuditor";
 import { pushTelegramNotification } from "@/app/actions/telegram";
@@ -280,9 +280,24 @@ async function runPollCycle(cursor: number): Promise<{
           expectingQualifyingAnswer: expectingAnswer,
         });
 
-        // 2d. Update captured_data if extracted
-        if (intent.extracted) {
-          const merged = { ...conv.captured_data, ...intent.extracted };
+        // 2c-bis. When in qualifying stage, ALWAYS try regex extractor
+        // alongside the LLM. Haiku occasionally returns 'unclear' for
+        // free-form Croatian/Serbian even when the message clearly answers
+        // ("Velika Gorica\nMogu dat koliko treba\n1500€"). Regex catches
+        // the common signals (city, age, hours, €goal) so we never lose
+        // captured fields just because the classifier misfired.
+        const regexExtracted =
+          conv.stage === "qualifying" || intent.intent === "qualifying_answer"
+            ? extractQualifyingFields(dm.body)
+            : undefined;
+
+        // 2d. Update captured_data with merged extraction (LLM + regex)
+        const newFields = {
+          ...(intent.extracted ?? {}),
+          ...(regexExtracted ?? {}),
+        };
+        if (Object.keys(newFields).length > 0) {
+          const merged = { ...conv.captured_data, ...newFields };
           await supabase
             .from("telegram_conversations")
             .update({ captured_data: merged })
@@ -290,9 +305,25 @@ async function runPollCycle(cursor: number): Promise<{
           conv.captured_data = merged;
         }
 
-        // 2e. Route to template
+        // 2d-bis. Promote intent if we extracted real qualifying fields
+        // but classifier said unclear/generic. routeTemplate's qualifying
+        // branch only fires on intent='qualifying_answer'.
+        let effectiveIntent = intent.intent;
+        if (
+          conv.stage === "qualifying" &&
+          (intent.intent === "unclear" ||
+            intent.intent === "generic_question" ||
+            intent.intent === "info") &&
+          regexExtracted &&
+          Object.keys(regexExtracted).length > 0
+        ) {
+          effectiveIntent = "qualifying_answer";
+        }
+
+        // 2e. Route to template (use effectiveIntent which may have been
+        // promoted from unclear → qualifying_answer above)
         const reply = routeTemplate({
-          intent: intent.intent,
+          intent: effectiveIntent,
           currentStage: conv.stage,
           vars: {
             firstName: conv.telegram_first_name ?? undefined,

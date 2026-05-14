@@ -314,22 +314,26 @@ export function routeTemplate(ctx: RouteContext): RenderedTemplate | null {
 
   // STAGE: QUALIFYING — expecting answers to 3 questions
   if (currentStage === "qualifying") {
-    if (intent === "qualifying_answer") {
-      // Check completeness
-      const missing: string[] = [];
-      if (!capturedFields?.location && !capturedFields?.age) missing.push("location");
-      if (!capturedFields?.experience && !capturedFields?.hours_per_week)
-        missing.push("hours_per_week");
-      if (!capturedFields?.monthly_goal_eur) missing.push("monthly_goal_eur");
-
-      if (missing.length === 0) {
-        // All answered — deliver PDF + pitch
-        return tplPdfAndPremiumPitch(vars);
-      }
-      // Partial — nudge for missing
-      return tplQualifyingNudge({ vars, missingFields: missing });
-    }
     if (intent === "mentorstvo") return tplMentorHandover(vars);
+    // ghost_unsubscribe + escalate_to_leo already handled by the early
+    // returns above. Everything else lands in the always-progress block.
+
+    // For ANY other intent in qualifying stage we treat the message as
+    // an attempt to answer. This includes unclear/generic_question/info —
+    // people often answer in fragments ("ok", "?", "Ne razumijem što"),
+    // and dropping them silently kills the funnel. Always nudge or pitch
+    // based on what fields we have so far. Worst case: another nudge.
+    const missing: string[] = [];
+    if (!capturedFields?.location && !capturedFields?.age) missing.push("location");
+    if (!capturedFields?.experience && !capturedFields?.hours_per_week)
+      missing.push("hours_per_week");
+    if (!capturedFields?.monthly_goal_eur) missing.push("monthly_goal_eur");
+
+    if (missing.length === 0) {
+      // All 3 answered — deliver PDF + PREMIUM pitch
+      return tplPdfAndPremiumPitch(vars);
+    }
+    return tplQualifyingNudge({ vars, missingFields: missing });
   }
 
   // STAGE: PITCH or AWAITING — user got the pitch, may ask details

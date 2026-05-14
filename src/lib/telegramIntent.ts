@@ -107,6 +107,95 @@ export function classifyRegex(text: string): ClassifyResult | null {
   return null;
 }
 
+/*
+ * Heuristic field extractor for qualifying answers. Runs alongside the
+ * LLM extractor as a safety net — if Haiku is rate-limited, returns
+ * "unclear", or hallucinates fields, the regex still surfaces obvious
+ * signals (city names, age numbers, hour counts, € goals).
+ *
+ * Non-exhaustive on purpose. We optimize for the 3 questions Leonardo
+ * asks in tplOpening: location+age, experience+hours, monthly goal.
+ *
+ * Returns partial extracted fields or undefined if nothing was parsed.
+ */
+export function extractQualifyingFields(text: string): ClassifyResult["extracted"] | undefined {
+  const t = text.trim();
+  if (!t) return undefined;
+
+  const out: NonNullable<ClassifyResult["extracted"]> = {};
+
+  // Location — common Balkan country / city names. Wide enough net for
+  // typical first-line answers like "iz Splita" or "Velika Gorica".
+  const locationPatterns = [
+    // Countries / regions (also accept "iz X")
+    /\b(iz\s+)?(hrvatske?|hrvatska|bosne?|bosna|srbije?|srbija|crne?\s+gore?|makedonije?|makedonija|slovenij[ae]|kosova|albanij[ae])\b/i,
+    // Major cities — Croatia + region
+    /\b(zagreb|split|rijeka|osijek|zadar|pula|šibenik|sibenik|karlovac|varaždin|varazdin|velika\s+gorica|sisak|samobor|vinkovci|sl\.\s*brod|slavonski\s+brod|dubrovnik|đakovo|djakovo|metković|metkovic)\b/i,
+    /\b(sarajevo|mostar|banja\s+luka|tuzla|zenica|bihać|bihac|brčko|brcko)\b/i,
+    /\b(beograd|novi\s+sad|niš|nis|kragujevac|subotica|čačak|cacak|panevo|pančevo|zrenjanin)\b/i,
+    /\b(skoplje|skopje|bitola|kumanovo|tetovo|prilep)\b/i,
+    /\b(podgorica|nikšić|niksic|bar|herceg\s+novi|budva)\b/i,
+    /\b(ljubljana|maribor|celje|kranj)\b/i,
+  ];
+  for (const p of locationPatterns) {
+    const m = t.match(p);
+    if (m) {
+      out.location = (m[2] ?? m[1] ?? m[0]).trim();
+      break;
+    }
+  }
+
+  // Age — number + "godin" word, or "X yo / godina"
+  const ageMatch = t.match(/\b(1[5-9]|[2-6]\d)\s*(godin[ae]|god\.?|yo|y\.?o\.?)\b/i);
+  if (ageMatch) {
+    const n = parseInt(ageMatch[1], 10);
+    if (n >= 14 && n <= 75) out.age = n;
+  }
+
+  // Hours per week — "X sati", "X h tjedno", "X-Y sati", "preko X sati"
+  const hoursMatch = t.match(
+    /\b(?:preko\s+|oko\s+|do\s+)?(\d{1,2})\s*(?:[-–]\s*\d{1,2}\s*)?(?:\+\s*)?(?:sat[aei]|h\b|hr\b)/i,
+  );
+  if (hoursMatch) {
+    const n = parseInt(hoursMatch[1], 10);
+    if (n >= 1 && n <= 80) out.hours_per_week = n;
+  }
+
+  // Monthly goal in EUR — handles: 1k, 1.000 €, 1500eur, 2K mjesečno,
+  // "preko 1000 eura", "minimalno X €", "barem X eura"
+  const goalPatterns = [
+    /\b(\d{1,3})\s*(?:k|K)\s*(?:€|eur|eura|mj|mjeseč)/,
+    /\b(\d{3,5})\s*(?:€|eur|eura)/,
+    /\b(?:preko|oko|barem|minimalno|cilj[ae]?)\s+(\d{3,5})\s*(?:€|eur|eura)?/i,
+    /\b(?:zadovoljan|sretan).{0,20}(\d{3,5})\s*(?:€|eur|eura)?/i,
+  ];
+  for (const p of goalPatterns) {
+    const m = t.match(p);
+    if (m) {
+      const raw = m[1];
+      let n = parseInt(raw, 10);
+      // 1k → 1000
+      if (/^\d{1,3}$/.test(raw) && /k/i.test(m[0])) n *= 1000;
+      if (n >= 200 && n <= 100_000) {
+        out.monthly_goal_eur = n;
+        break;
+      }
+    }
+  }
+
+  // Experience signal
+  const lower = t.toLowerCase();
+  if (/\b(tek\s+kre[ćc]em|po[čc]etnik|nemam\s+iskustva?|nikad\s+nisam)\b/.test(lower)) {
+    out.experience = "beginner";
+  } else if (/\b(monetiziran|zara[đd]ujem|zara[đd]io|profit)\b/.test(lower)) {
+    out.experience = "earning_some";
+  } else if (/\b(poku[šs]avam|isprobavam|gledam\s+kanale|gledao)\b/.test(lower)) {
+    out.experience = "trying";
+  }
+
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 const LLM_SYSTEM_PROMPT = `Ti si intent classifier za Telegram DM-ove koji ljudi šalju Leonardu Lamonu — tvorcu SideHustle™ Balkan Skool grupe.
 
 Korisnik može:
