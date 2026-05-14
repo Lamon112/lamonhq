@@ -130,19 +130,18 @@ Najbrže ćeš stići do ${goalLine} unutar PREMIUM grupe gdje radimo svaki tjed
 → Pridruži se: https://www.skool.com/sidehustlehr
 
 Imaš li bilo kakvo pitanje prije nego se prijaviš?`,
-    // PDF hosted on Google Drive. Source PDF is regenerated locally
-    // (scripts/generate-zlatna-knjiga.mjs) and uploaded as a new version
-    // of the existing Drive file via the UI ("Manage versions"). Drive
-    // keeps the same fileId/URL, so the bot picks up the new content
-    // without a code change.
+    // PDF hosted at /public/zlatna-knjiga.pdf on the Lamon HQ Vercel
+    // deployment. We control the source (scripts/generate-zlatna-knjiga.mjs),
+    // regenerate on demand, redeploy = instant update. Middleware
+    // whitelists this path so recipients hit the file without /login.
     //
     // Last-page CTA: skool.com/sidehustlehr (PREMIUM grupa €50/mj).
-    // Old Drive PDF pointed at lamon.io (B2B) which contradicted the
-    // reverse-funnel rule and the B2C SideHustle audience.
+    // Fonts: Inter Regular + SemiBold embedded for full Croatian
+    // diacritic support (č, š, ž, đ, ć) + Unicode arrow (→).
     attachments: [
       {
         type: "url",
-        url: "https://drive.google.com/file/d/1cT2CkPLGrf2SOKguRAc1Tf1u1hZEpwm2/view?usp=drivesdk",
+        url: "https://lamon-hq.vercel.app/zlatna-knjiga.pdf",
         label: "📄 10 Zlatnih Pravila — PDF",
       },
     ],
