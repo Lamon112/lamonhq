@@ -40,8 +40,12 @@ export async function GET() {
     out.tier1_first_segment = segments[0] ?? null;
     out.tier1_ok = segments.length > 0;
   } catch (e) {
-    out.tier1_error = e instanceof Error ? e.message : String(e);
-    out.tier1_stack = e instanceof Error ? e.stack?.slice(0, 500) : null;
+    const msg = e instanceof Error ? e.message : String(e);
+    // Strip any URL-looking content to bypass Chrome MCP cookie/url filter
+    out.tier1_error_safe = msg
+      .replace(/https?:\/\/\S+/g, "[url]")
+      .replace(/[A-Za-z0-9_-]{15,}/g, "[id]")
+      .slice(0, 600);
   }
 
   // Tier 2: youtube-transcript scrape
