@@ -25,6 +25,7 @@ import {
   Mic,
   ShieldCheck,
   GraduationCap,
+  Compass,
 } from "lucide-react";
 
 export type AgentId =
@@ -42,7 +43,8 @@ export type AgentId =
   | "pulse"
   | "riva"
   | "auditor"
-  | "scholar";
+  | "scholar"
+  | "hunter";
 
 export interface Agent {
   id: AgentId;
@@ -139,6 +141,25 @@ const AGENTS: Agent[] = [
     status: "online",
     accent: "rose",
     hint: "Ulovi sve buggy drafts prije nego što ih pošalješ.",
+  },
+  {
+    /*
+     * Hunter — bi-weekly viral niche generator for SideHustle™ Skool
+     * members. Cron-driven YT guru transcript scan + LLM niche
+     * extraction. Drafts Skool post for Leonardo's review.
+     */
+    id: "hunter",
+    name: "Hunter",
+    room: "Niche Hunter",
+    role: "Bi-weekly viral niche drop · YT guru scan · auto Skool post draft",
+    icon: Compass,
+    emoji: "🧭",
+    floor: 2,
+    slot: 5,
+    unlockLevel: 1,
+    status: "soon",
+    accent: "emerald",
+    hint: "Sljedeći drop: planiran za 28.5 (svaka 2 tjedna).",
   },
   {
     id: "nova",

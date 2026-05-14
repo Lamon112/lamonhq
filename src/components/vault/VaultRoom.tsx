@@ -198,6 +198,14 @@ const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
     { kind: "walk", start: 0.75, cycle: 11, delay: 3, suit: "fill-sky-500", label: "Student 2", scale: 0.85 },
     { kind: "sit", pos: 0.18, bottom: 4, suit: "fill-cyan-300", label: "Mentor", scale: 0.85 },
   ],
+  hunter: [
+    /* Hunter staff — niche scout / explorer vibe. Emerald accent.
+     * Center: Hunter at compass desk. Walkers: 2 transcript runners
+     * fetching guru videos. */
+    { kind: "sit", pos: 0.5, bottom: 4, suit: "fill-emerald-400", label: "Hunter", scale: 0.95 },
+    { kind: "walk", start: 0.3, cycle: 12, delay: 0, suit: "fill-emerald-300", label: "Transcript runner 1", scale: 0.85 },
+    { kind: "walk", start: 0.7, cycle: 10, delay: 3, suit: "fill-emerald-500", label: "Transcript runner 2", scale: 0.85 },
+  ],
 };
 
 interface VaultRoomProps {

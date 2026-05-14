@@ -17,6 +17,7 @@ import {
   Mic,
   ShieldCheck,
   GraduationCap,
+  Compass,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -38,7 +39,8 @@ export type RoomId =
   | "brand_pulse"
   | "riva_ops"
   | "audit"
-  | "skool_ops";
+  | "skool_ops"
+  | "niche_hunter";
 
 export interface Room {
   id: RoomId;
@@ -214,6 +216,37 @@ const skoolOps: Room = {
 };
 
 /*
+ * Niche Hunter — bi-weekly viral niche generator for SideHustle™
+ * Skool members. Leonardo's standing promise to the community: every
+ * 2 weeks a NEW viral niche drop.
+ *
+ * Method (cron driven):
+ *   1. YT search top-1 channel for "AI side hustle", "YouTube
+ *      automation", "TikTok creativity", "viral niche 2026" etc.
+ *   2. For top creators (Iman, Hamza, Riley Brown, Steph Smith,
+ *      etc.) fetch latest 3-5 videos
+ *   3. Pull transcripts via YouTube Transcript API
+ *   4. Claude analyzes — extracts EMERGING niches (mentioned 3+
+ *      gurus in 14d window, not yet saturated on TikTok/Shorts)
+ *   5. Generates Skool post draft: niche name + why it's viral +
+ *      first-mover advantage + 5 video ideas + monetization path
+ *   6. Drafts in `niche_drops` table awaiting Leonardo's review
+ *
+ * Lives on Intelligence Bay floor (alongside Holmes, Auditor, Lead
+ * Scorer) because it's a recon/intelligence function for B2C Skool
+ * content engine.
+ */
+const nicheHunter: Room = {
+  id: "niche_hunter",
+  name: "Niche Hunter",
+  tagline:
+    "Bi-weekly viral niche drop generator · YT guru transcript scan · automatska Skool post draft",
+  icon: Compass,
+  emoji: "🧭",
+  floor: "intelligence",
+};
+
+/*
  * Audit Lab — cross-domain auto-QA for every AI draft we generate
  * (Holmes outreach, Skool IG/Telegram replies, Brand Pulse comments,
  * Reply Analyst drafts, etc.). Surfaces failing drafts with severity-
@@ -245,8 +278,17 @@ export const FLOORS: Floor[] = [
     id: "intelligence",
     number: 2,
     name: "Intelligence Bay",
-    subtitle: "Score · Holmes · audit · analytics · competitor watch",
-    rooms: [leadScorer, holmes, auditLab, strateg, analytics, competitor],
+    subtitle:
+      "Score · Holmes · audit · niche hunter · analytics · competitor watch",
+    rooms: [
+      leadScorer,
+      holmes,
+      auditLab,
+      nicheHunter,
+      strateg,
+      analytics,
+      competitor,
+    ],
   },
   {
     id: "revenue",

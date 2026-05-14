@@ -1472,6 +1472,10 @@ Ako iz konteksta NE vidiš konkretno koji je sljedeći meeting, daj generic play
   // mentorship qualifying) ship in subsequent commits. Empty for
   // MVP read-view of Skool Ops room.
   scholar: [],
+  // Hunter actions (manual niche drop trigger between bi-weekly cron
+  // runs, archive past drops, etc.) ship in Phase 2 with full
+  // Inngest cron + YouTube transcript fetch + LLM extraction.
+  hunter: [],
 };
 
 export function getActionsForRoom(room: AgentId): AgentActionDef[] {
