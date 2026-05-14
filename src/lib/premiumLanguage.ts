@@ -385,13 +385,49 @@ const SWAPS: Swap[] = [
     replace: "",
     reason: "stripped: any sentence with 2.500-3.500€ (Plima Distribution+ price)",
   },
+  // NOTE: removed an overly-aggressive "bare X.XXX€/mj outside HR-cost"
+  // catch-all. It was matching the SECOND number in HR-cost ranges like
+  // "10.000-15.000€ mjesečno bruto" (because the lookbehind only checks
+  // immediately before the match position, and "10.000" doesn't trigger
+  // it for the "15.000" half). That left visible debris like "000€
+  // bruto u HR troškovima" in the email body. Rules #1-3 above already
+  // cover every actual Plima price that has leaked; if a NEW leak shows
+  // up (e.g., bare "7.500€/mj" without "bruto" anchor), add a precise
+  // rule for it rather than a broad regex that eats legitimate value
+  // anchoring.
+
+  // ── #13.7 EUR-ONLY ── Croatia adopted EUR on 2026-01-01 — kune are
+  // dead currency. AI sometimes regresses to "X kuna" / "tisuća kuna"
+  // for older training data legacy. Strip the entire sentence so the
+  // recipient never sees a 3-year-stale currency reference (instant
+  // credibility kill on a B2B premium pitch).
+  //
+  // Concrete bug this fixes: 2026-05-14 mail to one of the priority
+  // leadova — AI wrote "nekoliko desetaka tisuća kuna izgubljenog
+  // prihoda godišnje" inside an otherwise-clean paragraph.
   {
-    // Catch "X.XXX€ mjesečno" outside HR-cost context. The HR salary
-    // anchor uses K-suffix ("10-15K€") or explicit "bruto" / "u HR" /
-    // "koštao" within ~30 chars. Anything else is suspicious.
-    find: /(?<!K€|K |bruto|u HR|koštao|koštali|koštalo)[^.\n]{0,30}\b\d{1}[.,]\d{3}\s*€\s*(mj|mjesečno|na mjesec)[^.\n]*\.?/gi,
+    find: /[^.\n]*\b(?:\d[\d.,]*\s*)?(?:kuna|kune|kuni|kunama|HRK|kn)\b[^.\n]*\.?/gi,
     replace: "",
-    reason: "stripped: bare 'X.XXX€/mj' outside HR-cost anchor",
+    reason: "stripped: kuna/HRK mention (Croatia uses EUR since 2023)",
+  },
+
+  // ── #13.8 LANGUAGE PURITY ── kill Croatian-English mash-ups ──
+  // "sadržaj creator" / "content kreator" reads like LLM-translated
+  // wreckage. Pick a lane: full Croatian or full English, never mid-
+  // sentence code-switch on a single role title.
+  //
+  // Concrete bug this fixes: 2026-05-14 mail — AI wrote "Recepcionar
+  // 24/7, marketer, sadržaj creator, PR i analitičar". The phrase
+  // "sadržaj creator" trips every native-Croatian reader.
+  {
+    find: /\bsadr[žz]aj\s+creator(s|i|a|u)?\b/gi,
+    replace: "kreator sadržaja",
+    reason: "Croatian-English mash → 'sadržaj creator' → 'kreator sadržaja'",
+  },
+  {
+    find: /\bcontent\s+kreator(s|i|a|u)?\b/gi,
+    replace: "kreator sadržaja",
+    reason: "Croatian-English mash → 'content kreator' → 'kreator sadržaja'",
   },
 
   // ── #14 KRIVE METRIKE ── TikTok srca = lajkovi, NIKAD pregledi ──
