@@ -39,7 +39,11 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/inngest") ||
     pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico";
+    pathname === "/favicon.ico" ||
+    // Public lead-magnet assets — Telegram bot links here, recipients
+    // must access without login. Anything served from /public that we
+    // hand out via DM/email belongs in this list.
+    pathname === "/zlatna-knjiga.pdf";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
