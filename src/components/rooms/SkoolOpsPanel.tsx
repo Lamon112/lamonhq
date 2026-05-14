@@ -132,7 +132,7 @@ export function SkoolOpsPanel() {
         />
         <StatBox
           icon={<Users size={14} />}
-          label="Paid članovi"
+          label="PREMIUM članovi"
           value="165"
           hint="@€50/mj single tier"
           tone="neutral"
@@ -169,9 +169,9 @@ export function SkoolOpsPanel() {
           />
         </div>
         <p className="mt-2 text-[11px] text-text-muted">
-          Path C strategija: 3 nova mentorstva (+€1,500) + 18 novih €50 članova
-          (+€900) = €2,400 → cilj €5K. Path D (B2B Growth Operator) OFF
-          jer Rijeka grad pipeline propao.
+          Path C strategija: 3 nova mentorstva (+€1,500) + 18 novih PREMIUM
+          članova (€50/mj +€900) = €2,400 → cilj €5K. Path D (B2B Growth
+          Operator) OFF jer Rijeka grad pipeline propao.
         </p>
       </div>
 
@@ -346,7 +346,7 @@ function InboxTab({ channels }: { channels: ChannelStat[] }) {
           </li>
           <li>
             <span className="font-mono text-amber-300">INFO</span> →
-            Skool tier (€50/mj) + community link + mentor option mention
+            PREMIUM grupa (€50/mj) + community link · mentor option mention SAMO ako user eksplicitno traži više
           </li>
           <li>
             <span className="font-mono text-amber-300">MENTORSTVO</span>{" "}

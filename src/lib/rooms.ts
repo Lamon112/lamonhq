@@ -209,7 +209,7 @@ const skoolOps: Room = {
   id: "skool_ops",
   name: "Skool Ops",
   tagline:
-    "B2C SideHustle™ · MRR €2.6K → €5K · DM inbox · mentorship pipeline · content kalendar",
+    "B2C SideHustle™ PREMIUM · MRR €2.6K → €5K · DM inbox · mentorship pipeline · content kalendar",
   icon: GraduationCap,
   emoji: "🎓",
   floor: "operations",

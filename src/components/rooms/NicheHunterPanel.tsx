@@ -100,40 +100,75 @@ const PIPELINE: PipelineStage[] = [
 interface SuggestedGuru {
   name: string;
   handle: string;
+  platform: "YouTube" | "Instagram";
+  url: string;
   niche: string;
   whyTrack: string;
 }
 
+/*
+ * Curated DEEP-DIVER guru list per Leonardov feedback 2026-05-14.
+ * Previous list (Iman Gadzhi, Hamza Ahmed, Riley Brown, Steph Smith,
+ * Ali Abdaal) was rejected as "generic mainstream" — not the audience
+ * we need for SideHustle™ Balkan content. These are YouTube channel-
+ * flipping / faceless YT business / AI content automation specialists
+ * with smaller but tighter audiences (2-100K range), often from EU /
+ * DACH region — perfect overlap with Balkan side-hustle audience.
+ */
 const STARTER_GURUS: SuggestedGuru[] = [
   {
-    name: "Iman Gadzhi",
-    handle: "@ImanGadzhi",
-    niche: "Agency / SMMA",
-    whyTrack: "Mentions emerging niches every 2-4 weeks, large EU/Balkan audience overlap",
+    name: "Carl Faceless",
+    handle: "Carl Faceless",
+    platform: "YouTube",
+    url: "https://www.youtube.com/channel/UC1MCxPRYsKGd30E3xHMHWwA",
+    niche: "Faceless YouTube channels / AI content automation",
+    whyTrack:
+      "Direct overlap s tvojom audience-om — faceless YT je #1 ask u tvojim DM-ovima. Drops new niche videos weekly.",
   },
   {
-    name: "Hamza Ahmed",
-    handle: "@adonisXfitness",
-    niche: "Self-improvement + AI side hustles",
-    whyTrack: "Cross-pollinates fitness + biz, strong faceless YT angles",
+    name: "Razvan Paraschiv",
+    handle: "Razvan Paraschiv",
+    platform: "YouTube",
+    url: "https://www.youtube.com/channel/UCH7DG6XLOmhqZ5P0XUIU24g",
+    niche: "YouTube biznis deep-dive · 76.5K subs",
+    whyTrack:
+      "EU/RO scena, deeper analiza monetizacije i niche-discovery method-a. Manji audience = svaki post ima više detalja.",
   },
   {
-    name: "Riley Brown",
-    handle: "@rileybrownai",
-    niche: "AI tooling + content automation",
-    whyTrack: "Catches new AI tool drops same week — ideal early signal",
+    name: "Steffen Miro Extended",
+    handle: "Steffen Miro Extended",
+    platform: "YouTube",
+    url: "https://www.youtube.com/channel/UCp6SQfLshj-4NaykhtAF0sA",
+    niche: "Channel-flipping / niche testing · 2.58K subs",
+    whyTrack:
+      "Small but specialized — često prikazuje konkretne niche testove i revenue breakdownove koje veliki kanali skrivaju.",
   },
   {
-    name: "Steph Smith",
-    handle: "@stephsmithio",
-    niche: "Trend research + niche analysis",
-    whyTrack: "Literally publishes 'emerging trends' newsletter — pure signal",
+    name: "Tim Danilov Biz",
+    handle: "@timdanilovhi",
+    platform: "YouTube",
+    url: "https://www.youtube.com/@timdanilovhi",
+    niche: "YouTube biznis / channel-flipping (DE/RU)",
+    whyTrack:
+      "DACH / Eastern Europe audience — overlap s Balkan dijasporom. Pokriva niche-testing + channel sale flips.",
   },
   {
-    name: "Ali Abdaal",
-    handle: "@AliAbdaal",
-    niche: "Productive YouTube + productized education",
-    whyTrack: "EU influence, monetization-focused",
+    name: "adav1a",
+    handle: "@adav1a",
+    platform: "Instagram",
+    url: "https://www.instagram.com/adav1a/",
+    niche: "YT biznis insights (IG short-form)",
+    whyTrack:
+      "Reference iz Leonardove curated liste — IG short-form format daje brze signale o novim niche-evima.",
+  },
+  {
+    name: "shindy.mp4",
+    handle: "@shindy.mp4",
+    platform: "Instagram",
+    url: "https://www.instagram.com/shindy.mp4/",
+    niche: "AI content + YT automation",
+    whyTrack:
+      "Reference iz Leonardove curated liste — kreativan IG handle (.mp4) sugerira video-first content creator.",
   },
 ];
 
@@ -236,7 +271,7 @@ export function NicheHunterPanel() {
         <div className="mb-3 flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
             <PlayCircle size={11} className="mr-1 inline" />
-            Starter guru watchlist (5 channels)
+            Curated deep-diver watchlist (6 channels · YT + IG)
           </h4>
           <button
             onClick={() => setShowAddGuru((s) => !s)}
@@ -247,32 +282,40 @@ export function NicheHunterPanel() {
         </div>
 
         <p className="mb-3 text-[11px] text-text-muted">
-          Pre-seeded watchlist. Hunter cron skenira ove kanale svaka 2
-          tjedna. Phase 2: dynamic discovery (search za nove kanale po
-          keyword-u +&nbsp;cross-reference s view velocity).
+          Pre-seeded curated lista — DEEP-DIVERI o YT biznisu, channel-
+          flipping, AI content automation. <strong>Ne mainstream</strong>
+          (Iman/Hamza/MrBeast tipa) — manje subscribera ali tighter signal
+          + više konkretnih taktika koje overlap-aju s Balkan side-hustle
+          audience-om. Phase 2: dynamic discovery proširuje listu kroz
+          subscriptions graph i sličan-creator cross-reference.
         </p>
 
         <div className="space-y-1.5">
           {STARTER_GURUS.map((g) => (
             <a
-              key={g.handle}
-              href={`https://www.youtube.com/${g.handle}`}
+              key={g.url}
+              href={g.url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 rounded-md border border-border bg-bg-elevated/40 px-3 py-2 transition-colors hover:border-emerald-400/40"
             >
-              <PlayCircle
-                size={14}
-                className="shrink-0 text-rose-400"
-                strokeWidth={2.5}
-              />
+              <span
+                className={
+                  "shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider " +
+                  (g.platform === "YouTube"
+                    ? "border border-rose-400/40 bg-rose-500/10 text-rose-300"
+                    : "border border-pink-400/40 bg-pink-500/10 text-pink-300")
+                }
+              >
+                {g.platform === "YouTube" ? "YT" : "IG"}
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-text">{g.name}</p>
                 <p className="text-[10px] font-mono text-text-dim">
-                  {g.handle} · {g.niche}
+                  {g.niche}
                 </p>
               </div>
-              <p className="hidden max-w-xs text-[10px] italic text-text-muted sm:block">
+              <p className="hidden max-w-xs text-[10px] italic text-text-muted lg:block">
                 {g.whyTrack}
               </p>
               <ArrowRight size={12} className="shrink-0 text-text-dim" />
