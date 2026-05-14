@@ -69,9 +69,76 @@ export function RoomFurniture({ agentId }: { agentId: AgentId }) {
       return <PulseFurniture />;
     case "riva":
       return <RivaFurniture />;
+    case "auditor":
+      return <AuditorFurniture />;
     default:
       return null;
   }
+}
+
+/* =================================================================== */
+/* AUDITOR — Audit Lab quality-control room (rose accent)               */
+/* HERO 1: central inspection desk with magnifier + checklist tablet    */
+/* HERO 2: wall-mounted dashboard showing FAIL/WARN/CLEAN counters       */
+/* HERO 3: stack of red-flagged draft prints on side desk                */
+/* =================================================================== */
+function AuditorFurniture() {
+  return (
+    <>
+      {/* HERO 1: central inspection desk with magnifier + tablet */}
+      <div className="absolute left-1/2 top-12 h-16 w-32 -translate-x-1/2 rounded-sm border-2 border-rose-900 bg-gradient-to-b from-rose-950 to-stone-950 shadow-[inset_0_0_6px_rgba(0,0,0,0.7)]">
+        {/* Tablet glow with red border */}
+        <div className="absolute left-2 top-2 h-7 w-12 rounded-sm border border-rose-400/70 bg-rose-500/20 shadow-[inset_0_0_4px_rgba(244,63,94,0.5)]">
+          <div className="absolute inset-1 grid grid-cols-3 gap-0.5">
+            <div className="h-1 rounded bg-rose-400" />
+            <div className="h-1 rounded bg-amber-400" />
+            <div className="h-1 rounded bg-emerald-400" />
+            <div className="col-span-3 h-1 rounded bg-rose-500/50" />
+            <div className="col-span-2 h-1 rounded bg-amber-500/50" />
+          </div>
+        </div>
+        {/* Magnifier on right */}
+        <div className="absolute right-2 top-3 h-6 w-6 rounded-full border-2 border-rose-300/80 shadow-[0_0_4px_rgba(252,165,165,0.6)]" />
+        <div className="absolute right-1 top-8 h-3 w-1 rotate-45 bg-rose-300/80" />
+      </div>
+
+      {/* HERO 2: wall-mounted dashboard (FAIL/WARN/CLEAN counters) */}
+      <div className="absolute right-3 top-4 h-12 w-20 rounded-sm border-2 border-rose-900/60 bg-stone-950 shadow-[inset_0_0_6px_rgba(0,0,0,0.8)]">
+        <div className="grid h-full grid-cols-3 gap-1 p-1">
+          <div className="flex flex-col items-center justify-center rounded-sm bg-rose-500/20">
+            <span className="text-[6px] text-rose-300">FAIL</span>
+            <span className="text-[8px] font-bold text-rose-200">7</span>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-sm bg-amber-500/20">
+            <span className="text-[6px] text-amber-300">WARN</span>
+            <span className="text-[8px] font-bold text-amber-200">3</span>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-sm bg-emerald-500/20">
+            <span className="text-[6px] text-emerald-300">OK</span>
+            <span className="text-[8px] font-bold text-emerald-200">62</span>
+          </div>
+        </div>
+      </div>
+
+      {/* HERO 3: stack of flagged-draft prints (red bookmark tabs) */}
+      <div className="absolute left-3 bottom-3 h-7 w-9 rounded-sm border border-stone-700 bg-stone-100/90 shadow-md">
+        {/* Red tabs sticking out */}
+        <div className="absolute -right-1 top-1 h-0.5 w-2 bg-rose-500" />
+        <div className="absolute -right-1 top-2.5 h-0.5 w-2 bg-rose-500" />
+        <div className="absolute -right-1 top-4 h-0.5 w-2 bg-amber-500" />
+        {/* Text-line scribbles */}
+        <div className="absolute inset-1 space-y-0.5">
+          <div className="h-px w-3/4 bg-stone-600" />
+          <div className="h-px w-2/3 bg-stone-600" />
+          <div className="h-px w-3/4 bg-stone-600" />
+          <div className="h-px w-1/2 bg-stone-600" />
+        </div>
+      </div>
+
+      {/* Bottom-right: shield icon (room signature) */}
+      <div className="absolute bottom-3 right-3 h-6 w-5 rounded-t-full border border-rose-400/60 bg-rose-500/15 shadow-[0_0_4px_rgba(244,63,94,0.4)]" />
+    </>
+  );
 }
 
 /* =================================================================== */

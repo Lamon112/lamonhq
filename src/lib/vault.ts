@@ -23,6 +23,7 @@ import {
   MessageSquare,
   TrendingUp,
   Mic,
+  ShieldCheck,
 } from "lucide-react";
 
 export type AgentId =
@@ -38,7 +39,8 @@ export type AgentId =
   | "mentat"
   | "strateg"
   | "pulse"
-  | "riva";
+  | "riva"
+  | "auditor";
 
 export interface Agent {
   id: AgentId;
@@ -116,6 +118,27 @@ const AGENTS: Agent[] = [
     hint: "12 Hot leadova investigated, V3/I0/S9/D0.",
   },
   {
+    /*
+     * Auditor — programmatic QA across every AI draft. Codifies every
+     * failure pattern Leonardo's flagged (pricing leak, hallucinated
+     * numbers, kune, lowball ROI, submissive lang, sign-off, lang
+     * mash, regex debris). Surfaces failing leads with severity +
+     * exact snippet + suggested fix. Self-refreshes overnight.
+     */
+    id: "auditor",
+    name: "Auditor",
+    room: "Audit Lab",
+    role: "Auto-QA svih AI drafts · self-heals · uči iz tvojih edita",
+    icon: ShieldCheck,
+    emoji: "🛡",
+    floor: 2,
+    slot: 1,
+    unlockLevel: 1,
+    status: "online",
+    accent: "rose",
+    hint: "Ulovi sve buggy drafts prije nego što ih pošalješ.",
+  },
+  {
     id: "nova",
     name: "Nova",
     room: "Research Lab",
@@ -123,7 +146,7 @@ const AGENTS: Agent[] = [
     icon: Telescope,
     emoji: "📡",
     floor: 2,
-    slot: 1,
+    slot: 2,
     unlockLevel: 1,
     status: "soon",
     accent: "cyan",
@@ -137,7 +160,7 @@ const AGENTS: Agent[] = [
     icon: Inbox,
     emoji: "📬",
     floor: 2,
-    slot: 2,
+    slot: 3,
     unlockLevel: 1,
     status: "online",
     accent: "sky",
@@ -151,7 +174,7 @@ const AGENTS: Agent[] = [
     icon: MessageSquare,
     emoji: "🧠",
     floor: 2,
-    slot: 3,
+    slot: 4,
     unlockLevel: 1,
     status: "online",
     accent: "violet",

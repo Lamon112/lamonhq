@@ -181,6 +181,14 @@ const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
     { kind: "walk", start: 0.4, cycle: 12, delay: 0, suit: "fill-amber-500", label: "Forge", scale: 0.9 },
     { kind: "sit", pos: 0.75, bottom: 4, suit: "fill-amber-700", label: "Apprentice", scale: 0.85 },
   ],
+  auditor: [
+    /* Auditor staff — sits at clipboard reviewing AI output. Two QA
+     * walkers patrolling between draft-stations + one main inspector
+     * at center desk. Rose/red accent palette to match the room frame. */
+    { kind: "sit", pos: 0.5, bottom: 4, suit: "fill-rose-400", label: "QA Inspector", scale: 0.95 },
+    { kind: "walk", start: 0.3, cycle: 14, delay: 0, suit: "fill-rose-300", label: "Compliance auditor", scale: 0.85 },
+    { kind: "walk", start: 0.7, cycle: 12, delay: 4, suit: "fill-rose-500", label: "Pattern hunter", scale: 0.85 },
+  ],
 };
 
 interface VaultRoomProps {

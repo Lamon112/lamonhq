@@ -15,6 +15,7 @@ import {
   MessageSquare,
   TrendingUp,
   Mic,
+  ShieldCheck,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -34,7 +35,8 @@ export type RoomId =
   | "reports"
   | "brief"
   | "brand_pulse"
-  | "riva_ops";
+  | "riva_ops"
+  | "audit";
 
 export interface Room {
   id: RoomId;
@@ -188,6 +190,26 @@ const rivaOps: Room = {
   floor: "operations",
 };
 
+/*
+ * Audit Lab — cross-domain auto-QA for every AI draft we generate
+ * (Holmes outreach, Skool IG/Telegram replies, Brand Pulse comments,
+ * Reply Analyst drafts, etc.). Surfaces failing drafts with severity-
+ * sorted issues + auto-refresh / auto-fix action. Replaces Leonardo's
+ * manual character-by-character review loop.
+ *
+ * Lives on Intelligence Bay floor (next to Holmes) because audit is
+ * fundamentally QA of intelligence outputs.
+ */
+const auditLab: Room = {
+  id: "audit",
+  name: "Audit Lab",
+  tagline:
+    "Auto-QA svih AI drafts · failing leads + checks breakdown · self-heals · uči iz tvojih edita",
+  icon: ShieldCheck,
+  emoji: "🛡",
+  floor: "intelligence",
+};
+
 export const FLOORS: Floor[] = [
   {
     id: "operations",
@@ -200,8 +222,8 @@ export const FLOORS: Floor[] = [
     id: "intelligence",
     number: 2,
     name: "Intelligence Bay",
-    subtitle: "Score · Holmes · analytics · competitor watch",
-    rooms: [leadScorer, holmes, strateg, analytics, competitor],
+    subtitle: "Score · Holmes · audit · analytics · competitor watch",
+    rooms: [leadScorer, holmes, auditLab, strateg, analytics, competitor],
   },
   {
     id: "revenue",

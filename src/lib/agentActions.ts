@@ -1464,6 +1464,10 @@ Ako iz konteksta NE vidiš konkretno koji je sljedeći meeting, daj generic play
   strateg: [],
   pulse: [],
   riva: [],
+  // Auditor actions get wired up in Phase 2 (cron auto-refresh) +
+  // Phase 4 (learning loop). Empty for now — the room is purely a
+  // read view in MVP.
+  auditor: [],
 };
 
 export function getActionsForRoom(room: AgentId): AgentActionDef[] {
