@@ -18,7 +18,7 @@
  * No approval queue, no template builder, no history pane. Pure action.
  */
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AtSign,
@@ -406,7 +406,7 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
 
 function LeadActionCard({
   lead,
-  channel,
+  channel: originalChannel,
   channelMeta,
 }: {
   lead: LeadRow;
@@ -415,6 +415,78 @@ function LeadActionCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showFullDraft, setShowFullDraft] = useState(false);
+
+  /*
+   * Per-lead invalid-channel set.
+   *
+   * When Leonardo clicks "❌ Krivi broj" on a WA card (or "Kanal ne radi"
+   * on IG/LinkedIn/phone), we add THAT channel to a lead-scoped set in
+   * localStorage, then auto-pivot the entire card to the next-best
+   * channel from Holmes reachability. So a lead whose WA broj isn't on
+   * WhatsApp gets shown as a Mail card — draft, deep-link, copy buttons
+   * all swap to email — without Leonardo manually finding alternative.
+   *
+   * Lead-scoped (not channel-scoped) so we can chain fallbacks: if email
+   * also bounces, click again → next-next-best (phone / IG).
+   * "↩ Vrati" clears the whole set so a mis-click is always recoverable.
+   */
+  const invalidSetKey = `outreach_invalid_set_${lead.id}`;
+  const [invalidSet, setInvalidSet] = useState<Set<Channel>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = window.localStorage.getItem(invalidSetKey);
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw) as Channel[];
+      return new Set(arr);
+    } catch {
+      return new Set();
+    }
+  });
+
+  /*
+   * Effective channel = original prop (= channel of the parent tab),
+   * unless that channel has been marked invalid for this lead, in which
+   * case fall through to the next-best channel from reachability that
+   * (a) isn't itself marked invalid and (b) actually has a contact
+   * value for this lead. If every reachable channel is invalid, stay
+   * on the original (the UI surfaces an "all dead" state).
+   */
+  const channel: Channel = useMemo(() => {
+    if (!invalidSet.has(originalChannel)) return originalChannel;
+    const reachability = lead.holmes_report?.reachability ?? [];
+    const sorted = [...reachability].sort(
+      (a, b) => b.confidence - a.confidence,
+    );
+    const ranked: Channel[] = [
+      ...sorted
+        .map((r) => r.channel)
+        .filter((c): c is Channel =>
+          ["email", "whatsapp", "phone", "instagram", "linkedin"].includes(c),
+        ),
+      // Tail fallback when reachability is sparse / missing entirely.
+      "email",
+      "whatsapp",
+      "phone",
+      "instagram",
+      "linkedin",
+    ];
+    for (const c of ranked) {
+      if (c === originalChannel) continue;
+      if (invalidSet.has(c)) continue;
+      if (getContactForChannel(lead, c)) return c;
+    }
+    return originalChannel;
+  }, [originalChannel, invalidSet, lead]);
+
+  // True when we've auto-pivoted from the parent tab's channel to a
+  // fallback. Drives the "📬 Prebačeno na Email — original WA invalid" banner.
+  const isFallback = channel !== originalChannel;
+  // True when EVERY reachable channel for this lead has been marked
+  // invalid (we tried to find a fallback but couldn't). Drives the
+  // "lead unreachable" empty state.
+  const allDead =
+    invalidSet.has(originalChannel) && channel === originalChannel;
+
   // Initial draft is auto-cleaned via premium positioning language swaps.
   // Stash the swap metadata for the UI badge.
   //
@@ -447,6 +519,36 @@ function LeadActionCard({
     }
   });
   const [savedDraft, setSavedDraft] = useState(draft);
+
+  /*
+   * When the EFFECTIVE channel changes mid-session (Leonardo clicked
+   * "Krivi broj" → auto-pivot to fallback), reload the draft from
+   * the new channel's localStorage key, or fall back to that channel's
+   * AI-cleaned initial draft. Without this, the visible draft would
+   * stay as the OLD channel's text even though the deep-link, contact,
+   * and copy buttons all switched. Skip on initial mount — useState's
+   * lazy initializer above already ran with the right channel.
+   */
+  const lastChannelRef = useRef(channel);
+  useEffect(() => {
+    if (lastChannelRef.current === channel) return;
+    lastChannelRef.current = channel;
+    if (typeof window === "undefined") return;
+    const key = `outreach_draft_${lead.id}_${channel}`;
+    const saved = window.localStorage.getItem(key);
+    if (saved !== null) {
+      setDraft(saved);
+      setSavedDraft(saved);
+      return;
+    }
+    const raw = initialDraft(lead, channel);
+    const bodyOnly =
+      channel === "email" ? splitSubjectFromBody(raw).body : raw;
+    const result = cleanPremiumLanguage(bodyOnly);
+    setDraft(result.cleaned);
+    setSavedDraft(result.cleaned);
+  }, [channel, lead]);
+
   // Per-section copy feedback (so each Copy button can show its own
   // "✓ Kopirano" without all of them flipping at once).
   const [copiedSectionIdx, setCopiedSectionIdx] = useState<number | null>(null);
@@ -465,39 +567,42 @@ function LeadActionCard({
   const [waCopied, setWaCopied] = useState(false);
   const [gmail, setGmail] = useState<GmailStatus | null>(null);
 
-  // "Invalid contact" — Leonardo clicks this when the WA broj isn't on
-  // WhatsApp, the phone is disconnected, or the IG handle is dead. This
-  // doesn't insert an outreach row (different from Mark sent — no
-  // outreach actually happened); it just persists "primary channel
-  // doesn't work for this lead" so the UI hides the dead deep-link
-  // and elevates the fallback chips strip. Stored per (lead, channel)
-  // in localStorage so it survives reloads without a DB write.
-  const invalidKey = `outreach_invalid_${lead.id}_${channel}`;
-  const [invalid, setInvalid] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem(invalidKey) === "1";
-    } catch {
-      return false;
-    }
-  });
+  /*
+   * "Krivi broj" handler — adds the CURRENT effective channel to this
+   * lead's invalid set, persists, and triggers a re-render that picks
+   * a new effective channel. UI auto-pivots to the new draft / deep-
+   * link / contact for that channel without Leonardo clicking around.
+   */
   function markInvalid() {
     if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(invalidKey, "1");
-    } catch {
-      /* ignore */
-    }
-    setInvalid(true);
+    setInvalidSet((prev) => {
+      const next = new Set(prev);
+      next.add(channel);
+      try {
+        window.localStorage.setItem(invalidSetKey, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
   }
+
+  /*
+   * "↩ Vrati" — clears EVERY invalid mark for this lead, returning the
+   * card to the parent tab's original channel. Used when Leonardo
+   * mis-clicked Krivi broj or wants to retry a previously-skipped
+   * channel.
+   */
   function clearInvalid() {
     if (typeof window === "undefined") return;
-    try {
-      window.localStorage.removeItem(invalidKey);
-    } catch {
-      /* ignore */
-    }
-    setInvalid(false);
+    setInvalidSet(() => {
+      try {
+        window.localStorage.removeItem(invalidSetKey);
+      } catch {
+        /* ignore */
+      }
+      return new Set();
+    });
   }
 
   const report = lead.holmes_report ?? null;
@@ -688,6 +793,50 @@ function LeadActionCard({
             className="overflow-hidden"
           >
             <div className="space-y-3 border-t border-border/50 px-4 py-3">
+              {/*
+               * Auto-pivot banner — surfaces when the parent tab's
+               * channel was marked invalid for this lead and the card
+               * has switched to a fallback channel. Tells Leonardo
+               * exactly what happened so he doesn't wonder why a Mail
+               * draft is showing up under the WhatsApp tab.
+               */}
+              {(isFallback || allDead) && (
+                <div
+                  className={
+                    "rounded-md border px-3 py-2 text-xs " +
+                    (allDead
+                      ? "border-rose-400/60 bg-rose-500/15 text-rose-100"
+                      : "border-amber-400/50 bg-amber-500/10 text-amber-100")
+                  }
+                >
+                  {allDead ? (
+                    <>
+                      <p className="font-semibold">
+                        ⛔ Lead unreachable — svi kanali označeni invalid
+                      </p>
+                      <p className="mt-1 text-[11px] text-rose-200/80">
+                        Označio si {invalidSet.size} kanala kao
+                        nefunkcionalnih za ovog leada (
+                        {[...invalidSet].join(", ")}). Klikni{" "}
+                        <span className="font-mono">↩ Vrati</span> dolje
+                        ako želiš ponovno pokušati.
+                      </p>
+                    </>
+                  ) : (
+                    <p>
+                      📬 <strong>{originalChannel.toUpperCase()}</strong>{" "}
+                      označen kao invalid →{" "}
+                      <strong>auto-prebačeno na {channel.toUpperCase()}</strong>{" "}
+                      (next-best za ovog leada).
+                      <span className="ml-1 text-[11px] text-amber-200/70">
+                        Draft, deep-link i Copy gumbi sad su za{" "}
+                        {channel}.
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Best angle summary */}
               {angle?.summary && (
                 <div>
@@ -1157,15 +1306,15 @@ function LeadActionCard({
                  * email the failure mode is bounce, which is handled
                  * by Sent Archive's "Bounced" status pill instead.
                  */}
-                {channel !== "email" && !invalid && (
+                {channel !== "email" && !allDead && (
                   <button
                     onClick={markInvalid}
                     title={
                       channel === "whatsapp"
-                        ? "Klikni ako broj nije na WhatsApp-u — UI će ti odmah ponuditi mail / IG / LinkedIn za ovu kliniku."
+                        ? "Klikni ako broj nije na WhatsApp-u — UI će prebaciti karticu na sljedeći najbolji kanal za ovu kliniku (mail/phone/IG)."
                         : channel === "phone"
-                          ? "Klikni ako je telefon disconnected — prebacujem na alternativni kanal."
-                          : "Klikni ako kanal nije funkcionalan — prebacujem na alternativu."
+                          ? "Klikni ako je telefon disconnected — prebacujem karticu na sljedeći najbolji kanal."
+                          : "Klikni ako kanal nije funkcionalan — prebacujem karticu na alternativu."
                     }
                     className="flex items-center gap-1 rounded-md border border-rose-400/40 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-500/20"
                   >
@@ -1175,13 +1324,13 @@ function LeadActionCard({
                       : "Kanal ne radi"}
                   </button>
                 )}
-                {invalid && (
+                {invalidSet.size > 0 && (
                   <button
                     onClick={clearInvalid}
-                    title="Vrati primarni kanal (ako si pogrešno označio kao invalid)"
+                    title={`Vrati ${invalidSet.size === 1 ? "primarni kanal" : `svih ${invalidSet.size} kanala`} (ako si pogrešno označio kao invalid).`}
                     className="flex items-center gap-1 rounded-md border border-stone-400/30 bg-stone-500/10 px-3 py-1.5 text-xs text-text-muted hover:border-stone-300/50 hover:text-text"
                   >
-                    ↩ Vrati
+                    ↩ Vrati {invalidSet.size > 1 ? `(${invalidSet.size})` : ""}
                   </button>
                 )}
 
@@ -1290,8 +1439,12 @@ function LeadActionCard({
                   "instagram",
                   "linkedin",
                 ];
+                // Hide both the current effective channel AND any
+                // channel Leonardo already marked invalid for this
+                // lead — those shouldn't show up as suggestions because
+                // we know they don't work.
                 const fallbacks = allChannels
-                  .filter((c) => c !== channel)
+                  .filter((c) => c !== channel && !invalidSet.has(c))
                   .map((c) => ({ ch: c, value: getContactForChannel(lead, c) }))
                   .filter((f) => !!f.value) as { ch: Channel; value: string }[];
                 if (!fallbacks.length) return null;
@@ -1326,22 +1479,10 @@ function LeadActionCard({
                   },
                 };
                 return (
-                  <div
-                    className={
-                      "mt-2 flex flex-wrap items-center gap-2 border-t pt-2 " +
-                      (invalid
-                        ? "border-rose-400/50 bg-rose-500/5 -mx-3 px-3 rounded-md py-2"
-                        : "border-border/40")
-                    }
-                  >
-                    <span
-                      className={
-                        "text-[10px] uppercase tracking-wider " +
-                        (invalid ? "text-rose-300 font-semibold" : "text-text-muted")
-                      }
-                    >
-                      {invalid
-                        ? `❌ Primarni ${channel === "whatsapp" || channel === "phone" ? "broj" : "kanal"} ne radi — koristi:`
+                  <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2">
+                    <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                      {isFallback
+                        ? "Ostali kanali za ovog leada:"
                         : "Ako ne radi · fallback:"}
                     </span>
                     {fallbacks.map(({ ch, value }) => {
