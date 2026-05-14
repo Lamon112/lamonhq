@@ -19,6 +19,10 @@ import { raidScanner } from "@/lib/inngest/functions/raidScanner";
 import { autoReplyPoller } from "@/lib/inngest/functions/autoReplyPoller";
 import { auditorCron } from "@/lib/inngest/functions/auditorCron";
 import { telegramUserbotPoller } from "@/lib/inngest/functions/telegramUserbotPoller";
+import { nicheHunterCron } from "@/lib/inngest/functions/nicheHunterCron";
+import { videoIntelImport } from "@/lib/inngest/functions/videoIntelImport";
+import { scriptGenerator } from "@/lib/inngest/functions/scriptGenerator";
+import { clinicCallerCron } from "@/lib/inngest/functions/clinicCallerCron";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -30,6 +34,10 @@ export const { GET, POST, PUT } = serve({
     autoReplyPoller,
     auditorCron,
     telegramUserbotPoller,
+    nicheHunterCron,
+    videoIntelImport,
+    scriptGenerator,
+    clinicCallerCron,
   ],
   // Allow long-running steps without Vercel cutting them off — Inngest
   // takes over execution; this route only sends/receives step signals.
