@@ -152,13 +152,39 @@ export function extractQualifyingFields(text: string): ClassifyResult["extracted
     if (n >= 14 && n <= 75) out.age = n;
   }
 
-  // Hours per week — "X sati", "X h tjedno", "X-Y sati", "preko X sati"
-  const hoursMatch = t.match(
-    /\b(?:preko\s+|oko\s+|do\s+)?(\d{1,2})\s*(?:[-–]\s*\d{1,2}\s*)?(?:\+\s*)?(?:sat[aei]|h\b|hr\b)/i,
-  );
-  if (hoursMatch) {
-    const n = parseInt(hoursMatch[1], 10);
-    if (n >= 1 && n <= 80) out.hours_per_week = n;
+  // Hours per week — multiple formats:
+  // 1. "X sati", "X h tjedno", "preko X sati", "20-25 sati", "20+ sati"
+  // 2. "20+" alone (bare number+plus when in qualifying context)
+  // 3. Phrases meaning "full time / unlimited" → 40
+  // 4. Phrases meaning "weekend only / part-time" → 10
+  const fullTimePhrases =
+    /\b(koliko\s+treba|ne\s+radim|cijeli\s+dan|cijelo\s+vrijeme|puno\s+radno\s+vrijeme|sve\s+slobodno\s+vrijeme|24\/?7|non[\s-]?stop|full\s*time|nezaposlen)\b/i;
+  const partTimePhrases =
+    /\b(samo\s+vikend|vikendom|par\s+sati|malo|kad\s+stignem)\b/i;
+
+  if (fullTimePhrases.test(t)) {
+    out.hours_per_week = 40;
+  } else if (partTimePhrases.test(t)) {
+    out.hours_per_week = 10;
+  } else {
+    const hoursMatch = t.match(
+      /\b(?:preko\s+|oko\s+|do\s+)?(\d{1,2})\s*(?:[-–]\s*\d{1,2}\s*)?(?:\+\s*)?(?:sat[aei]|h\b|hr\b)/i,
+    );
+    if (hoursMatch) {
+      const n = parseInt(hoursMatch[1], 10);
+      if (n >= 1 && n <= 80) out.hours_per_week = n;
+    } else {
+      // Bare "20+" or "20-25" as standalone short reply
+      // Only triggers when the message is short (<25 chars) — likely a
+      // direct nudge response.
+      if (t.length <= 25) {
+        const bareMatch = t.match(/^\s*(\d{1,2})\s*(?:[-–]\s*\d{1,2})?\s*\+?\s*$/);
+        if (bareMatch) {
+          const n = parseInt(bareMatch[1], 10);
+          if (n >= 1 && n <= 80) out.hours_per_week = n;
+        }
+      }
+    }
   }
 
   // Monthly goal in EUR — handles: 1k, 1.000 €, 1500eur, 2K mjesečno,

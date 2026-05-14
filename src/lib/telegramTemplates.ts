@@ -121,10 +121,7 @@ export function tplPdfAndPremiumPitch(vars: TemplateVars): RenderedTemplate {
   return {
     templateId: "pdf_premium_pitch_v1",
     stageAfter: "awaiting",
-    body: `Top${name}! Šaljem ti odmah PDF + naslovnu:
-
-📕 Naslovnica
-📄 PDF: 10 Zlatnih Pravila — Viralni Content Framework
+    body: `Top${name}! Šaljem ti PDF — 10 Zlatnih Pravila (Viralni Content Framework):
 
 Iskren odgovor — PDF je 5% posla. 95% je SAMOSTALNA primjena.
 
@@ -133,12 +130,11 @@ Najbrže ćeš stići do ${goalLine} unutar PREMIUM grupe gdje radimo svaki tjed
 → Pridruži se: https://www.skool.com/sidehustlebalkan
 
 Imaš li bilo kakvo pitanje prije nego se prijaviš?`,
+    // NOTE: no image attachment — Drive image URLs return HTML wrapper,
+    // not raw bytes, so Telegram rejects them with WEBPAGE_MEDIA_EMPTY.
+    // PDF URL works because Telegram link-previews it from the Drive
+    // file page even without raw bytes.
     attachments: [
-      {
-        type: "image",
-        url: "https://drive.google.com/uc?export=view&id=1ks91DaVuhhNo8-X02ruZywedxCmKUOOT",
-        label: "10 Zlatnih Pravila — naslovnica",
-      },
       {
         type: "url",
         url: "https://drive.google.com/file/d/1cT2CkPLGrf2SOKguRAc1Tf1u1hZEpwm2/view?usp=drivesdk",

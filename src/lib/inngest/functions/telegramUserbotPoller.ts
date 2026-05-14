@@ -341,6 +341,50 @@ async function runPollCycle(cursor: number): Promise<{
           continue;
         }
 
+        // ── Anti-loop guard ─────────────────────────────────────────
+        // If we already sent THIS exact template_id to THIS conversation
+        // in the last 5 minutes, the user is clearly answering but our
+        // extractor isn't catching it. Asking the same question again is
+        // worse than silence — it kills credibility (Patrick saw the same
+        // "koliko sati tjedno možeš?" 3× in a row before complaining).
+        //
+        // Action: ESCALATE to Leonardo (handover stage) and push Jarvis
+        // alert with conversation context so he can take over manually.
+        // This is one of those failures the user explicitly said "se ne
+        // smije desavati" — better to admit defeat early than spam.
+        const { data: recentSame } = await supabase
+          .from("telegram_messages")
+          .select("id")
+          .eq("conversation_id", conv.id)
+          .eq("direction", "out")
+          .eq("template_id", reply.templateId)
+          .gte(
+            "sent_at",
+            new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+          )
+          .limit(2);
+        if (recentSame && recentSame.length >= 1) {
+          // We've already sent this exact template in last 5 min. Promote
+          // to handover.
+          await supabase
+            .from("telegram_conversations")
+            .update({
+              stage: "handover",
+              escalated_at: new Date().toISOString(),
+              escalation_reason: `anti-loop: ${reply.templateId} repeated`,
+              last_bot_reply_at: new Date().toISOString(),
+            })
+            .eq("id", conv.id);
+
+          void pushTelegramNotification(
+            "followups",
+            `🚨 ANTI-LOOP: bot je htio poslati ${reply.templateId} već 2× u 5 min za ${dm.firstName ?? "user"} (@${dm.telegramUsername ?? "?"}).\n\nNjegova zadnja poruka: "${dm.body.slice(0, 200)}"\n\nCaptured tako daleko: ${JSON.stringify(conv.captured_data)}\n\nBOT JE STAO. Otvori @lamonleonardo i preuzmi razgovor RUČNO.\n\n— Jarvis`,
+          );
+          escalated++;
+          processed++;
+          continue;
+        }
+
         // 2f. Audit reply (cross-domain auditor)
         const auditIssues = auditDraft({
           draft: reply.body,
@@ -481,15 +525,34 @@ export const telegramUserbotPoller = inngest.createFunction(
   async ({ step }) => {
     const supabase = getServiceSupabase();
 
-    // Step 0: load cursor
-    const cursor = await step.run("load-cursor", async () => {
+    // Step 0: load cursor + paused flag
+    const state = await step.run("load-state", async () => {
       const { data } = await supabase
         .from("telegram_poller_state")
-        .select("last_update_id")
+        .select("last_update_id, paused")
         .eq("id", 1)
         .maybeSingle();
-      return Number(data?.last_update_id ?? 0);
+      return {
+        cursor: Number(data?.last_update_id ?? 0),
+        paused: Boolean(data?.paused ?? false),
+      };
     });
+    const cursor = state.cursor;
+
+    // KILL SWITCH — when paused, do nothing. Touch heartbeat only so the
+    // dashboard still shows the cron is alive (just disabled by Leonardo).
+    if (state.paused) {
+      await step.run("paused-heartbeat", async () => {
+        await supabase
+          .from("telegram_poller_state")
+          .update({
+            last_poll_at: new Date().toISOString(),
+            notes: "PAUSED — re-enable via UPDATE telegram_poller_state SET paused=false",
+          })
+          .eq("id", 1);
+      });
+      return { ok: true, paused: true };
+    }
 
     // Step 1: run full poll + reply cycle in single GramJS connection
     const result = await step.run("poll-and-reply", async () => {
