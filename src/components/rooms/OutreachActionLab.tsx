@@ -46,6 +46,11 @@ import {
 } from "@/app/actions/outreach";
 import { sendViaGmail, getGmailStatus, type GmailStatus } from "@/app/actions/gmail";
 import { cleanPremiumLanguage } from "@/lib/premiumLanguage";
+import {
+  auditHolmesReport,
+  auditBadgeVariant,
+  type AuditResult,
+} from "@/lib/draftAuditor";
 import type { LeadRow } from "@/lib/queries";
 
 type Channel = "instagram" | "linkedin" | "email" | "phone" | "whatsapp";
@@ -600,6 +605,21 @@ function LeadActionCard({
   const angle = report?.best_angle ?? null;
   const reachability = report?.reachability ?? [];
 
+  /*
+   * Draft audit — programmatic QA across all channel drafts. Pure
+   * function, recomputes on every render. Surfaces a colored badge
+   * on the collapsed card + a dedicated issues panel when expanded
+   * so Leonardo can see at a glance whether a draft has any of the
+   * known failure patterns (pricing leak, hallucinated numbers,
+   * kune mentions, lowball ROI, submissive lang, wrong sign-off,
+   * Croatian-English mash, missing intro, etc.).
+   */
+  const auditResult: AuditResult | null = useMemo(
+    () => (report ? auditHolmesReport(report, { name: lead.name, icp_score: lead.icp_score }) : null),
+    [report, lead.name, lead.icp_score],
+  );
+  const auditVariant = auditResult ? auditBadgeVariant(auditResult) : null;
+
   const score = lead.icp_score ?? 0;
   const scoreColor =
     score >= 17
@@ -745,6 +765,33 @@ function LeadActionCard({
         >
           {score}
         </span>
+        {/*
+         * Audit badge — instant visual signal of draft quality.
+         * Red 🔴 = critical/high issues (BLOCK send: pricing leak,
+         *   hallucinated number, kune, lowball ROI, submissive lang)
+         * Yellow 🟡 = medium issues (refresh recommended: lang mash,
+         *   TT pregleda mislabel, missing WA intro)
+         * Cosmetic ⚠ = low-only (000€ debris, vague promise)
+         * Hidden when clean — no visual noise on healthy drafts.
+         */}
+        {auditResult && auditVariant !== "clean" && (
+          <span
+            title={`Auditor: ${auditResult.total_issues} issue${auditResult.total_issues === 1 ? "" : "s"} — klikni karticu za detalje`}
+            className={
+              "flex h-7 items-center gap-1 rounded-md border px-2 font-mono text-[10px] font-bold uppercase tracking-wider " +
+              (auditVariant === "fail"
+                ? "border-rose-400/60 bg-rose-500/15 text-rose-200"
+                : auditVariant === "warn"
+                  ? "border-amber-400/60 bg-amber-500/15 text-amber-200"
+                  : "border-stone-400/40 bg-stone-500/10 text-stone-300")
+            }
+          >
+            {auditVariant === "fail" ? "🔴" : auditVariant === "warn" ? "🟡" : "⚠"}
+            <span>
+              {auditResult.total_issues} {auditVariant === "fail" ? "BLOK" : "audit"}
+            </span>
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-text">
             {lead.name}
@@ -784,6 +831,98 @@ function LeadActionCard({
             className="overflow-hidden"
           >
             <div className="space-y-3 border-t border-border/50 px-4 py-3">
+              {/*
+               * AUDITOR PANEL — programmatic QA of all channel drafts.
+               *
+               * Listed FIRST in the expanded body so Leonardo sees it
+               * before scrolling through best_angle / drafts / etc.
+               * Each issue shows: severity icon + check name + exact
+               * snippet from the offending draft + suggested fix. If
+               * any critical/high issue is present, "Pošalji preko
+               * Gmail" / "Otvori WhatsApp" buttons should be treated
+               * as risky — auditor's job is to surface, not block; the
+               * decision to send anyway stays with Leonardo.
+               */}
+              {auditResult && auditResult.hasAny && (
+                <div
+                  className={
+                    "rounded-md border px-3 py-2.5 " +
+                    (auditVariant === "fail"
+                      ? "border-rose-400/60 bg-rose-500/10"
+                      : auditVariant === "warn"
+                        ? "border-amber-400/60 bg-amber-500/10"
+                        : "border-stone-400/40 bg-stone-500/5")
+                  }
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span
+                      className={
+                        "text-[10px] font-bold uppercase tracking-wider " +
+                        (auditVariant === "fail"
+                          ? "text-rose-300"
+                          : auditVariant === "warn"
+                            ? "text-amber-300"
+                            : "text-text-muted")
+                      }
+                    >
+                      🔍 Auditor · {auditResult.total_issues} problem
+                      {auditResult.total_issues === 1 ? "" : "a"}
+                      {auditVariant === "fail" && " · NE ŠALJI BEZ FIXA"}
+                    </span>
+                    {!auditResult.passes && (
+                      <span className="text-[10px] text-rose-200/70">
+                        Refresh draft preporučen
+                      </span>
+                    )}
+                  </div>
+                  <ul className="space-y-1.5">
+                    {auditResult.issues.slice(0, 6).map((issue, i) => (
+                      <li
+                        key={`${issue.checkId}-${issue.channel}-${i}`}
+                        className="rounded-sm border border-white/5 bg-bg-elevated/40 px-2 py-1.5 text-[11px]"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="mt-0.5 shrink-0 font-mono text-[9px] text-text-muted">
+                            {issue.severity === "critical"
+                              ? "🚨"
+                              : issue.severity === "high"
+                                ? "🔴"
+                                : issue.severity === "medium"
+                                  ? "🟡"
+                                  : "⚠"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-text">
+                              <span className="font-mono text-[9px] uppercase tracking-wider text-text-dim">
+                                {issue.channel}
+                              </span>
+                              <span className="ml-1.5">{issue.description}</span>
+                            </p>
+                            {issue.snippet && (
+                              <p className="mt-0.5 rounded-sm bg-black/30 px-1.5 py-0.5 font-mono text-[10px] italic text-text-muted">
+                                &ldquo;{issue.snippet}&rdquo;
+                              </p>
+                            )}
+                            <p className="mt-0.5 text-[10px] leading-snug text-text-muted">
+                              <span className="font-semibold text-text-dim">
+                                Fix:
+                              </span>{" "}
+                              {issue.suggestion}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                    {auditResult.issues.length > 6 && (
+                      <li className="text-center text-[10px] text-text-muted">
+                        + još {auditResult.issues.length - 6} problem
+                        {auditResult.issues.length - 6 === 1 ? "" : "a"}…
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
               {/*
                * Auto-pivot banner — surfaces when the parent tab's
                * channel was marked invalid for this lead and the card
