@@ -130,15 +130,15 @@ Najbrže ćeš stići do ${goalLine} unutar PREMIUM grupe gdje radimo svaki tjed
 → Pridruži se: https://www.skool.com/sidehustlebalkan
 
 Imaš li bilo kakvo pitanje prije nego se prijaviš?`,
-    // NOTE: no image attachment — Drive image URLs return HTML wrapper,
-    // not raw bytes, so Telegram rejects them with WEBPAGE_MEDIA_EMPTY.
-    // PDF URL works because Telegram link-previews it from the Drive
-    // file page even without raw bytes.
+    // PDF hosted at Vercel /public — we control the file, last-page CTA
+    // points at skool.com/sidehustlebalkan (the old Drive PDF had a
+    // lamon.io B2B CTA that confused B2C SideHustle users).
+    // Regenerate with: node scripts/generate-zlatna-knjiga.mjs
     attachments: [
       {
         type: "url",
-        url: "https://drive.google.com/file/d/1cT2CkPLGrf2SOKguRAc1Tf1u1hZEpwm2/view?usp=drivesdk",
-        label: "📄 10 Zlatnih Pravila Vodic.pdf",
+        url: "https://lamon-hq.vercel.app/zlatna-knjiga.pdf",
+        label: "📄 10 Zlatnih Pravila — PDF",
       },
     ],
   };
