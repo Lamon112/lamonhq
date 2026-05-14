@@ -24,6 +24,7 @@ import { createClient } from "@supabase/supabase-js";
 import { inngest } from "../client";
 import { runAgentHolmes } from "@/lib/agentHolmes";
 import { auditHolmesReport, auditBadgeVariant } from "@/lib/draftAuditor";
+import { judgeAllChannelsForLead } from "@/lib/llmJudge";
 import { pushTelegramNotification } from "@/app/actions/telegram";
 
 const MAX_REFRESH_PER_RUN = 30;
@@ -110,8 +111,88 @@ export const auditorCron = inngest.createFunction(
       return failingLeads.slice(0, MAX_REFRESH_PER_RUN);
     });
 
-    if (failing.length === 0) {
-      return { ok: true, refreshed: 0, reason: "no failing drafts" };
+    /*
+     * Step 1.5: LLM judge pass on leads that PASSED regex. Regex
+     * already caught the patterns we know; the LLM judge looks for
+     * subtle issues (tone mismatch, broken flow, weak CTA, etc.) that
+     * pattern-matching can't see. Promotes any lead with a high-
+     * severity LLM finding into the failing list so it gets refreshed
+     * tonight too. Capped at 40 calls (~$0.016 spend) to keep cost
+     * bounded if the regex pass clears most of the queue.
+     */
+    const llmPromoted = await step.run("llm-judge-pass", async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select(
+          "id, name, icp_score, niche, notes, website_url, holmes_report, stage",
+        )
+        .not("holmes_report", "is", null)
+        .not("stage", "in", '("closed_won","closed_lost")')
+        .order("icp_score", { ascending: false })
+        .limit(40);
+      if (error || !data) return [];
+
+      const failingIds = new Set(failing.map((f) => f.id));
+      const promoted: typeof failing = [];
+
+      for (const l of data as Array<{
+        id: string;
+        name: string;
+        icp_score: number | null;
+        niche: string | null;
+        notes: string | null;
+        website_url: string | null;
+        holmes_report: Record<string, unknown>;
+        stage: string;
+      }>) {
+        // Skip ones already flagged by regex — refresh queue picks
+        // them up from `failing`.
+        if (failingIds.has(l.id)) continue;
+
+        const report = l.holmes_report as {
+          channel_drafts?: Partial<
+            Record<string, string | null | undefined>
+          >;
+          pitch_tier?: string | null;
+          recommended_package?: string | null;
+        };
+
+        const llmIssues = await judgeAllChannelsForLead({
+          leadName: l.name,
+          pitchTier: report.pitch_tier ?? null,
+          recommendedPackage: report.recommended_package ?? null,
+          channelDrafts: (report.channel_drafts ?? {}) as Partial<
+            Record<
+              "email" | "phone" | "whatsapp" | "instagram" | "linkedin",
+              string | null | undefined
+            >
+          >,
+        });
+
+        const hasHigh = llmIssues.some((i) => i.severity === "high");
+        if (hasHigh && promoted.length < 10) {
+          promoted.push({
+            id: l.id,
+            name: l.name,
+            niche: l.niche,
+            notes: l.notes,
+            websiteUrl: l.website_url,
+            worstSeverity: "high",
+            issueCount: llmIssues.length,
+          });
+        }
+      }
+      return promoted;
+    });
+
+    const allFailing = [...failing, ...llmPromoted];
+
+    if (allFailing.length === 0) {
+      return {
+        ok: true,
+        refreshed: 0,
+        reason: "no failing drafts (regex + LLM both clean)",
+      };
     }
 
     /*
@@ -124,7 +205,7 @@ export const auditorCron = inngest.createFunction(
     let refreshedCount = 0;
     const errors: string[] = [];
 
-    for (const lead of failing) {
+    for (const lead of allFailing) {
       // Inngest's step.run return-type union (`{ok:true}` vs
       // `{ok:false; error}`) gets jsonified; we use a discriminated
       // check on `ok` to narrow.
@@ -191,7 +272,9 @@ export const auditorCron = inngest.createFunction(
     return {
       ok: true,
       refreshed: refreshedCount,
-      totalFound: failing.length,
+      regexFailing: failing.length,
+      llmPromoted: llmPromoted.length,
+      totalFound: allFailing.length,
       errors: errors.length,
     };
   },
