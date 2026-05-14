@@ -251,14 +251,27 @@ async function runPollCycle(cursor: number): Promise<{
             .eq("id", conv.id);
         }
 
-        // 2b. Log inbound (idempotent — UNIQUE on telegram_message_id)
-        await supabase.from("telegram_messages").insert({
-          conversation_id: conv.id,
-          telegram_message_id: dm.messageId,
-          direction: "in",
-          body: dm.body,
-          sent_at: dm.receivedAt,
-        });
+        // 2b. Log inbound. We tolerate the unique-constraint violation
+        // (conv_id, telegram_message_id, direction) because operational
+        // recovery — e.g. resetting the cursor to reprocess a stuck queue
+        // after a bug fix — re-runs the same inbound IDs. Using upsert
+        // with onConflict ignore keeps the pipeline flowing instead of
+        // throwing into the outer catch and skipping the reply.
+        await supabase
+          .from("telegram_messages")
+          .upsert(
+            {
+              conversation_id: conv.id,
+              telegram_message_id: dm.messageId,
+              direction: "in",
+              body: dm.body,
+              sent_at: dm.receivedAt,
+            },
+            {
+              onConflict: "conversation_id,telegram_message_id,direction",
+              ignoreDuplicates: true,
+            },
+          );
 
         // 2c. Classify intent
         const expectingAnswer = conv.stage === "qualifying";
