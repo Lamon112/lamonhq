@@ -42,6 +42,10 @@ import { RivaOpsPanel } from "./rooms/RivaOpsPanel";
 import { AuditLabPanel } from "./rooms/AuditLabPanel";
 import { SkoolOpsPanel } from "./rooms/SkoolOpsPanel";
 import { NicheHunterPanel } from "./rooms/NicheHunterPanel";
+import { ScriptLabPanel } from "./rooms/ScriptLabPanel";
+import { CoachLabPanel } from "./rooms/CoachLabPanel";
+import { ClinicCallerPanel } from "./rooms/ClinicCallerPanel";
+import { LinkedInLabPanel } from "./rooms/LinkedInLabPanel";
 import type { InboundMessage } from "@/app/actions/inbound";
 
 export interface RoomData {
@@ -204,6 +208,14 @@ function RoomBody({
       return <SkoolOpsPanel />;
     case "niche_hunter":
       return <NicheHunterPanel />;
+    case "script_lab":
+      return <ScriptLabPanel />;
+    case "coach_lab":
+      return <CoachLabPanel />;
+    case "clinic_caller":
+      return <ClinicCallerPanel />;
+    case "linkedin_lab":
+      return <LinkedInLabPanel />;
     case "strateg":
       return <StrategPanel initialInbound={data.inbound} />;
     case "brand_pulse":

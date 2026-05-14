@@ -18,6 +18,10 @@ import {
   ShieldCheck,
   GraduationCap,
   Compass,
+  Film,
+  BookOpen,
+  PhoneCall,
+  AtSign,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -40,7 +44,11 @@ export type RoomId =
   | "riva_ops"
   | "audit"
   | "skool_ops"
-  | "niche_hunter";
+  | "niche_hunter"
+  | "script_lab"
+  | "coach_lab"
+  | "clinic_caller"
+  | "linkedin_lab";
 
 export interface Room {
   id: RoomId;
@@ -256,6 +264,75 @@ const nicheHunter: Room = {
  * Lives on Intelligence Bay floor (next to Holmes) because audit is
  * fundamentally QA of intelligence outputs.
  */
+/*
+ * Script Lab — weekly Leonardo video script generator. Pulls top-10x
+ * performers from video_intel (@lamon.leonardo + @sidequestshr), latest
+ * approved niche drops, and generates 5-7 ready-to-shoot scripts every
+ * Monday morning following PON/UTO/SRI/ČET/PET channel cadence.
+ *
+ * Each script: hook 3sek, body structure, full voiceover, CTA, hashtags,
+ * burned subtitles, viral_prediction + conversion_prediction scores +
+ * rationale + borrowed_from refs to the top-10x videos it copied.
+ */
+const scriptLab: Room = {
+  id: "script_lab",
+  name: "Script Lab",
+  tagline:
+    "Tjedna AI video skripta · top-10x performers analiza · viral + konverzija scoring",
+  icon: Film,
+  emoji: "🎬",
+  floor: "intelligence",
+};
+
+/*
+ * Coach Lab — AI YouTube biznis coach za Leonardove 1:1 studente.
+ * Per-student: onboarding intake → 12-week roadmap (Opus) → weekly
+ * check-in AI analysis (Sonnet) with Leonardo oversight (approve gate
+ * before send). Cost ~$0.15/student/week.
+ */
+const coachLab: Room = {
+  id: "coach_lab",
+  name: "Coach Lab",
+  tagline:
+    "AI YT biznis coach za 1:1 studente · 12-tj roadmap · weekly check-in analiza · Leonardo oversight",
+  icon: BookOpen,
+  emoji: "📚",
+  floor: "operations",
+};
+
+/*
+ * Clinic Caller — AI voice agent (Vapi + ElevenLabs + Claude) calls
+ * dental/aesthetic clinic queue with Leonardov 4-part outreach playbook.
+ * Cron every 15 min, max 5 concurrent calls. Outcomes mapped to:
+ * booked / gatekeeper / voicemail / not_interested / wrong_number /
+ * no_answer / failed. Booked → push Jarvis.
+ */
+const clinicCaller: Room = {
+  id: "clinic_caller",
+  name: "Clinic Caller",
+  tagline:
+    "AI voice agent · automatski zove ordinacije · Vapi+ElevenLabs · Leonardov 4-part playbook",
+  icon: PhoneCall,
+  emoji: "📞",
+  floor: "revenue",
+};
+
+/*
+ * LinkedIn Lab — generator 3 varijante (hook/story/contrarian) po
+ * temi. Leonardov B2B brand glas (peer-level, no submissive lang,
+ * specific numbers, assumptive close). Workflow: pending_review →
+ * approve → publish (manual to LinkedIn). Saved url for tracking.
+ */
+const linkedinLab: Room = {
+  id: "linkedin_lab",
+  name: "LinkedIn Lab",
+  tagline:
+    "AI 3-varijant generator za LinkedIn objave · Leonardo voice · viral + konverzija scoring",
+  icon: AtSign,
+  emoji: "💼",
+  floor: "operations",
+};
+
 const auditLab: Room = {
   id: "audit",
   name: "Audit Lab",
@@ -272,7 +349,7 @@ export const FLOORS: Floor[] = [
     number: 3,
     name: "Operations Hub",
     subtitle: "Klijenti, Skool B2C, kalendar, brief",
-    rooms: [clients, brandPulse, rivaOps, skoolOps, calendar, brief],
+    rooms: [clients, brandPulse, rivaOps, skoolOps, coachLab, linkedinLab, calendar, brief],
   },
   {
     id: "intelligence",
@@ -285,6 +362,7 @@ export const FLOORS: Floor[] = [
       holmes,
       auditLab,
       nicheHunter,
+      scriptLab,
       strateg,
       analytics,
       competitor,
@@ -295,7 +373,7 @@ export const FLOORS: Floor[] = [
     number: 1,
     name: "B2B Revenue Factory",
     subtitle: "Outreach → Discovery → Close",
-    rooms: [outreach, sentArchive, discovery, closing],
+    rooms: [outreach, clinicCaller, sentArchive, discovery, closing],
   },
 ];
 
