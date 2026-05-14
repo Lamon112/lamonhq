@@ -18,7 +18,7 @@
  * No approval queue, no template builder, no history pane. Pure action.
  */
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AtSign,
@@ -197,7 +197,77 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
     [initialList, sentSet],
   );
 
-  // Group by primary channel (fallback: derive from reachability or available channels)
+  /*
+   * Per-lead invalid-channel map (lifted from individual LeadCards).
+   *
+   * Lifting this state to the parent is what makes "Krivi broj" actually
+   * MOVE a lead between tabs — when a WA card is marked invalid, the
+   * parent's byChannel re-grouping kicks in and that lead now appears
+   * under the lead's next-best channel (e.g., Phone), with WA's badge
+   * decremented and Phone's badge incremented.
+   *
+   * Hydrated from localStorage on mount by scanning every lead in
+   * initialList — no scan-by-prefix because we already know the IDs.
+   */
+  const [invalidMap, setInvalidMap] = useState<Map<string, Set<Channel>>>(
+    () => {
+      if (typeof window === "undefined") return new Map();
+      const m = new Map<string, Set<Channel>>();
+      for (const lead of initialList) {
+        try {
+          const raw = window.localStorage.getItem(
+            `outreach_invalid_set_${lead.id}`,
+          );
+          if (!raw) continue;
+          const arr = JSON.parse(raw) as Channel[];
+          if (Array.isArray(arr) && arr.length > 0)
+            m.set(lead.id, new Set(arr));
+        } catch {
+          /* ignore corrupt entries */
+        }
+      }
+      return m;
+    },
+  );
+
+  function markLeadInvalid(leadId: string, channel: Channel) {
+    setInvalidMap((prev) => {
+      const next = new Map(prev);
+      const set = new Set(next.get(leadId) ?? []);
+      set.add(channel);
+      next.set(leadId, set);
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(
+            `outreach_invalid_set_${leadId}`,
+            JSON.stringify([...set]),
+          );
+        } catch {
+          /* ignore */
+        }
+      }
+      return next;
+    });
+  }
+
+  function clearLeadInvalid(leadId: string) {
+    setInvalidMap((prev) => {
+      const next = new Map(prev);
+      next.delete(leadId);
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem(`outreach_invalid_set_${leadId}`);
+        } catch {
+          /* ignore */
+        }
+      }
+      return next;
+    });
+  }
+
+  // Group by EFFECTIVE channel — falls through to next-best when the
+  // Holmes-inferred primary has been marked invalid. Recomputes whenever
+  // invalidMap changes, so leads physically migrate between tabs.
   const byChannel = useMemo(() => {
     const map: Record<Channel, LeadRow[]> = {
       instagram: [],
@@ -207,7 +277,7 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
       linkedin: [],
     };
     for (const lead of allLeads) {
-      const ch = inferPrimaryChannel(lead);
+      const ch = getEffectiveChannelForLead(lead, invalidMap.get(lead.id));
       if (ch) map[ch].push(lead);
     }
     // Queue is pure execution surface — always best ICP first.
@@ -215,7 +285,7 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
       map[ch].sort((a, b) => (b.icp_score ?? 0) - (a.icp_score ?? 0));
     }
     return map;
-  }, [allLeads]);
+  }, [allLeads, invalidMap]);
 
   // Pick default tab = channel with most leads
   const defaultChannel: Channel = useMemo(() => {
@@ -392,6 +462,9 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
               lead={lead}
               channel={activeChannel}
               channelMeta={activeMeta}
+              invalidSet={invalidMap.get(lead.id) ?? EMPTY_INVALID_SET}
+              onMarkInvalid={(ch) => markLeadInvalid(lead.id, ch)}
+              onClearInvalid={() => clearLeadInvalid(lead.id)}
             />
           ))
         )}
@@ -406,86 +479,50 @@ export function OutreachActionLab({ initialList, sentLeadIds }: Props) {
 
 function LeadActionCard({
   lead,
-  channel: originalChannel,
+  channel,
   channelMeta,
+  invalidSet,
+  onMarkInvalid,
+  onClearInvalid,
 }: {
   lead: LeadRow;
   channel: Channel;
   channelMeta: ChannelMeta;
+  invalidSet: Set<Channel>;
+  onMarkInvalid: (channel: Channel) => void;
+  onClearInvalid: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showFullDraft, setShowFullDraft] = useState(false);
 
   /*
-   * Per-lead invalid-channel set.
+   * The `channel` prop coming from the parent IS the effective channel
+   * — the parent's byChannel grouping has already migrated this lead
+   * into whichever tab matches `getEffectiveChannelForLead(lead, invalids)`
+   * after applying the invalidSet. So if Leonardo clicked "Krivi broj"
+   * on this lead under WA, the lead now physically lives under the
+   * Phone (or Email / IG / etc.) tab and `channel` here equals "phone".
    *
-   * When Leonardo clicks "❌ Krivi broj" on a WA card (or "Kanal ne radi"
-   * on IG/LinkedIn/phone), we add THAT channel to a lead-scoped set in
-   * localStorage, then auto-pivot the entire card to the next-best
-   * channel from Holmes reachability. So a lead whose WA broj isn't on
-   * WhatsApp gets shown as a Mail card — draft, deep-link, copy buttons
-   * all swap to email — without Leonardo manually finding alternative.
-   *
-   * Lead-scoped (not channel-scoped) so we can chain fallbacks: if email
-   * also bounces, click again → next-next-best (phone / IG).
-   * "↩ Vrati" clears the whole set so a mis-click is always recoverable.
+   * We still expose:
+   *  - `holmesOriginalChannel` — what Holmes originally suggested, used
+   *    in the "Bio na X, prebačen ovdje" banner so Leonardo sees the
+   *    pivot history at a glance
+   *  - `isFallback` — true when we're not on the Holmes-recommended
+   *    channel anymore (some channels have been marked invalid)
+   *  - `allDead` — true when every reachable channel for this lead is
+   *    marked invalid (lead is now unreachable)
    */
-  const invalidSetKey = `outreach_invalid_set_${lead.id}`;
-  const [invalidSet, setInvalidSet] = useState<Set<Channel>>(() => {
-    if (typeof window === "undefined") return new Set();
-    try {
-      const raw = window.localStorage.getItem(invalidSetKey);
-      if (!raw) return new Set();
-      const arr = JSON.parse(raw) as Channel[];
-      return new Set(arr);
-    } catch {
-      return new Set();
-    }
-  });
-
-  /*
-   * Effective channel = original prop (= channel of the parent tab),
-   * unless that channel has been marked invalid for this lead, in which
-   * case fall through to the next-best channel from reachability that
-   * (a) isn't itself marked invalid and (b) actually has a contact
-   * value for this lead. If every reachable channel is invalid, stay
-   * on the original (the UI surfaces an "all dead" state).
-   */
-  const channel: Channel = useMemo(() => {
-    if (!invalidSet.has(originalChannel)) return originalChannel;
-    const reachability = lead.holmes_report?.reachability ?? [];
-    const sorted = [...reachability].sort(
-      (a, b) => b.confidence - a.confidence,
-    );
-    const ranked: Channel[] = [
-      ...sorted
-        .map((r) => r.channel)
-        .filter((c): c is Channel =>
-          ["email", "whatsapp", "phone", "instagram", "linkedin"].includes(c),
-        ),
-      // Tail fallback when reachability is sparse / missing entirely.
-      "email",
-      "whatsapp",
-      "phone",
-      "instagram",
-      "linkedin",
-    ];
-    for (const c of ranked) {
-      if (c === originalChannel) continue;
-      if (invalidSet.has(c)) continue;
-      if (getContactForChannel(lead, c)) return c;
-    }
-    return originalChannel;
-  }, [originalChannel, invalidSet, lead]);
-
-  // True when we've auto-pivoted from the parent tab's channel to a
-  // fallback. Drives the "📬 Prebačeno na Email — original WA invalid" banner.
-  const isFallback = channel !== originalChannel;
-  // True when EVERY reachable channel for this lead has been marked
-  // invalid (we tried to find a fallback but couldn't). Drives the
-  // "lead unreachable" empty state.
+  const holmesOriginalChannel = useMemo(
+    () => inferPrimaryChannel(lead),
+    [lead],
+  );
+  const isFallback =
+    invalidSet.size > 0 && holmesOriginalChannel !== channel;
   const allDead =
-    invalidSet.has(originalChannel) && channel === originalChannel;
+    invalidSet.size > 0 &&
+    holmesOriginalChannel !== null &&
+    invalidSet.has(holmesOriginalChannel) &&
+    channel === holmesOriginalChannel;
 
   // Initial draft is auto-cleaned via premium positioning language swaps.
   // Stash the swap metadata for the UI badge.
@@ -519,36 +556,6 @@ function LeadActionCard({
     }
   });
   const [savedDraft, setSavedDraft] = useState(draft);
-
-  /*
-   * When the EFFECTIVE channel changes mid-session (Leonardo clicked
-   * "Krivi broj" → auto-pivot to fallback), reload the draft from
-   * the new channel's localStorage key, or fall back to that channel's
-   * AI-cleaned initial draft. Without this, the visible draft would
-   * stay as the OLD channel's text even though the deep-link, contact,
-   * and copy buttons all switched. Skip on initial mount — useState's
-   * lazy initializer above already ran with the right channel.
-   */
-  const lastChannelRef = useRef(channel);
-  useEffect(() => {
-    if (lastChannelRef.current === channel) return;
-    lastChannelRef.current = channel;
-    if (typeof window === "undefined") return;
-    const key = `outreach_draft_${lead.id}_${channel}`;
-    const saved = window.localStorage.getItem(key);
-    if (saved !== null) {
-      setDraft(saved);
-      setSavedDraft(saved);
-      return;
-    }
-    const raw = initialDraft(lead, channel);
-    const bodyOnly =
-      channel === "email" ? splitSubjectFromBody(raw).body : raw;
-    const result = cleanPremiumLanguage(bodyOnly);
-    setDraft(result.cleaned);
-    setSavedDraft(result.cleaned);
-  }, [channel, lead]);
-
   // Per-section copy feedback (so each Copy button can show its own
   // "✓ Kopirano" without all of them flipping at once).
   const [copiedSectionIdx, setCopiedSectionIdx] = useState<number | null>(null);
@@ -568,41 +575,25 @@ function LeadActionCard({
   const [gmail, setGmail] = useState<GmailStatus | null>(null);
 
   /*
-   * "Krivi broj" handler — adds the CURRENT effective channel to this
-   * lead's invalid set, persists, and triggers a re-render that picks
-   * a new effective channel. UI auto-pivots to the new draft / deep-
-   * link / contact for that channel without Leonardo clicking around.
+   * "Krivi broj" handler. Calls back to the parent which updates the
+   * shared invalidMap → byChannel re-groups → this lead disappears
+   * from the current tab and reappears under the next-best channel's
+   * tab (with that tab's badge incremented). When the parent re-renders
+   * the active tab without this lead, this LeadActionCard instance
+   * unmounts; the new instance under the destination tab will mount
+   * fresh with the new channel prop and its associated draft.
    */
   function markInvalid() {
-    if (typeof window === "undefined") return;
-    setInvalidSet((prev) => {
-      const next = new Set(prev);
-      next.add(channel);
-      try {
-        window.localStorage.setItem(invalidSetKey, JSON.stringify([...next]));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
+    onMarkInvalid(channel);
   }
 
   /*
-   * "↩ Vrati" — clears EVERY invalid mark for this lead, returning the
-   * card to the parent tab's original channel. Used when Leonardo
-   * mis-clicked Krivi broj or wants to retry a previously-skipped
-   * channel.
+   * "↩ Vrati" — clears EVERY invalid mark for this lead, returning it
+   * to the Holmes-recommended channel. Used when Leonardo mis-clicked
+   * or wants to retry a previously-skipped channel.
    */
   function clearInvalid() {
-    if (typeof window === "undefined") return;
-    setInvalidSet(() => {
-      try {
-        window.localStorage.removeItem(invalidSetKey);
-      } catch {
-        /* ignore */
-      }
-      return new Set();
-    });
+    onClearInvalid();
   }
 
   const report = lead.holmes_report ?? null;
@@ -815,7 +806,8 @@ function LeadActionCard({
                         ⛔ Lead unreachable — svi kanali označeni invalid
                       </p>
                       <p className="mt-1 text-[11px] text-rose-200/80">
-                        Označio si {invalidSet.size} kanala kao
+                        Označio si {invalidSet.size} kanal
+                        {invalidSet.size === 1 ? "" : "a"} kao
                         nefunkcionalnih za ovog leada (
                         {[...invalidSet].join(", ")}). Klikni{" "}
                         <span className="font-mono">↩ Vrati</span> dolje
@@ -824,12 +816,15 @@ function LeadActionCard({
                     </>
                   ) : (
                     <p>
-                      📬 <strong>{originalChannel.toUpperCase()}</strong>{" "}
-                      označen kao invalid →{" "}
-                      <strong>auto-prebačeno na {channel.toUpperCase()}</strong>{" "}
-                      (next-best za ovog leada).
+                      📬 Lead je <strong>prebačen na {channel.toUpperCase()}</strong>{" "}
+                      jer si{" "}
+                      {invalidSet.size === 1
+                        ? `${[...invalidSet][0].toUpperCase()} označio kao invalid`
+                        : `${invalidSet.size} kanala označio kao invalid (${[...invalidSet].join(", ")})`}
+                      . Holmes original:{" "}
+                      <strong>{holmesOriginalChannel?.toUpperCase()}</strong>.
                       <span className="ml-1 text-[11px] text-amber-200/70">
-                        Draft, deep-link i Copy gumbi sad su za{" "}
+                        Sve gumbi (deep-link, Copy, Mark sent) sad su za{" "}
                         {channel}.
                       </span>
                     </p>
@@ -1683,6 +1678,53 @@ function parseDraftSections(
 
   // Email / IG / LinkedIn — single block, no parsing.
   return [{ title: "Draft", emoji: "✉", body: draft }];
+}
+
+// Stable empty Set used as the default `invalidSet` prop value so we
+// don't allocate a fresh Set on every render (identity churn would bust
+// memoisation downstream).
+const EMPTY_INVALID_SET: Set<Channel> = new Set();
+
+/*
+ * Effective channel for a lead = where the lead should currently be
+ * grouped in the Outreach Lab tabs.
+ *
+ * Starts from Holmes' inferPrimaryChannel suggestion, then walks the
+ * reachability ranking (highest confidence first) for a fallback if
+ * the original is in the lead's invalid set. Skips any channel that
+ * is also invalid or has no contact value. If everything is invalid,
+ * returns the original (the LeadActionCard will then surface the "all
+ * channels marked invalid" empty state).
+ */
+function getEffectiveChannelForLead(
+  lead: LeadRow,
+  invalids: Set<Channel> | undefined,
+): Channel | null {
+  const original = inferPrimaryChannel(lead);
+  if (!original) return null;
+  if (!invalids || invalids.size === 0) return original;
+  if (!invalids.has(original)) return original;
+  const reachability = lead.holmes_report?.reachability ?? [];
+  const sorted = [...reachability].sort((a, b) => b.confidence - a.confidence);
+  const ranked: Channel[] = [
+    ...sorted
+      .map((r) => r.channel)
+      .filter((c): c is Channel =>
+        ["email", "whatsapp", "phone", "instagram", "linkedin"].includes(c),
+      ),
+    // Tail fallback for sparse reachability arrays.
+    "email",
+    "whatsapp",
+    "phone",
+    "instagram",
+    "linkedin",
+  ];
+  for (const c of ranked) {
+    if (c === original) continue;
+    if (invalids.has(c)) continue;
+    if (getContactForChannel(lead, c)) return c;
+  }
+  return original;
 }
 
 function inferPrimaryChannel(lead: LeadRow): Channel | null {
