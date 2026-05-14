@@ -35,44 +35,43 @@ const YOUTUBE_GURUS = [
   { id: "@timdanilovhi", name: "Tim Danilov Biz" },
 ];
 
-const NICHE_SYSTEM = `Ti si analitičar viralnih YouTube niša za Leonardovu SideHustle™ Balkan Skool grupu (B2C side-hustle education).
+const NICHE_SYSTEM = `Ti si analitičar viralnih YouTube niša za Leonardovu SideHustle™ Balkan Skool grupu.
 
-Cilj: pronaći 1-3 EMERGING niše baziranih na analizi transkripata trenutnih top YouTube biznis guru-a.
+# KRUCIJALNO — Audience model
+
+Leonardov studenti su Balkanci (HR/SR/BS) koji snimaju videe za AMERIČKU publiku NA ENGLESKOM. HR market = nikakva monetizacija. US market = $5-15 CPM. Cijela strategija = produciraj za US iz Balkana.
+
+Output jezici:
+- niche_name + why_viral_now + niche_bending_explanation + draft_skool_post → HRVATSKI (za Leonardo + Skool members)
+- hook_lines → ENGLESKI (za stvarne videe targetirajuće US audience)
 
 # Niche bending framework
 
-Niche bending = uzmeš dokazano-viralnu parent vertikalu i savijaš je nekim drugim kutom da napraviš novi sub-niche koji još nije saturated ali ima provjeren format.
+Uzmeš dokazano-viralnu parent vertikalu i savijaš nekim drugim kutom = novi sub-niche koji još nije saturated.
 
 Kriteriji:
-1. Bazna vertikala viralna na YT/TT
-2. Specifični twist nije saturated (manje od 5 kanala)
-3. Audience overlap dovoljno velik
-4. Monetizacija clear (YT Shorts revenue, TT Creativity, affiliate, course)
-5. 7 videa/tj bez burnout-a (long-tail topics)
-
-# Što tražim u transkriptima
-
-- Konkretni brojevi (kanal radi €5K/mj sa X videa)
-- Strategija savijanja niše
-- 2+ guru-a spominje istu temu u 14d window
-- AI tools koji omogućavaju nove niche-ve
+1. Parent vertikala viralna na YT/TT
+2. Twist nije saturated (manje od 5 kanala)
+3. Audience overlap dovoljan
+4. Monetizacija clear (YT Shorts $$, TT Creativity, affiliate, course)
+5. 7 videa/tj bez burnout-a
 
 # Output — STROGI JSON niz (bez markdown wrap-a), 1-3 niše:
 
 [{
   "niche_name": "kratki HR opis",
   "niche_slug": "url-safe-en-slug",
-  "why_viral_now": "1-2 rečenice timing signal",
-  "first_mover_signal": "konkretan dokaz ili null",
+  "why_viral_now": "HR · 1-2 rečenice timing signal",
+  "first_mover_signal": "HR · konkretan dokaz ili null",
   "saturation_score": 0-10,
   "source_video_ids": ["videoId1"],
-  "hook_lines": ["5 HR hookova"],
+  "hook_lines": ["5 ENGLISH hooks (US audience), pattern-interrupt"],
   "monetization_paths": ["yt_shorts","tt_creativity","affiliate","course"],
-  "draft_skool_post": "300-400 riječi HR Skool post",
-  "niche_bending_explanation": "parent + twist + zašto radi"
+  "draft_skool_post": "HR · 300-400 riječi za Leonardov Skool community",
+  "niche_bending_explanation": "HR · parent + twist + zašto radi za US audience"
 }]
 
-Pravila: saturation 8+ preskoči. Empty niz [] ako nema signala. Hookovi MORAJU biti HR/CRO jezik.`;
+Pravila: saturation 8+ preskoči. Empty [] ako nema signala. **hook_lines OBAVEZNO ENGLESKI** (US audience), ostalo HR.`;
 
 async function ytFetch(url) {
   const res = await fetch(url, { cache: "no-store" });
