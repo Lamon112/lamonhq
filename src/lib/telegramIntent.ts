@@ -126,16 +126,18 @@ export function extractQualifyingFields(text: string): ClassifyResult["extracted
 
   // Location — common Balkan country / city names. Wide enough net for
   // typical first-line answers like "iz Splita" or "Velika Gorica".
+  // Trailing \b dropped so "Zagreba", "Splita", "Hrvatske" all match
+  // (noun cases — Croatian/Serbian inflections add suffixes).
   const locationPatterns = [
     // Countries / regions (also accept "iz X")
-    /\b(iz\s+)?(hrvatske?|hrvatska|bosne?|bosna|srbije?|srbija|crne?\s+gore?|makedonije?|makedonija|slovenij[ae]|kosova|albanij[ae])\b/i,
+    /\b(iz\s+)?(hrvatsk|bosn|srbij|srbij|crne?\s+gor|makedonij|slovenij|kosov|albanij)/i,
     // Major cities — Croatia + region
-    /\b(zagreb|split|rijeka|osijek|zadar|pula|šibenik|sibenik|karlovac|varaždin|varazdin|velika\s+gorica|sisak|samobor|vinkovci|sl\.\s*brod|slavonski\s+brod|dubrovnik|đakovo|djakovo|metković|metkovic)\b/i,
-    /\b(sarajevo|mostar|banja\s+luka|tuzla|zenica|bihać|bihac|brčko|brcko)\b/i,
-    /\b(beograd|novi\s+sad|niš|nis|kragujevac|subotica|čačak|cacak|panevo|pančevo|zrenjanin)\b/i,
-    /\b(skoplje|skopje|bitola|kumanovo|tetovo|prilep)\b/i,
-    /\b(podgorica|nikšić|niksic|bar|herceg\s+novi|budva)\b/i,
-    /\b(ljubljana|maribor|celje|kranj)\b/i,
+    /\b(zagreb|split|rijek|osijek|zadar|pula|šibenik|sibenik|karlovac|varaždin|varazdin|velika\s+gorica|sisak|samobor|vinkovci|sl\.\s*brod|slavonski\s+brod|dubrovnik|đakov|djakov|metkov)/i,
+    /\b(sarajevo|mostar|banja\s+luka|tuzla|zenica|bihać|bihac|brčk|brck)/i,
+    /\b(beograd|novi\s+sad|niš|nis|kragujevac|subotica|čačak|cacak|pančev|pancev|zrenjanin)/i,
+    /\b(skopl|skopj|bitol|kumanov|tetov|prilep)/i,
+    /\b(podgorica|nikšić|niksic|bar|herceg\s+novi|budva)/i,
+    /\b(ljubljana|maribor|celje|kranj)/i,
   ];
   for (const p of locationPatterns) {
     const m = t.match(p);
@@ -145,11 +147,30 @@ export function extractQualifyingFields(text: string): ClassifyResult["extracted
     }
   }
 
-  // Age — number + "godin" word, or "X yo / godina"
-  const ageMatch = t.match(/\b(1[5-9]|[2-6]\d)\s*(godin[ae]|god\.?|yo|y\.?o\.?)\b/i);
-  if (ageMatch) {
-    const n = parseInt(ageMatch[1], 10);
+  // Age — multiple patterns:
+  // 1. "X godina/godine/god"
+  // 2. "imam X" (very common: "Iz Zagreba imam 25")
+  // 3. Bare X right after location ("iz Skoplja 28", "Velika Gorica 30")
+  // 4. Bare X in very short standalone reply
+  const ageGodinaMatch = t.match(/\b(1[5-9]|[2-6]\d)\s*(godin[aei]|god\.?|yo|y\.?o\.?)/i);
+  if (ageGodinaMatch) {
+    const n = parseInt(ageGodinaMatch[1], 10);
     if (n >= 14 && n <= 75) out.age = n;
+  } else {
+    const ageImamMatch = t.match(/\bimam\s+(1[5-9]|[2-6]\d)\b/i);
+    if (ageImamMatch) {
+      const n = parseInt(ageImamMatch[1], 10);
+      if (n >= 14 && n <= 75) out.age = n;
+    } else if (out.location) {
+      // We just detected a location in this same message — the next
+      // 2-digit standalone number is very likely the age (people answer
+      // q1+q2 in one breath: "iz Splita 23 tek krećem...").
+      const ageAfterLocation = t.match(/[A-zŠšĆćČčĐđŽž]+[a-zŠšĆćČčĐđŽž]*[\s,]+(1[4-9]|[2-6]\d)\b/);
+      if (ageAfterLocation) {
+        const n = parseInt(ageAfterLocation[1], 10);
+        if (n >= 14 && n <= 75) out.age = n;
+      }
+    }
   }
 
   // Hours per week — multiple formats:
@@ -167,33 +188,46 @@ export function extractQualifyingFields(text: string): ClassifyResult["extracted
   } else if (partTimePhrases.test(t)) {
     out.hours_per_week = 10;
   } else {
-    const hoursMatch = t.match(
+    // Number BEFORE "sat" — "20 sati", "5h tjedno"
+    let hoursMatch = t.match(
       /\b(?:preko\s+|oko\s+|do\s+)?(\d{1,2})\s*(?:[-–]\s*\d{1,2}\s*)?(?:\+\s*)?(?:sat[aei]|h\b|hr\b)/i,
     );
+    // Number AFTER "sat" — "par sat od 3 do 4", "sati 4-5"
+    if (!hoursMatch) {
+      hoursMatch = t.match(
+        /\bsat[aei]?\s+(?:od\s+|preko\s+|oko\s+)?(\d{1,2})(?:\s*[-–]\s*\d{1,2})?/i,
+      );
+    }
+    // "X do Y sati" / "X-Y sati" reverse direction
+    if (!hoursMatch) {
+      hoursMatch = t.match(
+        /\b(\d{1,2})\s*(?:do|[-–])\s*\d{1,2}\s*(?:sat[aei]|h\b)?/i,
+      );
+    }
     if (hoursMatch) {
       const n = parseInt(hoursMatch[1], 10);
       if (n >= 1 && n <= 80) out.hours_per_week = n;
-    } else {
-      // Bare "20+" or "20-25" as standalone short reply
-      // Only triggers when the message is short (<25 chars) — likely a
-      // direct nudge response.
-      if (t.length <= 25) {
-        const bareMatch = t.match(/^\s*(\d{1,2})\s*(?:[-–]\s*\d{1,2})?\s*\+?\s*$/);
-        if (bareMatch) {
-          const n = parseInt(bareMatch[1], 10);
-          if (n >= 1 && n <= 80) out.hours_per_week = n;
-        }
+    } else if (t.length <= 25) {
+      // Bare "20+" or "20-25" as standalone short reply.
+      // Only triggers on short messages — likely a direct nudge response.
+      const bareMatch = t.match(/^\s*(\d{1,2})\s*(?:[-–]\s*\d{1,2})?\s*\+?\s*$/);
+      if (bareMatch) {
+        const n = parseInt(bareMatch[1], 10);
+        if (n >= 1 && n <= 80) out.hours_per_week = n;
       }
     }
   }
 
-  // Monthly goal in EUR — handles: 1k, 1.000 €, 1500eur, 2K mjesečno,
-  // "preko 1000 eura", "minimalno X €", "barem X eura"
+  // Monthly goal in EUR — handles: 1k, 1.000 €, 1500eur, 1500e, 2K mj,
+  // "preko 1000 eura", "minimalno X €", "barem X eura", "1500e za 6 meseci"
   const goalPatterns = [
-    /\b(\d{1,3})\s*(?:k|K)\s*(?:€|eur|eura|mj|mjeseč)/,
-    /\b(\d{3,5})\s*(?:€|eur|eura)/,
-    /\b(?:preko|oko|barem|minimalno|cilj[ae]?)\s+(\d{3,5})\s*(?:€|eur|eura)?/i,
-    /\b(?:zadovoljan|sretan).{0,20}(\d{3,5})\s*(?:€|eur|eura)?/i,
+    /\b(\d{1,3})\s*(?:k|K)\s*(?:€|eur|eura|e\b|mj|mjeseč)/,
+    // Number followed by € / eur / eura / "e" as currency suffix
+    /\b(\d{3,5})\s*(?:€|eur|eura|e\b)/,
+    /\b(?:preko|oko|barem|minimalno|cilj[ae]?|nek\s+bude)\s+(\d{3,5})\s*(?:€|eur|eura|e\b)?/i,
+    /\b(?:zadovoljan|sretan).{0,30}(\d{3,5})\s*(?:€|eur|eura|e\b)?/i,
+    // "Ma za pocetak X" / "za pocetak X" (Patrick pattern)
+    /\b(?:za\s+po[čc]etak|po[čc]etna?|prvih)\s+(\d{3,5})/i,
   ];
   for (const p of goalPatterns) {
     const m = t.match(p);
@@ -209,13 +243,16 @@ export function extractQualifyingFields(text: string): ClassifyResult["extracted
     }
   }
 
-  // Experience signal
+  // Experience signal — drop trailing \b so inflected forms match
+  // ("monetiziran", "monetizirana", "monetiziranih", "zaradio", "zaradila").
   const lower = t.toLowerCase();
-  if (/\b(tek\s+kre[ćc]em|po[čc]etnik|nemam\s+iskustva?|nikad\s+nisam)\b/.test(lower)) {
+  if (/\b(tek\s+kre[ćc]em|po[čc]etnik|nemam\s+iskustva|nikad\s+nisam|tek\s+po[čc]injem)/.test(lower)) {
     out.experience = "beginner";
-  } else if (/\b(monetiziran|zara[đd]ujem|zara[đd]io|profit)\b/.test(lower)) {
+  } else if (
+    /\b(monetizir|zara[đd]uj|zara[đd]i|profit|imam\s+\d+\s+monetiziran|3\s+monetiziran)/.test(lower)
+  ) {
     out.experience = "earning_some";
-  } else if (/\b(poku[šs]avam|isprobavam|gledam\s+kanale|gledao)\b/.test(lower)) {
+  } else if (/\b(poku[šs]avam|isprobavam|gledam\s+kanale|gledao\s+sam|bavim\s+se)/.test(lower)) {
     out.experience = "trying";
   }
 

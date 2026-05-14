@@ -278,10 +278,17 @@ export interface RouteContext {
     hours_per_week?: number | string;
     monthly_goal_eur?: number | string;
   };
+  /**
+   * Template_id of the LAST outbound message in this conversation.
+   * Used by the qualifying-stage anti-loop branch: if we'd send the
+   * exact same template again, switch strategy (cut losses, send PDF
+   * with whatever fields we have) instead of repeating the nudge.
+   */
+  previousTemplateId?: string | null;
 }
 
 export function routeTemplate(ctx: RouteContext): RenderedTemplate | null {
-  const { intent, currentStage, vars, capturedFields } = ctx;
+  const { intent, currentStage, vars, capturedFields, previousTemplateId } = ctx;
 
   // OPT-OUT — always wins
   if (intent === "ghost_unsubscribe") return tplOptOut(vars);
@@ -327,6 +334,16 @@ export function routeTemplate(ctx: RouteContext): RenderedTemplate | null {
 
     if (missing.length === 0) {
       // All 3 answered — deliver PDF + PREMIUM pitch
+      return tplPdfAndPremiumPitch(vars);
+    }
+    // Anti-loop escape hatch: if the last message we sent was already a
+    // qualifying nudge, the user is clearly not playing along (Patrick
+    // pattern: "20+", "??"). Cut losses — give them the PDF + PREMIUM
+    // pitch with whatever fields we have. The pitch self-personalizes
+    // around populated fields and degrades gracefully when missing.
+    // After opening_v1, one nudge IS the right move; only escape when
+    // the previous bot message was itself a nudge.
+    if (previousTemplateId === "qualifying_nudge_v1") {
       return tplPdfAndPremiumPitch(vars);
     }
     return tplQualifyingNudge({ vars, missingFields: missing });

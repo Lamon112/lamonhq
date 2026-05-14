@@ -320,6 +320,17 @@ async function runPollCycle(cursor: number): Promise<{
           effectiveIntent = "qualifying_answer";
         }
 
+        // 2e-prep. Look up the most recent outbound template_id so the
+        // routeTemplate anti-loop escape hatch knows what we sent last.
+        const { data: lastOut } = await supabase
+          .from("telegram_messages")
+          .select("template_id")
+          .eq("conversation_id", conv.id)
+          .eq("direction", "out")
+          .order("sent_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         // 2e. Route to template (use effectiveIntent which may have been
         // promoted from unclear → qualifying_answer above)
         const reply = routeTemplate({
@@ -331,6 +342,7 @@ async function runPollCycle(cursor: number): Promise<{
             monthlyGoalEur: conv.captured_data?.monthly_goal_eur,
           },
           capturedFields: conv.captured_data ?? undefined,
+          previousTemplateId: lastOut?.template_id ?? null,
         });
 
         if (!reply) {
