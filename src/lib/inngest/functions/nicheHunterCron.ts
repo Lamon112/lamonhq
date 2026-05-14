@@ -199,20 +199,32 @@ export const nicheHunterCron = inngest.createFunction(
       return { ok: false, reason: "no videos fetched" };
     }
 
-    // Step 2: fetch transcripts (with concurrency limit + progress updates)
-    const transcripts = await step.run("fetch-transcripts", async () => {
-      const ids = allVideos.map((v) => v.videoId);
-      const tx = await fetchTranscriptsBatch(ids, {
-        concurrency: 3,
-        perVideoTimeoutMs: 25_000,
+    // Step 2: fetch transcripts ONE-PER-STEP so each gets its own Vercel
+    // function timeout (Hobby = 60s, Pro = 300s). Without this split, a
+    // batched fetch for 20 videos exceeds the 60s limit and the step
+    // dies silently — transcripts_pulled stays at 0 forever.
+    //
+    // Each step.run also auto-updates transcripts_pulled counter so the
+    // panel can show real progress (1/20, 2/20, ...).
+    const transcripts: Array<{ videoId: string; text: string; language: string } | null> = [];
+    let successCount = 0;
+    for (let i = 0; i < allVideos.length; i++) {
+      const v = allVideos[i];
+      const tx = await step.run(`transcript-${v.videoId}`, async () => {
+        const { fetchTranscript } = await import("@/lib/youtubeTranscript");
+        const t = await fetchTranscript(v.videoId);
+        return t ? { videoId: t.videoId, text: t.text, language: t.language } : null;
       });
-      const successCount = tx.filter((t) => t).length;
-      await supabase
-        .from("niche_hunter_runs")
-        .update({ transcripts_pulled: successCount })
-        .eq("cycle_id", cycleId);
-      return tx;
-    });
+      transcripts.push(tx);
+      if (tx) successCount++;
+      // Update progress counter after each video (visible in panel)
+      await step.run(`progress-after-${v.videoId}`, async () => {
+        await supabase
+          .from("niche_hunter_runs")
+          .update({ transcripts_pulled: successCount })
+          .eq("cycle_id", cycleId);
+      });
+    }
 
     const enrichedVideos = allVideos.map((v, i) => ({
       ...v,
