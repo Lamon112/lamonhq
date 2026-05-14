@@ -189,6 +189,15 @@ const DWELLERS_BY_AGENT: Record<Agent["id"], AnyDweller[]> = {
     { kind: "walk", start: 0.3, cycle: 14, delay: 0, suit: "fill-rose-300", label: "Compliance auditor", scale: 0.85 },
     { kind: "walk", start: 0.7, cycle: 12, delay: 4, suit: "fill-rose-500", label: "Pattern hunter", scale: 0.85 },
   ],
+  scholar: [
+    /* Scholar staff — academic library / content classroom vibe.
+     * Center: scholar at standing desk with books. Walkers: 2 students
+     * + 1 mentor visiting. Sky/blue accent palette. */
+    { kind: "sit", pos: 0.5, bottom: 4, suit: "fill-sky-400", label: "Scholar", scale: 0.95 },
+    { kind: "walk", start: 0.25, cycle: 13, delay: 0, suit: "fill-sky-300", label: "Student 1", scale: 0.85 },
+    { kind: "walk", start: 0.75, cycle: 11, delay: 3, suit: "fill-sky-500", label: "Student 2", scale: 0.85 },
+    { kind: "sit", pos: 0.18, bottom: 4, suit: "fill-cyan-300", label: "Mentor", scale: 0.85 },
+  ],
 };
 
 interface VaultRoomProps {

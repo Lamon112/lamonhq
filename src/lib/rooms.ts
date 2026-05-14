@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Mic,
   ShieldCheck,
+  GraduationCap,
 } from "lucide-react";
 
 export type FloorId = "operations" | "intelligence" | "revenue";
@@ -36,7 +37,8 @@ export type RoomId =
   | "brief"
   | "brand_pulse"
   | "riva_ops"
-  | "audit";
+  | "audit"
+  | "skool_ops";
 
 export interface Room {
   id: RoomId;
@@ -191,6 +193,27 @@ const rivaOps: Room = {
 };
 
 /*
+ * Skool Ops — B2C SideHustle™ business surface (parallel to Plima
+ * B2B per the b2b/b2c split rule). Tracks Skool community MRR (€2.6K
+ * → €5K M6 target), mentorship pipeline (5 slots, 1 filled), DM
+ * inbox queue across IG @sidequestshr / TikTok @sidehustlebalkan /
+ * Telegram t.me/sidehustlehr / Skool community feed.
+ *
+ * Lives on Operations Hub floor (alongside Client Manager, Brand
+ * Pulse, Riva Ops) because it's a recurring-ops surface, not a
+ * lead-gen pipeline.
+ */
+const skoolOps: Room = {
+  id: "skool_ops",
+  name: "Skool Ops",
+  tagline:
+    "B2C SideHustle™ · MRR €2.6K → €5K · DM inbox · mentorship pipeline · content kalendar",
+  icon: GraduationCap,
+  emoji: "🎓",
+  floor: "operations",
+};
+
+/*
  * Audit Lab — cross-domain auto-QA for every AI draft we generate
  * (Holmes outreach, Skool IG/Telegram replies, Brand Pulse comments,
  * Reply Analyst drafts, etc.). Surfaces failing drafts with severity-
@@ -215,8 +238,8 @@ export const FLOORS: Floor[] = [
     id: "operations",
     number: 3,
     name: "Operations Hub",
-    subtitle: "Klijenti, kalendar, brief",
-    rooms: [clients, brandPulse, rivaOps, calendar, brief],
+    subtitle: "Klijenti, Skool B2C, kalendar, brief",
+    rooms: [clients, brandPulse, rivaOps, skoolOps, calendar, brief],
   },
   {
     id: "intelligence",

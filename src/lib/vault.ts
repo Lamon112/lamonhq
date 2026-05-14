@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Mic,
   ShieldCheck,
+  GraduationCap,
 } from "lucide-react";
 
 export type AgentId =
@@ -40,7 +41,8 @@ export type AgentId =
   | "strateg"
   | "pulse"
   | "riva"
-  | "auditor";
+  | "auditor"
+  | "scholar";
 
 export interface Agent {
   id: AgentId;
@@ -207,6 +209,25 @@ const AGENTS: Agent[] = [
     status: "online",
     accent: "rose",
     hint: "Real-time Riva voice agent monitor · per-clinic call log + config.",
+  },
+  {
+    /*
+     * Scholar — B2C SideHustle™ Ops agent. Tracks Skool MRR, DM
+     * inbox across IG/TikTok/Telegram, mentorship pipeline, content
+     * kalendar. Parallel to Steward (clients) but for the B2C side.
+     */
+    id: "scholar",
+    name: "Scholar",
+    room: "Skool Ops",
+    role: "SideHustle™ B2C · Skool MRR · DM inbox · mentorship pipeline",
+    icon: GraduationCap,
+    emoji: "🎓",
+    floor: 3,
+    slot: 6,
+    unlockLevel: 1,
+    status: "online",
+    accent: "sky",
+    hint: "165 paid · €2.6K/mj → €5K cilj · 5 mentor mjesta · 50 unanswered DMs.",
   },
 
   // FLOOR 3 — Operations

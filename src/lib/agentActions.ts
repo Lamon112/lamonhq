@@ -1468,6 +1468,10 @@ Ako iz konteksta NE vidiš konkretno koji je sljedeći meeting, daj generic play
   // Phase 4 (learning loop). Empty for now — the room is purely a
   // read view in MVP.
   auditor: [],
+  // Scholar actions (DM auto-responder, content kalendar generator,
+  // mentorship qualifying) ship in subsequent commits. Empty for
+  // MVP read-view of Skool Ops room.
+  scholar: [],
 };
 
 export function getActionsForRoom(room: AgentId): AgentActionDef[] {

@@ -30,15 +30,32 @@ export function ResourceBar({ stats, xp, user, inlineSlot }: ResourceBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const progress = Math.min((stats.mrrCents / stats.goalTargetCents) * 100, 100);
 
+  /*
+   * Per the b2b/b2c-split memory rule, MRR is shown as TWO separate
+   * tiles — Plima (B2B clinics, target €30K/mj M6) and Skool (B2C
+   * SideHustle™, target €5K/mj M6). Combined target = €35K/mj.
+   *
+   * Skool MRR is hardcoded to €2.6K as of 2026-05-14 baseline; v2
+   * wires live Stripe/Skool API once we figure out platform access.
+   */
+  const SKOOL_MRR_CENTS = 260000; // €2,600 baseline, update via memory + redeploy until live API
+  const SKOOL_MRR_TARGET_CENTS = 500000; // €5,000 M6 target
+
   const tiles = [
     {
-      label: "MRR",
+      label: "Plima MRR",
       value: formatEuro(stats.mrrCents, { compact: true }),
       delta:
         stats.monthlyDeltaCents > 0
           ? `+${formatEuro(stats.monthlyDeltaCents)} ovaj mj`
-          : `${stats.activeClients} klijenata`,
+          : `B2B · ${stats.activeClients} klijenata`,
       emoji: "💰",
+    },
+    {
+      label: "Skool MRR",
+      value: formatEuro(SKOOL_MRR_CENTS, { compact: true }),
+      delta: `B2C · cilj ${formatEuro(SKOOL_MRR_TARGET_CENTS, { compact: true })}`,
+      emoji: "🎓",
     },
     {
       label: "Active",
@@ -60,12 +77,6 @@ export function ResourceBar({ stats, xp, user, inlineSlot }: ResourceBarProps) {
       value: stats.outreachToday.toString(),
       delta: "outreach danas",
       emoji: "📤",
-    },
-    {
-      label: "Content",
-      value: stats.contentPostsThisMonth.toString(),
-      delta: "posts ovaj mj",
-      emoji: "📊",
     },
   ];
 

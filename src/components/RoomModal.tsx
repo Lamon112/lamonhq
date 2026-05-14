@@ -40,6 +40,7 @@ import { StrategPanel } from "./rooms/StrategPanel";
 import { BrandPulsePanel } from "./rooms/BrandPulsePanel";
 import { RivaOpsPanel } from "./rooms/RivaOpsPanel";
 import { AuditLabPanel } from "./rooms/AuditLabPanel";
+import { SkoolOpsPanel } from "./rooms/SkoolOpsPanel";
 import type { InboundMessage } from "@/app/actions/inbound";
 
 export interface RoomData {
@@ -198,6 +199,8 @@ function RoomBody({
       return <HolmesBureauPanel initialLeads={data.leads.list} />;
     case "audit":
       return <AuditLabPanel initialLeads={data.leads.list} />;
+    case "skool_ops":
+      return <SkoolOpsPanel />;
     case "strateg":
       return <StrategPanel initialInbound={data.inbound} />;
     case "brand_pulse":
