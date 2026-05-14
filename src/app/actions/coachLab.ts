@@ -177,7 +177,7 @@ Learning style: ${student.learning_style ?? "(?)"}
 Vrati MARKDOWN roadmap (nema JSON wrap-a). Otvori s 1-rečenicom procjenom njegove startne pozicije, onda Week 1..12 sekcije.`;
 
   const message = await anthropic.messages.create({
-    model: "claude-opus-4-1-20250805",
+    model: "claude-opus-4-5",
     max_tokens: 8192,
     system: [{ type: "text", text: ROADMAP_SYSTEM }],
     messages: [{ role: "user", content: userMsg }],
@@ -269,7 +269,7 @@ Blocker tjedna: ${checkin.blocker ?? "(nije specificirano)"}
 Vrati MARKDOWN analizu (4 sekcije iz system prompt-a).`;
 
   const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5",
     max_tokens: 4096,
     system: [{ type: "text", text: CHECKIN_SYSTEM }],
     messages: [{ role: "user", content: userMsg }],

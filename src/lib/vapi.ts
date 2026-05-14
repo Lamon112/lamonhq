@@ -122,7 +122,7 @@ Pozdraviš ${greetingTarget} s "Dobar dan, zovem Lamon Agency za ${args.clinicNa
     firstMessage: `Dobar dan! Zovem Lamon Agency za ${args.clinicName}. Smijem li dobiti ${greetingTarget}?`,
     model: {
       provider: "anthropic",
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-5",
       messages: [{ role: "system", content: systemPrompt }],
     },
     voice: {

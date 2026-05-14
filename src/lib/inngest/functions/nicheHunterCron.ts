@@ -233,7 +233,7 @@ ${ctxLines}
 Vrati JSON niz (nema fence-a) s 1-3 niše. Svaka MORA imati niche_bending_explanation polje da Leonardo nauči pattern.`;
 
       const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-5",
         max_tokens: 8192,
         system: [{ type: "text", text: NICHE_PROMPT_SYSTEM }],
         messages: [{ role: "user", content: userMsg }],

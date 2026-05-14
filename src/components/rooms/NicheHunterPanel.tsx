@@ -27,7 +27,7 @@
  * v3: auto-publish to Skool + content kalendar slotting.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
   Compass,
   Calendar as CalendarIcon,
@@ -36,7 +36,41 @@ import {
   Sparkles,
   Clock,
   ArrowRight,
+  Zap,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
+
+interface NicheDrop {
+  id: string;
+  cycle_id: string;
+  niche_name: string;
+  niche_slug: string;
+  why_viral_now: string;
+  first_mover_signal: string | null;
+  saturation_score: number | null;
+  source_gurus: Array<{ name?: string; video_id?: string; url?: string; views?: number }>;
+  source_video_count: number;
+  hook_lines: string[];
+  monetization_paths: string[];
+  draft_skool_post: string;
+  status: "pending_review" | "approved" | "published" | "rejected";
+  generation_cost_usd: number;
+  created_at: string;
+}
+
+interface NicheRun {
+  id: string;
+  cycle_id: string;
+  started_at: string;
+  finished_at: string | null;
+  gurus_scanned: number;
+  videos_fetched: number;
+  transcripts_pulled: number;
+  niches_extracted: number;
+  total_cost_usd: number;
+  status: "running" | "success" | "partial" | "failed";
+}
 
 interface PipelineStage {
   id: string;
@@ -174,14 +208,58 @@ const STARTER_GURUS: SuggestedGuru[] = [
 
 export function NicheHunterPanel() {
   const [showAddGuru, setShowAddGuru] = useState(false);
+  const [drops, setDrops] = useState<NicheDrop[]>([]);
+  const [runs, setRuns] = useState<NicheRun[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [triggerStatus, setTriggerStatus] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // Hardcoded "next drop date" — bi-weekly from a fixed anchor (May 14).
-  // v2 reads this from the Inngest cron schedule.
+  async function refresh() {
+    try {
+      const r = await fetch("/api/niche-hunter/list");
+      const d = await r.json();
+      setDrops(d.drops ?? []);
+      setRuns(d.runs ?? []);
+    } catch (e) {
+      console.warn("[niche-hunter] load failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+    // Auto-refresh every 30s while a run is in progress
+    const interval = setInterval(refresh, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  function triggerRunNow() {
+    setTriggerStatus("Pokrećem...");
+    startTransition(async () => {
+      try {
+        const r = await fetch("/api/niche-hunter/trigger", { method: "POST" });
+        const d = await r.json();
+        if (d.ok) {
+          setTriggerStatus(`✓ Pokrenuto (event ${d.eventId?.slice(0, 8) ?? "?"}). Rezultat ~2 min.`);
+          refresh();
+        } else {
+          setTriggerStatus(`✗ ${d.error ?? "trigger failed"}`);
+        }
+      } catch (e) {
+        setTriggerStatus(`✗ ${e instanceof Error ? e.message : "failed"}`);
+      }
+    });
+  }
+
   const today = new Date("2026-05-14");
   const nextDrop = new Date("2026-05-28");
   const daysUntil = Math.ceil(
     (nextDrop.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
   );
+  const latestRun = runs[0] ?? null;
+  const isRunning = latestRun?.status === "running";
 
   return (
     <div className="space-y-4">
@@ -209,12 +287,171 @@ export function NicheHunterPanel() {
               </span>
               <span className="flex items-center gap-1.5 rounded-md border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-amber-200">
                 <Clock size={12} />
-                Cron: every 14 days · 02:00 Zagreb (Phase 2)
+                Cron: every 14 days · 02:00 Zagreb
               </span>
+              <button
+                onClick={triggerRunNow}
+                disabled={isPending || isRunning}
+                className="ml-auto flex items-center gap-1.5 rounded-md border-2 border-amber-400/50 bg-amber-500/20 px-3 py-1 font-bold text-amber-200 hover:bg-amber-500/30 disabled:opacity-50"
+              >
+                {isPending || isRunning ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Zap size={12} />
+                )}
+                {isRunning ? "Pokrenut..." : "Run NOW"}
+              </button>
             </div>
+            {triggerStatus && (
+              <p className="mt-2 text-[11px] text-amber-200/80">{triggerStatus}</p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* ── Live niche drops ── */}
+      {loading ? (
+        <div className="rounded-lg border border-border bg-bg-card/40 p-6 text-center text-xs text-text-muted">
+          Učitavam niche drops...
+        </div>
+      ) : (
+        <div className="rounded-lg border border-emerald-400/40 bg-emerald-500/5 p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-200">
+              <Sparkles size={11} className="mr-1 inline" />
+              Aktualne niše · {drops.length} {drops.length === 1 ? "drop" : "dropova"}
+            </h4>
+            {latestRun && (
+              <span className="text-[10px] text-text-muted">
+                Last run: {latestRun.transcripts_pulled}/{latestRun.videos_fetched} transkripata · ${latestRun.total_cost_usd?.toFixed(3) ?? "0.000"}
+              </span>
+            )}
+          </div>
+          {drops.length === 0 ? (
+            <div className="rounded border border-dashed border-emerald-400/30 bg-bg-card/40 p-4 text-center text-xs text-text-muted">
+              Još nijedna niše nije generirana. Klikni{" "}
+              <strong className="text-amber-300">Run NOW</strong> da pokreneš
+              prvi ciklus (~2 min).
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {drops.map((d) => {
+                const isOpen = expanded.has(d.id);
+                return (
+                  <div
+                    key={d.id}
+                    className="rounded-md border border-border bg-bg-card/50 p-3"
+                  >
+                    <button
+                      onClick={() => {
+                        const next = new Set(expanded);
+                        if (next.has(d.id)) next.delete(d.id);
+                        else next.add(d.id);
+                        setExpanded(next);
+                      }}
+                      className="flex w-full items-start justify-between gap-2 text-left"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-text">{d.niche_name}</p>
+                        <p className="mt-0.5 line-clamp-2 text-[11px] italic text-text-muted">
+                          {d.why_viral_now}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 text-[10px]">
+                        <span
+                          className={
+                            "rounded px-1.5 py-0.5 font-bold " +
+                            ((d.saturation_score ?? 5) <= 3
+                              ? "bg-emerald-500/20 text-emerald-200"
+                              : (d.saturation_score ?? 5) <= 6
+                                ? "bg-amber-500/20 text-amber-200"
+                                : "bg-rose-500/20 text-rose-200")
+                          }
+                        >
+                          sat {d.saturation_score ?? "?"}/10
+                        </span>
+                        <span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-violet-200">
+                          {d.status}
+                        </span>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="mt-3 space-y-2 border-t border-border pt-3 text-xs">
+                        {d.first_mover_signal && (
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase text-text-muted">
+                              First-mover signal
+                            </p>
+                            <p className="text-emerald-200">{d.first_mover_signal}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase text-text-muted">
+                            Hook ideje (HR)
+                          </p>
+                          <ul className="ml-3 list-disc text-text">
+                            {(d.hook_lines ?? []).map((h, i) => (
+                              <li key={i}>{h}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase text-text-muted">
+                            Monetizacija
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {(d.monetization_paths ?? []).map((m) => (
+                              <span
+                                key={m}
+                                className="rounded bg-cyan-500/10 px-1.5 py-0.5 text-cyan-200"
+                              >
+                                {m}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase text-text-muted">
+                            Skool post draft
+                          </p>
+                          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded bg-bg-elevated/50 p-2 font-mono text-[11px] text-text">
+                            {d.draft_skool_post}
+                          </pre>
+                        </div>
+                        {d.source_gurus?.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase text-text-muted">
+                              Source videa ({d.source_gurus.length})
+                            </p>
+                            <ul className="space-y-0.5 text-[11px]">
+                              {d.source_gurus.map((s, i) => (
+                                <li key={i}>
+                                  {s.url ? (
+                                    <a
+                                      href={s.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sky-300 hover:underline"
+                                    >
+                                      {s.name} · {s.views?.toLocaleString() ?? "?"} views
+                                    </a>
+                                  ) : (
+                                    <span>{s.name}</span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Pipeline visualizer ── */}
       <div className="rounded-lg border border-border bg-bg-card/40 p-3">

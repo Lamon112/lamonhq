@@ -216,7 +216,7 @@ ${nicheLines || "(nema approved niche drop-ova)"}
 Vrati JSON niz s 5-7 skripti, jedna po danu u tjednu.`;
 
       const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-5",
         max_tokens: 8192,
         system: [{ type: "text", text: SCRIPT_SYSTEM_PROMPT }],
         messages: [{ role: "user", content: userMsg }],
