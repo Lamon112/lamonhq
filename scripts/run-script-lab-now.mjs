@@ -1,145 +1,198 @@
 /**
- * Generate weekly video scripts locally — mirrors Baywash structure.
+ * Script Lab v3 — Leonardo SideHustle PREMIUM (HR audience).
  *
- * Pulls latest niche drops from Supabase niche_drops (via REST + anon
- * key), Leonardov methodology + Baywash structure as Claude system
- * context, generates 5-7 ready-to-shoot scripts.
+ * Trained on actual Leonardo scripts from Drive sidehustle/skripte folder
+ * (12+ documents analyzed: 18.-30.4 skripte, snimanje 8.4, srijedi 11.3,
+ * 17.3 snimanje, glavni yt video ad, inflacija long-form, fruit niche,
+ * 5 chatgpt načina zarade, snimanje 22-31.3, 5 načina chatgpt short).
  *
- * Two account flavors:
- *   - @lamon.leonardo (HR · Plima B2B)
- *   - @sidequestshr (EN · SideHustle US audience for view monetization)
+ * Per Leonardov 2026-05-14 directive:
+ *  - Sve na hrvatskom (target: HR/SR/BS audience za PREMIUM Skool grupa)
+ *  - Mix tema (AI/ChatGPT, lifestyle, edu, controversy, trend-jacking, member wins)
+ *  - Mix CTA po skripti (ZLATNA KNJIGA / PLAN / PREMIUM / INFO / AI / itd)
+ *  - Light format (samo skripta + hook + CTA, no per-second timeline)
+ *  - Lokacije: RCZ / luksuzni stan Rijeka / more · Bentley za 1 mj
+ *  - 5 skripti PON-PET
  *
- * Output: outputs/scripts-YYYY-MM-DD.md (full Baywash-style detail per script)
- *
- * Run: node scripts/run-script-lab-now.mjs
+ * Output: outputs/scripts-YYYY-MM-DD.md
  */
 
 import fs from "node:fs";
 import path from "node:path";
 
-// Load .env.local
 const env = fs.readFileSync(path.resolve("./.env.local"), "utf8");
 for (const line of env.split("\n")) {
   const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SCRIPT_SYSTEM = `Ti si Leonardov Chief Content Officer. Generiraš tjedne (PON-PET) skripte za @sidequestshr / @sidehustlebalkan / YT Shorts — sve na HRVATSKOM, target = SideHustle PREMIUM Skool grupa (€50/mj, 165 članova, Balkan side-hustlers).
 
-// Pull latest approved/pending niche drops from Supabase to seed script gen
-async function fetchLatestNiches() {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
-  try {
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/niche_drops?select=niche_name,why_viral_now,hook_lines,monetization_paths,niche_bending_explanation,saturation_score&order=created_at.desc&limit=5`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
-    );
-    if (!r.ok) return [];
-    return await r.json();
-  } catch {
-    return [];
-  }
-}
+# 🚨 ZLATNO PRAVILO — VALUE > MOTIVACIJA
 
-const SCRIPT_SYSTEM = `Ti si Leonardov Chief Content Officer. Generiraš video skripte za sljedeći tjedan, mirroring strukturu koju je Leo zadnji put koristio za Baywash skripte (best-practice format).
+Leonardov 2026-05-14 feedback (3/10 ocjena prošlog runa): "video nema nikakav value... postao motivacijski govornik i sve je propalo".
 
-# AUDIENCE STRATEGIJA — KRUCIJALNO
+SVAKA SKRIPTA MORA SADRŽAVATI **JEDAN OD 4 VALUE TIPA** — bez izuzetka:
 
-Imaš DVA paralelna kanala:
+**A) STEP-BY-STEP HOW-TO** (kao njegove "5 ChatGPT načina" / "Skeleton Shorts" / "Fruit Love Show")
+- TOČNO koji alat (ChatGPT, Higgsfield Nano Banana, Kling 3, openart, Replit, Netlify, Canva, Gumroad, Whop)
+- TOČAN prompt ili klikovi (npr. "Odi na Explore GPTs, pretraži 'fruit avatar'")
+- Što se nakon koraka dobije
+- Završi s "ostavi NAJVAŽNIJE za profil/komentar"
 
-**A) @lamon.leonardo (HR · Plima B2B brand)**
-- Audience: HR vlasnici premium dental/estetic klinika
-- Jezik: HRVATSKI
-- CTA: "Pošalji DEMO na DM" ili "bukiraj Zoom 15 min"
-- Goal: discovery call → Plima paket close
+**B) TEAR-DOWN s itemized brojkama** (kao njegov Big Mek 5€ price reveal)
+- Razlomi cijenu/proces po stavkama (donji peciv 5c, pljeskavica 40c...)
+- Konkretni brojevi
+- Reveal "totalna cijena = X" + "cijela istina na profilu"
 
-**B) @sidequestshr (US · SideHustle B2C)**
-- Audience: US/global side-hustlers (Balkanci snimaju za US monetizirano YT/TT)
-- Jezik: ENGLISH (HR audience nema CPM, US ima $5-15)
-- CTA: "Comment X to get the framework" + skool.com/sidehustlehr link
-- Goal: viral views → Skool join (€50/mj)
+**C) MECHANISM REVEAL — kako/zašto nešto radi** (kao njegov Mr Beast dopamine, inflacija banana metafora)
+- Imenuj fenomen ("dopaminizacija mrkve i štapa")
+- Pokaži MEHANIZAM (psychology, ekonomija, algoritam)
+- Daj konkretan primjer s brojkama (4 videa = pola milijarde pregleda)
+- Identity bridge ("BTW ja sam Leonardo, proučavam emocionalnu psihologiju...")
 
-Svaka skripta MORA biti targetirana na jedan od ovih kanala, ne miješati.
+**D) CASE STUDY s detaljima** (kao njegov Filmovi Ukratko prodaja, Mleko u kesi 20k breakdown, član-priče)
+- Konkretne brojke (15k + 2K TT + 1k/mj × 6mj VO = 23k)
+- Točan timeline (22.2.2022 → 4 mjeseca kasnije Hong Kong buyer)
+- Concrete "what they did" (Marko snima 2 čestitke dnevno × 200€ = 6k mj)
+- Lesson za viewer ("evo zašto i vi možete...")
 
-# BAYWASH STRUKTURA (mirror this depth)
+# 🚫 NIKAD (motivacijski govornik anti-patterns)
 
-Svaka skripta ima:
-1. **title** — narrative hook ("Najgori auto u 12 godina detailinga")
-2. **target_account** — "@lamon.leonardo" ili "@sidequestshr"
-3. **target_language** — "hr" ili "en"
-4. **target_audience** — "hr_b2b" ili "us_global"
-5. **slot_label** — kada se objavljuje (npr. "PON 19:00 Edukativni Short")
-6. **duration_estimate_sec** — 20-90s
-7. **hook_formula** — taxonomy: "autoritet", "contrast", "numerical", "anti-status", "curiosity-gap", "stat-shock", "pattern-interrupt", "social-proof"
-8. **script_goal** — "viral_reach" | "conversion" | "brand_pillar" | "low_barrier_entry" | "social_proof"
-9. **mix_tag** — "drama" | "conversion" | "edu" | "pillar"
-10. **hook_3sec** — exact prva rečenica (na ciljanom jeziku)
-11. **narration_md** — VERBATIM full voiceover, sa stage directions u italici (\\*pauza, gleda u kameru\\*), pauze označene
-12. **broll_timeline_md** — markdown lista per-second editor instructions:
-    - **0-4s:** "..." → top broll = ...
-    - **4-8s:** "..." → top broll = ...
-13. **text_overlays_md** — markdown lista burned subs s timestampima
-14. **caption_md** — finalni post caption (na ciljanom jeziku) + hashtags
-15. **production_notes_md** — markdown bullets: zašto OVAJ format radi, što tweak-ati, alternative
-16. **viral_prediction** — 0-10
-17. **conversion_prediction** — 0-10
-18. **rationale** — 1-2 rečenice na HR-u zašto baš ovaj format ovaj tjedan
+- "Trebaš znati gdje su pare i kako ih uzeti" → fluff
+- "Sve to samo jer sam shvatio jednu stvar" → ne reveal-aš ŠTO
+- "Nije rocket science" → vague filler
+- "Ne moraš biti programer, ne moraš imati diplomu" → motivational
+- "Trebaš samo počti i biti konzistentan" → empty
+- "Život koji je zaslužio" / "Sloboda" → corny
 
-# Leonardov methodology (10 Zlatnih Pravila)
-1. Hook 3sek = stat shock ili pattern interrupt
-2. Vertikalno 9:16 default
-3. Burned-in subs obavezno
-4. Storytelling > educational (Setup → Problem → Twist → Lekcija → CTA)
-5. Loop-able final frame
-6. CTA = comment trigger ne follow
-7. Tema = problem koji target rješava DANAS
-8. Cadence > savršenstvo
-9. Cross-platform 24h window
-10. View-through rate 75%+ cilj
+# 📊 BROJKE KOJE SMIJEŠ KORISTITI (Leonardove provjerene)
 
-# Output
+**Njegovi rezultati:**
+- Filmovi Ukratko prodaja: 15k + 2k TT + 1k/mj × 6mj VO = 23k ukupno (Hong Kong buyer)
+- Filmovi Ukratko timeline: kanal pokrenut 22.2.2022, prodan 4 mjeseca kasnije
+- "Jedan kanal mi je zaradio preko 50.000€ u 3 mjeseca" (verifirana stara skripta)
+- "Jedan kanal donio 20k u mjesec dana"
+- Kanali u Americi koji rade 10k mj
+- "Mleko u kesi" zarađuje skoro 20k mjesečno (2 čestitke × 200€/dan = 6k mj + sponzori 5k + box meč 5k + copyrighting 2k = ~18-20k)
 
-STROGI JSON niz, bez markdown wrap-a, bez extra teksta. 5-7 skripti pokriva cijeli tjedan (PON-NED). Mix po kanalu: 3-4 za @sidequestshr (US viralni), 2-3 za @lamon.leonardo (HR B2B). Svaka skripta MORA imati SVA polja od 1-18.
+**Njegovi studenti (Skool members):**
+- Tom: €17.000 u 3 mj, 114.9M views, +167K subs
+- Matija: €3.000/mj u 2 mj, prvi video €500+, raste 15K/sat
+- Poseidon: €15-20K/mj stable, putuje 365 dana (prvi student ever)
+- Vuk: €5.000/mj konzistentno
+- Omerbešić (Skool aktivnost): "1 video već 40k pregleda, prešao 30k jail"
+- Skool grupa: 165 plaćenih članova @ €50/mj
 
-NEMA placeholdera — svako polje ispunjeno konkretno. broll_timeline mora imati per-second timestamps. narration mora biti spreman za Max/Leo da pročita pred kameru.`;
+**Platforma plaćanja po milijun pregleda:**
+- Twitter: 8.5€
+- TikTok: 600€
+- Instagram: 0€ (apsolutno ništa)
+- Snapchat: 1000€
+- Facebook: 2000€
+- YouTube: i do 30.000€
 
-const niches = await fetchLatestNiches();
-console.log(`[script-lab] Pulled ${niches.length} niches as seed context`);
+**Big Mek deconstruction (full):**
+- Donji peciv 5c, goveđa pljeskavica 40c, salata/umak/luk 28c, srednji peciv 5c, druga pljeskavica 40c, sir/salata/umak/krastavci/luk 43c, gornji peciv 5c
+- Prodajna cijena 5€, totalna cost McDonalds-u $3.63
+
+**Cijene goriva (March 2026 ref):**
+- Dizel 1.3€ → 1.5€ → 1.8€ → potencijalno 2.4€
+- Benzin 1.66€ → 2.06€ → potencijalno 2.5€
+- 60l tank: 78€ → 90€ → 108€
+
+**Cartoon parable (1M vs 1¢):**
+- 1¢ udvostručeno svaki dan 30 dana = 5.368.709,12€
+- Dan 10 = 5.12€, Dan 20 = 5.000€, Dan 30 = 5.4M€
+
+**🚨 NE SMIJE KORISTITI:**
+- "RCZ od 50k" — RCZ NIJE 50k (Leonardo izričito tražio: NE spominji)
+- Bilo koja brojka koja nije u listi gore = ne izmišljaj. Pivotiraj na drugu provjerenu.
+
+# Hook arsenal (rotiraj formule)
+
+1. **BROJKA SHOCK** — brojka u prve 3 sek (sve iz liste gore)
+2. **IDENTITY CONTRAST** — prije Glovo, sada [konkretna stvar bez izmišljenih brojki]
+   - **VAŽNO:** Glovo origin → ODMAH prelazi u SPECIFIC mehanizam (ne motivacijski!)
+   - Primjer dobro: "Bio sam u Glovu, otkrio sam da YouTube plaća 30.000€ za milijun pregleda — evo kako sam digao prvi kanal"
+   - Primjer LOŠE: "Bio sam u Glovu, sada vozim RCZ — trebaš znati gdje su pare"
+3. **TREND-JACKING** — eksplodirajući trend (Mr Beast IG dopamine, Fruit niche)
+4. **EDU TEAR-DOWN** — Big Mek style breakdown
+5. **MECHANISM REVEAL** — psychology / ekonomija / algoritam
+6. **CASE STUDY OPEN** — student win story s detaljima
+7. **CONTROVERSY / BEEF** (rijetko, max 1×/mj)
+8. **PROBLEM-AWARE** — "Ako vam fali 500€..." (must lead to step-by-step)
+
+# CTA katalog (STROGO formatiraj točno ovako)
+
+- **"Komentirajte [TRIGGER] i pošaljem vam [resource]"** — JEDINI ispravan format DM trigger-a
+  - Triggeri: ZLATNA KNJIGA / PLAN / CLIPPING / AI / EDUKACIJA / YT / PREMIUM / INFO / NIŠA / TIKTOK / SKRIPTA / VODIČ / MEHANIZAM
+  - 🚨 NIKAD "Komentirajte X za Y" — uvijek "Komentirajte X i pošaljem vam Y"
+- **"Imate više na mom profilu"** — soft profile redirect (kad si dao 70-90% value-a već)
+- **"Uđite u moju besplatnu Telegram grupu"** — Telegram funnel
+- Premium Skool pitch (rijetko, samo nakon stat shock + case study): "Pridruži se PREMIUM grupi (€50/mj)"
+
+# 🚫 DEAD NIŠE (ne predlaži više)
+
+- **Fruit niša / Fruit Love Show** — Leonardov 2026-05-15: "fruit niša je dead". Ne pojavljuje se više u skriptama.
+
+# Strukturni pattern (svaka skripta)
+
+1. **HOOK (3 sek)** — pattern interrupt + brojka ili case study opening
+2. **VALUE TIP** (A/B/C/D) — JEDAN od 4 obavezna value tipa s konkretnim detaljima
+3. **TEASE OSTATAK** ("totalna cifra je X — cijela istina na profilu" / "ovo je prvih 4 koraka — peti koji je game-changer čeka u DM-u")
+4. **CTA** (komentar trigger ili profil)
+
+# Brand voice
+- Direktan, peer-to-peer, NIKAD submissive
+- Konkretne brojke (samo iz liste gore!)
+- Self-deprecation OK ("ne stane mi sve u 60 sek...")
+- "ekipo" / "ljudi" / "vi" / "moji studenti"
+- NIKAD generic motivational ("samo počni")
+
+# LOKACIJE DOSTUPNE
+- RCZ (auto, dok vozi) — NE spominji cijenu
+- Luksuzni stan u Rijeci
+- More
+- Za mjesec dana: Bentley
+- (Penthouse Zagreb iz arhive za retroaktivne lifestyle reveals)
+
+# OUTPUT — STROGI JSON niz, nema markdown wrap-a, 5 skripti pokriva PON-PET
+
+[{
+  "day": "PON" | "UTO" | "SRI" | "ČET" | "PET",
+  "title": "kratki internal naziv (npr. 'Filmovi Ukratko 30k story')",
+  "topic_category": "ai_chatgpt | lifestyle_reveal | edu_teardown | controversy | trend_jacking | member_win | identity_contrast | problem_aware",
+  "hook_formula": "brojka_shock | identity_contrast | trend_jacking | edu_teardown | lifestyle_reveal | controversy | problem_aware | stat_identity_anchor",
+  "duration_estimate_sec": 30-90,
+  "location_setup": "RCZ_voznja | luksuzni_stan_rijeka | more | bentley_voznja | drugo",
+  "hook_3sec": "EXACT prva rečenica (HR)",
+  "skripta": "FULL VERBATIM skripta (HR), 1-2 paragrafa, spreman da Leo čita pred kameru. Uključi pauze (na novim recima), brojke, storytelling. Završi s CTA.",
+  "cta_trigger": "ZLATNA_KNJIGA | PLAN | PREMIUM | INFO | AI | EDUKACIJA | CLIPPING | YT | NIŠA | PROFIL_REDIRECT | TELEGRAM",
+  "cta_text": "Točan tekst CTA na kraju skripte (npr. 'Komentirajte AI za cijeli vodič')",
+  "viral_prediction": 0-10,
+  "conversion_prediction": 0-10,
+  "rationale": "1 rečenica HR — zašto OVAJ format OVAJ dan u tjednu"
+}]
+
+5 skripti, balansiraj topic_category po danu. Ne ponavljaj isti hook_formula 2 dana zaredom. Mix CTA-ova (ne svi isti). Sve na hrvatskom u Leonardovom direktnom peer-tonu.`;
+
+console.log("[script-lab] Calling Claude Sonnet 4.5...");
 
 const Anthropic = (await import("@anthropic-ai/sdk")).default;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const userMsg = `Generiraj 5-7 video skripti za sljedeći tjedan (PON-NED).
-
-# Najnoviji niche drops iz Niche Hunter-a (cross-pollinate u skripte za @sidequestshr ako relevant)
-${niches.length > 0 ? niches.map(n => `## ${n.niche_name} (sat ${n.saturation_score}/10)
-${n.why_viral_now}
-Niche bending: ${n.niche_bending_explanation ?? "(n/a)"}
-Hook ideje: ${(n.hook_lines ?? []).slice(0, 3).join(" / ")}`).join("\n\n") : "(nema niche drop-ova)"}
-
-# Plima B2B context za @lamon.leonardo skripte
-- Premium klinike (≥15 leadova/mj) bottleneck = filter, ne volumen
-- Leonardo angle: AI gatekeeper Riva pred receptionkom
-- Case studies: Visodent (planiran), Stomalux (planiran)
-- CTA discovery call (15min, no pricing in video)
-
-# SideHustle B2C context za @sidequestshr skripte
-- US audience, monetiziran YT Shorts ($5-15 CPM)
-- Hook 3sek u stat shock ili pattern interrupt na ENGLESKOM
-- CTA komentar trigger + Skool link
-- 165 paying members u Skoolu, neki rade $15K+/mj
-- Top performers: Tom (€17K u 3mj), Matija (€3K/mj u 2mj)
-
-Vrati JSON niz s 5-7 skripti koje pokrivaju cijeli tjedan, mix balansiran po cilju (viral / conversion / brand_pillar). Svaka skripta MORA imati SVA polja iz system prompt-a 1-18, bez placeholdera.`;
-
-console.log("[script-lab] Calling Claude Sonnet 4.5...");
-
 const message = await anthropic.messages.create({
   model: "claude-sonnet-4-5",
-  max_tokens: 16000,
+  max_tokens: 12000,
   system: [{ type: "text", text: SCRIPT_SYSTEM }],
-  messages: [{ role: "user", content: userMsg }],
+  messages: [
+    {
+      role: "user",
+      content:
+        "Generiraj 5 skripti za sljedeći tjedan PON-PET. Mix tema, mix hook formula, mix CTA, sve na HR. Lokacije: RCZ / luksuzni stan Rijeka / more (Bentley dostupan za mjesec). Vrati JSON niz.",
+    },
+  ],
 });
 
 const block = message.content.find((b) => b.type === "text");
@@ -151,53 +204,39 @@ try {
   scripts = JSON.parse(cleaned);
 } catch (e) {
   console.error("[script-lab] JSON parse failed. Raw output:");
-  console.error(raw.slice(0, 1000));
+  console.error(raw.slice(0, 1500));
   process.exit(1);
 }
 
 const cost = (message.usage.input_tokens / 1_000_000) * 3 + (message.usage.output_tokens / 1_000_000) * 15;
 
 console.log(`\n[script-lab] Generated ${scripts.length} scripts. Cost: $${cost.toFixed(3)}`);
-console.log("=".repeat(70));
 
-// Write to MD file in Baywash style
+// Write MD
 const today = new Date().toISOString().slice(0, 10);
 const outPath = path.resolve(`./outputs/scripts-${today}.md`);
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
-let md = `# Script Lab — ${today}\n\n`;
-md += `> ${scripts.length} skripti generirano · Cost $${cost.toFixed(3)} · Mirror Baywash structure (top-broll/bottom-talent 50/50, narration s stage directions, per-second editor timeline)\n\n`;
-
-// Pregled tablica
+let md = `# Script Lab v3 — ${today}\n\n`;
+md += `> ${scripts.length} skripti za PON-PET · Cost $${cost.toFixed(3)} · HR · Mix tema/hook/CTA · Light format\n\n`;
 md += `## 📋 Pregled\n\n`;
-md += `| # | Slot | Account | Lang | Cilj | Hook formula | Dužina | Mix |\n`;
+md += `| Dan | Topic | Hook | Lokacija | Trajanje | CTA | Viral | Conv |\n`;
 md += `|---|---|---|---|---|---|---|---|\n`;
-scripts.forEach((s, i) => {
-  md += `| ${i + 1} | ${s.slot_label ?? "?"} | ${s.target_account ?? "?"} | ${s.target_language ?? "?"} | ${s.script_goal ?? "?"} | ${s.hook_formula ?? "?"} | ${s.duration_estimate_sec ?? "?"}s | ${s.mix_tag ?? "?"} |\n`;
+scripts.forEach((s) => {
+  md += `| **${s.day}** | ${s.topic_category} | ${s.hook_formula} | ${s.location_setup} | ${s.duration_estimate_sec}s | ${s.cta_trigger} | ${s.viral_prediction}/10 | ${s.conversion_prediction}/10 |\n`;
 });
 md += `\n---\n\n`;
 
-// Per-script detail
-scripts.forEach((s, i) => {
-  md += `## 🎬 SKRIPTA ${i + 1} — "${s.title ?? "?"}"\n\n`;
-  md += `**Account:** ${s.target_account} | **Language:** ${s.target_language} | **Audience:** ${s.target_audience}\n`;
-  md += `**Slot:** ${s.slot_label} | **Duration:** ${s.duration_estimate_sec}s | **Mix:** ${s.mix_tag}\n`;
-  md += `**Hook formula:** ${s.hook_formula} | **Goal:** ${s.script_goal}\n`;
-  md += `**Viral prediction:** ${s.viral_prediction}/10 · **Conversion:** ${s.conversion_prediction}/10\n\n`;
-  md += `**Hook 3-sec:**\n> ${s.hook_3sec}\n\n`;
-  md += `### Narration\n${s.narration_md ?? "(missing)"}\n\n`;
-  md += `### Top-broll timeline\n${s.broll_timeline_md ?? "(missing)"}\n\n`;
-  md += `### Text overlays\n${s.text_overlays_md ?? "(missing)"}\n\n`;
-  md += `### Caption\n${s.caption_md ?? "(missing)"}\n\n`;
-  md += `### Production notes\n${s.production_notes_md ?? "(missing)"}\n\n`;
+scripts.forEach((s) => {
+  md += `## 🎬 ${s.day} — "${s.title}"\n\n`;
+  md += `**Topic:** ${s.topic_category} · **Hook formula:** ${s.hook_formula} · **Lokacija:** ${s.location_setup} · **Trajanje:** ${s.duration_estimate_sec}s\n`;
+  md += `**Viral:** ${s.viral_prediction}/10 · **Conversion:** ${s.conversion_prediction}/10\n\n`;
+  md += `### 🎯 Hook (3 sek)\n> ${s.hook_3sec}\n\n`;
+  md += `### 📝 Skripta\n${s.skripta}\n\n`;
+  md += `### 📲 CTA\n**Trigger:** \`${s.cta_trigger}\`\n\n${s.cta_text}\n\n`;
   md += `**Rationale:** ${s.rationale}\n\n---\n\n`;
 });
 
 fs.writeFileSync(outPath, md, "utf8");
-console.log(`\n[script-lab] Output written to ${outPath}`);
-console.log(`\n[script-lab] First 2 scripts preview:\n`);
-scripts.slice(0, 2).forEach((s, i) => {
-  console.log(`#${i + 1} [${s.target_account}] ${s.title}`);
-  console.log(`  Hook: ${s.hook_3sec?.slice(0, 100)}`);
-  console.log(`  Viral: ${s.viral_prediction}/10 · Conv: ${s.conversion_prediction}/10\n`);
-});
+console.log(`\n[script-lab] Output: ${outPath}\n`);
+scripts.forEach((s) => console.log(`  ${s.day}: ${s.title} (${s.hook_formula}, V${s.viral_prediction}/C${s.conversion_prediction})`));

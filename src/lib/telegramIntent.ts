@@ -26,6 +26,7 @@ export type TelegramIntent =
   | "yt_youtube"         // YouTube biznis intent
   | "mentorstvo"         // Direct mentorship request
   | "info"               // Generic info / "tell me more"
+  | "quiz_request"       // "QUIZ", "PLAN", "TEST" — wants personalized AI plan
   | "premium_join"       // "Pridružio sam se / Joined" confirmation
   | "premium_question"   // Question about PREMIUM tier (price, content, what's inside)
   | "qualifying_answer"  // Free-form answer to one of the 3 qualifying questions
@@ -75,6 +76,18 @@ const REGEX_PATTERNS: Array<{ pattern: RegExp; intent: TelegramIntent }> = [
   { pattern: /^info$/i, intent: "info" },
   { pattern: /\bvi[šs]e\s+info\b/i, intent: "info" },
   { pattern: /\brec[ie]?\s+(mi\s+)?vi[šs]e\b/i, intent: "info" },
+
+  // Quiz / personalized plan trigger — Hormozi-style funnel from D1.
+  // Users who comment "QUIZ" / "PLAN" / "TEST" / "NIŠA" on viral video
+  // posts get this intent → bot drops the /quiz link. NIŠA added per
+  // ČET skripta (D5) which uses NIŠA as its CTA word.
+  { pattern: /^quiz\b/i, intent: "quiz_request" },
+  { pattern: /^plan\b/i, intent: "quiz_request" },
+  { pattern: /^test\b/i, intent: "quiz_request" },
+  { pattern: /^niš[ae]\b/i, intent: "quiz_request" },
+  { pattern: /^nis[ae]\b/i, intent: "quiz_request" },
+  { pattern: /\bosobni\s+plan\b/i, intent: "quiz_request" },
+  { pattern: /\bquiz\b.*\b(link|po[šs]alji|gdje)\b/i, intent: "quiz_request" },
 
   // Escalation
   { pattern: /\bleonardo\s+(osobno|direktno|li[čc]no)\b/i, intent: "escalate_to_leo" },

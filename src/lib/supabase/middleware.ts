@@ -35,6 +35,10 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/plima") ||
+    // Quiz AI funnel — leads come from TT/IG/DM and must access without auth.
+    // /quiz form, /quiz/result/[id] result page, /api/quiz/* submit/fetch.
+    pathname.startsWith("/quiz") ||
+    pathname.startsWith("/api/quiz") ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/inngest") ||

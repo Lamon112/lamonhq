@@ -253,6 +253,44 @@ export function tplOptOut(_vars: TemplateVars): RenderedTemplate {
 }
 
 /* =====================================================================
+ * TEMPLATE 10 — Quiz funnel link (cold "QUIZ" / "PLAN" / "TEST" trigger)
+ *
+ * Per Leonardov 2026-05-15 strategic pivot: Telegram→Skool funnel
+ * upgraded to a personalized AI quiz funnel (Hormozi-style). Instead
+ * of 3 qualifying Q's → PDF, the bot drops the /quiz link directly.
+ * The quiz captures 10 fields, Claude generates a personalized 30-day
+ * plan + matched case study, and the result page upsells Skool €50/mj.
+ *
+ * Why no qualifying first: the quiz IS the qualifying flow. Asking 3
+ * questions before the link adds friction without value — quiz captures
+ * everything those 3 Q's would, plus 7 more.
+ *
+ * Stage transition: → awaiting (user clicks link, completes quiz, then
+ * we either auto-DM follow-up via the QuizFunnelPanel or wait for them
+ * to come back having clicked the Skool CTA).
+ * ===================================================================== */
+export function tplQuizLink(vars: TemplateVars): RenderedTemplate {
+  const greeting = vars.firstName ? `Top ${vars.firstName}!` : "Top!";
+  return {
+    templateId: "quiz_link_v1",
+    stageAfter: "awaiting",
+    body: `${greeting} 🎯
+
+Imam puno bolje od PDF-a — AI-powered osobni plan za TVOJ side hustle put.
+
+10 pitanja (60 sek), AI ti generira:
+✅ Tvoj score 0-100 (gdje si trenutno)
+✅ Top 3 prepreke koje te drže natrag
+✅ 30-dnevni plan prilagođen tvojim satima/budžetu/cilju
+✅ Koji case study (Tom 17K, Matija 3K, Vuk 5K, Borna…) ti je najbliži
+
+→ ${vars.context ?? "https://lamon-hq.vercel.app/quiz?utm_source=telegram"}
+
+Nakon plana — javi se ovdje s pitanjima ili screenshotom rezultata.`,
+  };
+}
+
+/* =====================================================================
  * TEMPLATE 9 — Ghost nurture bump (24h-72h since last user reply)
  *
  * Sent ONCE if user got pitch but didn't respond for 24-72h. After
@@ -303,6 +341,9 @@ export function routeTemplate(ctx: RouteContext): RenderedTemplate | null {
   // STAGE: NEW — first contact
   if (currentStage === "new") {
     if (intent === "greeting") return tplGreetingResponse(vars);
+    // Quiz request short-circuits — give them the link immediately.
+    // Quiz IS the qualifying flow; no need to ask 3 Q's first.
+    if (intent === "quiz_request") return tplQuizLink(vars);
     if (
       intent === "zlatna_knjiga" ||
       intent === "yt_youtube" ||
@@ -360,6 +401,9 @@ export function routeTemplate(ctx: RouteContext): RenderedTemplate | null {
     }
     if (intent === "premium_join") return tplMemberWelcome(vars);
     if (intent === "mentorstvo") return tplMentorHandover(vars);
+    // Quiz request from a user already in pitch stage — they want to
+    // re-do the quiz or share with friends. Give the link again.
+    if (intent === "quiz_request") return tplQuizLink(vars);
   }
 
   // STAGE: MEMBER — already in PREMIUM

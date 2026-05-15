@@ -45,6 +45,7 @@ import {
   type InboxStats,
   type TelegramStage,
 } from "@/app/actions/telegramInbox";
+import { QuizFunnelPanel } from "./QuizFunnelPanel";
 
 interface ChannelStat {
   platform: string;
@@ -112,7 +113,7 @@ const MENTORSHIP_SLOTS: MentorshipSlot[] = [
 
 export function SkoolOpsPanel() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "inbox" | "mentorship" | "content"
+    "overview" | "inbox" | "mentorship" | "content" | "quiz"
   >("overview");
 
   const totalUnanswered = CHANNELS.reduce(
@@ -210,12 +211,19 @@ export function SkoolOpsPanel() {
         >
           📅 Content kalendar
         </TabBtn>
+        <TabBtn
+          active={activeTab === "quiz"}
+          onClick={() => setActiveTab("quiz")}
+        >
+          🎯 Quiz Funnel
+        </TabBtn>
       </div>
 
       {activeTab === "overview" && <OverviewTab channels={CHANNELS} />}
       {activeTab === "inbox" && <InboxTab channels={CHANNELS} />}
       {activeTab === "mentorship" && <MentorshipTab slots={MENTORSHIP_SLOTS} />}
       {activeTab === "content" && <ContentTab />}
+      {activeTab === "quiz" && <QuizFunnelPanel />}
     </div>
   );
 }
