@@ -13,8 +13,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const BEFORE_IMG: string | null = "/baywash/paint-correction-before.jpg";
-const AFTER_IMG: string | null = "/baywash/paint-correction-after.jpg";
+const BEFORE_IMG: string | null = null; // CSS panel until real photo lands
+const AFTER_IMG: string | null = null;
 
 export function BeforeAfterSlider() {
   const [pos, setPos] = useState(50); // percent
@@ -141,55 +141,152 @@ export function BeforeAfterSlider() {
   );
 }
 
-/** CSS-only "swirl-damaged paint" placeholder until real photo lands. */
+/**
+ * CSS-only car panel "BEFORE" — dull, hazy, swirl-damaged paint.
+ *
+ * Visual cues that it IS a car panel (not generic gradient):
+ *  - Curved top edge highlight = roofline reflection
+ *  - Horizontal crease across middle = body line (door/fender)
+ *  - Subtle door handle hint right side
+ *  - Visible micro-swirls + scratches via SVG noise
+ *  - Dull, low-contrast paint with hazy haze layer
+ */
 function PlaceholderBefore() {
   return (
-    <div className="relative h-full w-full bg-neutral-700">
-      <div
-        className="absolute inset-0 opacity-90"
-        style={{
-          background: `
-            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
-            radial-gradient(circle at 70% 60%, rgba(255,255,255,0.06) 0%, transparent 40%),
-            radial-gradient(circle at 50% 80%, rgba(255,255,255,0.04) 0%, transparent 30%),
-            repeating-conic-gradient(from 0deg at 30% 40%, transparent 0deg, rgba(255,255,255,0.04) 5deg, transparent 10deg),
-            repeating-conic-gradient(from 45deg at 65% 65%, transparent 0deg, rgba(255,255,255,0.03) 4deg, transparent 8deg),
-            linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 60%, #2a2a2a 100%)
-          `,
-        }}
-      />
+    <div className="relative h-full w-full overflow-hidden bg-neutral-700">
+      {/* Base dull metallic paint */}
       <div
         className="absolute inset-0"
         style={{
-          background:
-            "repeating-linear-gradient(15deg, transparent 0px, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 3px)",
+          background: `
+            radial-gradient(ellipse at 50% 110%, rgba(40,40,40,0.6) 0%, transparent 50%),
+            linear-gradient(180deg,
+              #4a4a4a 0%,
+              #6b6b6b 15%,
+              #5a5a5a 35%,
+              #4a4a4a 50%,
+              #3a3a3a 75%,
+              #2a2a2a 100%
+            )
+          `,
         }}
       />
+      {/* Roofline / top highlight (curved car body cue) */}
+      <div
+        className="absolute inset-x-0 top-0 h-1/4"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(220,220,220,0.35) 0%, rgba(180,180,180,0.15) 40%, transparent 100%)",
+        }}
+      />
+      {/* Body line crease across middle (door/fender body line) */}
+      <div
+        className="absolute inset-x-0 top-1/2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.6) 80%, transparent 100%)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.15)",
+        }}
+      />
+      {/* Door handle hint (right side, ~60% down) */}
+      <div className="absolute right-[8%] top-[58%] h-2 w-12 rounded-full bg-black/40 shadow-[0_1px_0_rgba(255,255,255,0.1)]" />
+      {/* SWIRL MARKS — multi-layer conic patterns simulating buffer trails */}
+      <div
+        className="absolute inset-0 opacity-70 mix-blend-overlay"
+        style={{
+          background: `
+            repeating-conic-gradient(from 0deg at 20% 30%, transparent 0deg, rgba(255,255,255,0.18) 4deg, transparent 8deg),
+            repeating-conic-gradient(from 45deg at 65% 65%, transparent 0deg, rgba(255,255,255,0.12) 3deg, transparent 7deg),
+            repeating-conic-gradient(from 90deg at 80% 25%, transparent 0deg, rgba(255,255,255,0.10) 5deg, transparent 11deg)
+          `,
+        }}
+      />
+      {/* Linear micro-scratches */}
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          background:
+            "repeating-linear-gradient(15deg, transparent 0px, transparent 2px, rgba(255,255,255,0.12) 2px, rgba(255,255,255,0.12) 3px)",
+        }}
+      />
+      {/* Haze overlay — reduces contrast (dull, oxidized paint) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-white/[0.08]" />
     </div>
   );
 }
 
-/** CSS-only "mirror finish" placeholder. */
+/**
+ * CSS-only car panel "AFTER" — Stage 4 mirror finish, deep gloss, reflection.
+ *
+ * Cues that it IS a polished car panel:
+ *  - Same curved roofline + body line + door handle as BEFORE (continuity)
+ *  - Deep saturated reflection (dark sky + ground horizon)
+ *  - Sharp specular highlight sweep (chrome/wet look)
+ *  - Soft yellow accent reflection (Baywash signature in the reflection)
+ *  - NO swirl marks, NO scratches — buttery smooth
+ */
 function PlaceholderAfter() {
   return (
-    <div className="relative h-full w-full bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-black">
+      {/* Base deep gloss black with subtle vertical gradient (sky reflecting down) */}
       <div
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.25) 0%, transparent 40%),
-            radial-gradient(ellipse at 70% 80%, rgba(250,204,21,0.15) 0%, transparent 50%),
-            linear-gradient(135deg, #1a1a1a 0%, #050505 40%, #0f0f0f 100%)
+            linear-gradient(180deg,
+              #1a1f2e 0%,
+              #0f1422 25%,
+              #050810 50%,
+              #0a0e1c 75%,
+              #1a1f2e 100%
+            )
           `,
         }}
       />
-      {/* Reflective shine sweep */}
+      {/* Horizon line — environment reflection (where ground meets sky in panel reflection) */}
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-x-0 top-[45%] h-px"
         style={{
           background:
-            "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)",
+            "linear-gradient(90deg, transparent 0%, rgba(120,140,180,0.5) 30%, rgba(140,160,200,0.7) 50%, rgba(120,140,180,0.5) 70%, transparent 100%)",
         }}
+      />
+      {/* Roofline highlight (curved car body cue) */}
+      <div
+        className="absolute inset-x-0 top-0 h-1/4"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(180,200,240,0.4) 0%, rgba(100,120,160,0.15) 60%, transparent 100%)",
+        }}
+      />
+      {/* Body line crease across middle (same position as Before for continuity) */}
+      <div
+        className="absolute inset-x-0 top-1/2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.7) 20%, rgba(0,0,0,0.8) 80%, transparent 100%)",
+          boxShadow: "0 1px 0 rgba(200,220,255,0.25)",
+        }}
+      />
+      {/* Door handle hint */}
+      <div className="absolute right-[8%] top-[58%] h-2 w-12 rounded-full bg-black shadow-[0_1px_0_rgba(200,220,255,0.3)]" />
+      {/* SPECULAR HIGHLIGHT — diagonal sharp light sweep (mirror finish signature) */}
+      <div
+        className="absolute inset-0 opacity-60"
+        style={{
+          background:
+            "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%)",
+        }}
+      />
+      {/* Yellow Baywash reflection accent (top-right) */}
+      <div
+        aria-hidden="true"
+        className="absolute right-[10%] top-[15%] h-16 w-24 rounded-full bg-yellow-300/30 blur-2xl"
+      />
+      {/* Cool blue garage light reflection (bottom-left) */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-[20%] left-[15%] h-20 w-32 rounded-full bg-blue-300/15 blur-3xl"
       />
     </div>
   );

@@ -632,54 +632,62 @@ function InternationalSection() {
             </div>
           </Reveal>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
+            {/* Hero card — REAL Baywash customer (Ferrari from Max's FB) */}
+            <Reveal>
+              <div
+                className="group relative aspect-[16/10] overflow-hidden rounded-3xl border border-white/10 bg-neutral-800"
+                style={{
+                  backgroundImage: "url(/baywash/ferrari-cover.jpg)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                <div className="absolute inset-0 ring-0 ring-yellow-400/0 transition-all duration-300 group-hover:ring-2 group-hover:ring-yellow-400/40" />
+                <div className="absolute right-4 top-4 rounded-full bg-yellow-400 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-black">
+                  Real customer
+                </div>
+                <div className="absolute inset-x-6 bottom-6 flex flex-col justify-end">
+                  <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
+                    🇭🇷 Iz Baywash garaže · Rijeka
+                  </div>
+                  <div className="mt-1 text-xl font-bold leading-tight text-white">
+                    Ferrari · cijeli 47-koraka sustav
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+
+            {/* 3 customer-quote cards — country + verbatim quote (no fake stock cars) */}
             {[
               {
-                car: "Ferrari · iz Baywash garaže",
-                origin: "🇭🇷 Rijeka",
-                img: "/baywash/ferrari-cover.jpg",
-                note: "Real customer",
+                flag: "🇩🇪",
+                country: "Njemačka",
+                quote: "Vozim 5.000 km zbog Stage 4. U Münchenu ne rade ovo.",
               },
               {
-                car: "BMW M5 Competition",
-                origin: "🇦🇪 Dubai",
-                img: "/baywash/bmw-m5.jpg",
+                flag: "🇸🇦",
+                country: "Saudi Arabia",
+                quote: "Riyadh → Rijeka. Artdeshine NGC+ je razlog što sam ovdje.",
               },
               {
-                car: "Mercedes-AMG GT",
-                origin: "🇸🇦 Saudi Arabia",
-                img: "/baywash/mercedes-amg.jpg",
-              },
-              {
-                car: "Porsche 911 Turbo S",
-                origin: "🇮🇹 Italija",
-                img: "/baywash/porsche-911.jpg",
+                flag: "🇮🇹",
+                country: "Italija",
+                quote: "Vraćam se 4× godišnje za maintenance. Klijent već 5 godina.",
               },
             ].map((item, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <div
-                  className="group relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-neutral-800"
-                  style={{
-                    backgroundImage: `url(${item.img})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                >
-                  {/* Bottom gradient for label legibility */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent transition-opacity group-hover:opacity-90" />
-                  {/* Subtle yellow ring on hover */}
-                  <div className="absolute inset-0 ring-0 ring-yellow-400/0 transition-all duration-300 group-hover:ring-2 group-hover:ring-yellow-400/40" />
-                  {item.note ? (
-                    <div className="absolute right-3 top-3 rounded-full bg-yellow-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-black">
-                      {item.note}
-                    </div>
-                  ) : null}
-                  <div className="absolute inset-x-5 bottom-5 flex flex-col justify-end">
-                    <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
-                      {item.origin}
-                    </div>
-                    <div className="mt-1 text-base font-bold leading-tight text-white">
-                      {item.car}
+              <Reveal key={i} delay={(i + 1) * 0.08}>
+                <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-neutral-900 to-black p-5 transition hover:border-yellow-400/40">
+                  <div className="flex items-start gap-4">
+                    <div className="text-3xl">{item.flag}</div>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+                        {item.country}
+                      </div>
+                      <p className="mt-1.5 text-sm leading-relaxed text-neutral-200 sm:text-base">
+                        &ldquo;{item.quote}&rdquo;
+                      </p>
                     </div>
                   </div>
                 </div>
