@@ -53,11 +53,13 @@ Search-only (Cowork data, ne profile-verified — flagged `verify_pre_send`):
 ```
 Pozdrav Bruno,
 
-Vidio sam da si OTW i da iza tebe stoji Sales Manager rola kod KAZ d.o.o. — točan profil koji tražim. Možda nije baš full-time, ali realan side income €1.000-2.000/mj uz fleksibilan raspored — može preći u full-time ako klikne.
+Vidio sam da si OTW i da iza tebe stoji Sales Manager rola kod KAZ d.o.o. — točan profil koji tražim.
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu. Trial tjedan bez obveza.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income uz tvoj postojeći raspored. Može preći u full-time ako klikne.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 i 14-16:30).
+Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
+
+Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sam).
 
 Imamo Neda i Sebastijana zajedničke — 10 min Zoom da pokažem što i kako?
 
@@ -91,11 +93,11 @@ Pozdrav Ines,
 
 Vidio sam tvoj profil — SDR @ Hypefy, plus Nestlé sales background prije toga, i imamo 9 zajedničkih kontakata (Pavla, Janko i ekipa). Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
 
-Tražim performance-based cold caller-a — €200 po zatvorenom klijentu (cash 7 dana). Realna matematika: 5 closeova mjesečno = €1.000+, plus bonus po kvalitetnom Zoomu nakon ramp-upa.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Hypefy uloge. Performance model: €200 po zatvorenom klijentu, cash 7 dana.
 
-Skripte, lead lista, CRM sustav — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
-Side income na top tvoje Hypefy uloge — 10 min Zoom da pokažem materijal?
+10 min Zoom da pokažem materijal?
 
 Leo
 ```
@@ -132,11 +134,11 @@ Pozdrav Anamaria,
 
 Vidio sam OTW + sales rep iskustvo @ Avon — direct outbound consultative discipline + komunikacijska edukacija sa Bernays-a. Točan mindset koji tražim.
 
-Možda nije baš full-time, ali realan side income €1.000-2.000/mj uz fleksibilan raspored — može preći u full-time ako klikne.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, 100% remote (Hybrid OK).
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu. Trial tjedan bez obveza.
+Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 i 14-16:30). 100% remote (Hybrid OK).
+Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sama).
 
 Imamo Pavlu, Martinu i još 2 zajednička kontakta. 10 min Zoom da pokažem materijal?
 
@@ -174,9 +176,9 @@ Vidim da imaš medical sales experience (Beiersdorf sada, Sabex prije toga) — 
 
 Vodim Lamon Agency — marketing partner za privatne stomatološke klinike u HR. Sklopio sam ugovore s nekoliko premium ordinacija i sada gradim outreach tim koji razumije industriju.
 
-Model: €200 po zatvorenom klijentu, cash 7 dana, tier bonus za bolje pakete. Tipičan caller koji vodi ramp-up zarađuje ~€1.500-2.000/mj.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Beiersdorf uloge. Sve remote — Split radi savršeno. €200 po zatvorenom klijentu, cash 7 dana, tier bonus za bolje pakete.
 
-Znati doktora-vlasnika kako govoriti je 80% bitke. Ti to već imaš. Sve remote — Split radi savršeno.
+Znati doktora-vlasnika kako govoriti je 80% bitke. Ti to već imaš.
 
 Imaš 10 min za Zoom da prođemo materijale?
 
@@ -211,9 +213,9 @@ Pozdrav Ivana,
 
 Vidio sam tvoj profil — BDR @ OB2B, "Finding your new partners" tagline (mindset partner discovery-a je 1:1 zatvaranje retainer klijenta). Plus imamo Martinu, Neda i još 4 zajednička kontakta. Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
 
-Tražim performance-based cold caller-a — €200 po zatvorenom klijentu (cash 7 dana). Realna matematika: 5 closeova mjesečno = €1.000+, plus bonus po kvalitetnom Zoomu nakon ramp-upa.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje OB2B uloge. €200 po zatvorenom klijentu, cash 7 dana.
 
-Skripte, lead lista, CRM sustav — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
 Zanima te 10 min Zoom da pokažem materijal?
 
@@ -246,11 +248,11 @@ Pozdrav Lara,
 
 Vidio sam da si OTW i da iza tebe stoji Sales Manager track s record-setting sales figures + territory expansion — to je nivo performansi koji tražim.
 
-Možda nije baš full-time, ali realan side income €1.000-2.000/mj uz fleksibilan raspored — može preći u full-time ako klikne. Karlovac fine, sve ide remote.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income uz fleksibilan raspored. Karlovac fine, sve ide remote. Može preći u full-time ako klikne.
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu. Trial tjedan bez obveza.
+Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 i 14-16:30).
+Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sama).
 
 10 min Zoom da pokažem materijal?
 
@@ -284,11 +286,11 @@ Pozdrav Igor,
 
 Vidio sam da si OTW i da iza tebe stoji Samsung Senior Ambassador rola @ DEKRA — prodavanje premium tech brenda u retail/B2B kontekstu je točno mindset koji tražim.
 
-Možda nije baš full-time, ali realan side income €1.000-2.000/mj uz fleksibilan raspored — može preći u full-time ako klikne.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income uz fleksibilan raspored. Može preći u full-time ako klikne.
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu. Trial tjedan bez obveza.
+Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 i 14-16:30).
+Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sam).
 
 10 min Zoom da pokažem što i kako?
 
@@ -322,9 +324,9 @@ Pozdrav Iva,
 
 Vidio sam tvoj profil — Operations & Sales Manager + Industrial Engineering MSc + sada SDR @ HotelSync. Hybrid analytical+sales background je neobičan i točno mindset koji treba consultative selling u premium segmentu. Plus imamo Miju Radovcic i još 3 zajednička kontakta. Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
 
-Tražim performance-based cold caller-a — €200 po zatvorenom klijentu (cash 7 dana). Realna matematika: 5 closeova mjesečno = €1.000+, plus bonus po kvalitetnom Zoomu nakon ramp-upa.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje HotelSync uloge. €200 po zatvorenom klijentu, cash 7 dana.
 
-Skripte, lead lista, CRM sustav — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
 Zanima te 10 min Zoom da pokažem materijal?
 
@@ -359,7 +361,7 @@ Vidim da imaš Sales Officer iskustvo pri Medical Intertrade — domaća medical
 
 Vodim Lamon Agency — marketing partner za privatne stomatološke klinike u HR. Sklopio sam ugovore s nekoliko premium ordinacija i sada gradim outreach tim koji razumije industriju.
 
-Model: €200 po zatvorenom klijentu, cash 7 dana, tier bonus za bolje pakete. Tipičan caller koji vodi ramp-up zarađuje ~€1.500-2.000/mj.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Medical Intertrade uloge. €200 po zatvorenom klijentu, cash 7 dana, tier bonus za bolje pakete.
 
 Znati doktora-vlasnika kako govoriti je 80% bitke. Ti to već imaš.
 
@@ -395,9 +397,9 @@ Vidio sam tvoj profil — SDR @ Turizam Info, B2B konzultativna prodaja u touris
 
 Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
 
-Tražim performance-based cold caller-a — €200 po zatvorenom klijentu (cash 7 dana). Realna matematika: 5 closeova mjesečno = €1.000+, plus bonus po kvalitetnom Zoomu nakon ramp-upa.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Turizam Info uloge. €200 po zatvorenom klijentu, cash 7 dana.
 
-Skripte, lead lista, CRM sustav — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
 Zanima te 10 min Zoom da pokažem materijal?
 
@@ -476,7 +478,7 @@ Niži score, koristi ako prvih 10 ne odgovori u 7 dana:
 
 4. **Skratiti template za Connect+note (max 280 chars):**
    ```
-   Pozdrav [Ime], vidio sam [signal]. Radim premium marketing agenciju za privatne klinike (dental fokus, €1.500/mj retainer). Tražim cold caller-a — €200/close, cash 7 dana, trial tjedan bez obveza. 10 min Zoom da pokažem materijal? — Leo
+   Pozdrav [Ime], vidio sam [signal]. Radim premium marketing agenciju za dental klinike. 1-2h posla dnevno = €1-2K/mj. €200/close, cash 7 dana, trial bez obveza. 10 min Zoom? — Leo
    ```
 
 5. **Rate limit**: 7-9 min spacing između DMs. Max 15 DM/dan. Ako LinkedIn flag → STOP, retry sutra.
