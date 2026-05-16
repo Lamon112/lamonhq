@@ -94,14 +94,14 @@ function pickKind(elapsedSec: number): ItemKind {
   return "small";
 }
 
-const ITEM_STYLES: Record<ItemKind, { class: string; label: string }> = {
-  small: { class: "mr-coin mr-coin-bronze", label: "€10" },
-  medium: { class: "mr-coin mr-coin-silver", label: "€100" },
+const ITEM_STYLES: Record<ItemKind, { class: string; label: string; sub?: string }> = {
+  small: { class: "mr-coin mr-coin-bronze", label: "10", sub: "€" },
+  medium: { class: "mr-coin mr-coin-silver", label: "100", sub: "€" },
   big: { class: "mr-bar", label: "€1K" },
   huge: { class: "mr-bills", label: "€10K" },
   legendary: { class: "mr-briefcase", label: "€100K" },
   tax: { class: "mr-tax", label: "TAX" },
-  scam: { class: "mr-scam", label: "SCAM" },
+  scam: { class: "mr-scam", label: "FOREX", sub: "100%" },
   debt: { class: "mr-debt", label: "DEBT" },
 };
 
@@ -312,13 +312,15 @@ export function MoneyRushGame() {
           spawned: {debugInfo.spawned} · alive: {debugInfo.alive}
         </div>
 
-        {/* Items */}
+        {/* Items — wrapper is 96x96 transparent hitbox; visual coin/card
+            centered inside. Bigger touch target = no missed taps on mobile
+            even when items move fast. Click handler on wrapper, not visual. */}
         {items.map((item) => {
           const sty = ITEM_STYLES[item.kind];
           return (
             <div
               key={item.id}
-              className={`mr-item ${sty.class} ${paused ? "mr-paused" : ""}`}
+              className={`mr-hitbox ${paused ? "mr-paused" : ""}`}
               style={{
                 left: `${item.xPercent}%`,
                 animationDuration: `${item.fallDuration}s`,
@@ -330,7 +332,10 @@ export function MoneyRushGame() {
               }}
               onAnimationEnd={() => onItemAnimEnd(item.id)}
             >
-              <span className="mr-label">{sty.label}</span>
+              <div className={`mr-visual ${sty.class}`}>
+                {sty.sub && <span className="mr-sub">{sty.sub}</span>}
+                <span className="mr-label">{sty.label}</span>
+              </div>
             </div>
           );
         })}
@@ -406,12 +411,15 @@ export function MoneyRushGame() {
             linear-gradient(180deg, #1a1a24 0%, #0e0e16 50%, #06060a 100%);
         }
 
-        .mr-item {
+        /* === Hitbox wrapper — generous 96x96 invisible touch area.
+              Visual coin/card sits centered inside. Mobile thumbs find
+              this much easier than a 64x64 visual hit area. === */
+        .mr-hitbox {
           position: absolute;
           top: 0;
-          width: 64px;
-          height: 64px;
-          margin-left: -32px;
+          width: 96px;
+          height: 96px;
+          margin-left: -48px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -419,6 +427,7 @@ export function MoneyRushGame() {
           touch-action: manipulation;
           user-select: none;
           -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
           will-change: transform;
           animation-name: mr-fall;
           animation-timing-function: linear;
@@ -428,85 +437,121 @@ export function MoneyRushGame() {
           animation-play-state: paused !important;
         }
         @keyframes mr-fall {
-          from { transform: translate3d(0, -80px, 0); }
+          from { transform: translate3d(0, -100px, 0); }
           to { transform: translate3d(0, 110vh, 0); }
+        }
+
+        /* Visual sits inside hitbox — pointer-events: none so all clicks
+           hit the wrapper instead. */
+        .mr-visual {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
         }
 
         .mr-label {
           font-weight: 900;
-          font-size: 13px;
-          text-align: center;
           line-height: 1;
+          letter-spacing: -0.02em;
+        }
+        .mr-sub {
+          font-weight: 700;
+          line-height: 1;
+          opacity: 0.85;
         }
 
-        /* Coins */
+        /* === €10 + €100 COINS — clear money look, prominent value === */
         .mr-coin {
           border-radius: 50%;
           box-shadow:
-            inset -2px -3px 6px rgba(0, 0, 0, 0.5),
-            inset 2px 3px 6px rgba(255, 255, 255, 0.4),
-            0 4px 12px rgba(0, 0, 0, 0.4);
+            inset -3px -4px 8px rgba(0, 0, 0, 0.55),
+            inset 3px 4px 6px rgba(255, 255, 255, 0.5),
+            0 3px 8px rgba(0, 0, 0, 0.45);
+          position: relative;
+        }
+        /* Decorative outer ring (engraved coin edge) */
+        .mr-coin::before {
+          content: "";
+          position: absolute;
+          inset: 4px;
+          border-radius: 50%;
+          border: 1.5px dashed rgba(0, 0, 0, 0.25);
+          pointer-events: none;
+        }
+        .mr-coin .mr-sub {
+          font-size: 14px;
+          margin-bottom: -2px;
         }
         .mr-coin-bronze {
-          background: radial-gradient(circle at 35% 30%, #fdebb3 0%, #c9a84c 50%, #5e4717 100%);
-          color: #1a1209;
+          width: 56px; height: 56px;
+          background: radial-gradient(circle at 32% 28%, #ffe1a0 0%, #d59a3c 45%, #7a5418 100%);
+          color: #2a1808;
         }
+        .mr-coin-bronze .mr-label { font-size: 18px; }
         .mr-coin-silver {
-          background: radial-gradient(circle at 35% 30%, #fff5d8 0%, #e0bf5e 50%, #5a4318 100%);
-          color: #1a1209;
+          width: 70px; height: 70px;
+          background: radial-gradient(circle at 32% 28%, #fff7c8 0%, #e8c869 45%, #5a4318 100%);
+          color: #2a1808;
         }
+        .mr-coin-silver .mr-label { font-size: 22px; }
 
-        /* Gold bar */
+        /* === €1K Gold bar === */
         .mr-bar {
-          width: 80px; margin-left: -40px; height: 50px;
+          width: 78px; height: 44px;
           background: linear-gradient(180deg, #ffe896 0%, #e0bf5e 40%, #a07d2c 80%, #6b4f15 100%);
           clip-path: polygon(5% 5%, 95% 5%, 90% 95%, 10% 95%);
           color: #fff7d6;
-          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
-          text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
         }
+        .mr-bar .mr-label { font-size: 16px; }
 
-        /* Bills stack */
+        /* === €10K Bills stack === */
         .mr-bills {
-          width: 80px; height: 56px; margin-left: -40px;
+          width: 78px; height: 52px;
           background: linear-gradient(180deg, #36955b 0%, #1a5e3a 100%);
           color: #d2f5dc;
           border: 1.5px solid rgba(255, 255, 255, 0.4);
           border-radius: 4px;
           box-shadow:
-            6px 6px 0 -1px #2a7a4a,
-            10px 10px 0 -2px #1f5f3a,
-            14px 14px 18px rgba(0, 0, 0, 0.5);
+            5px 5px 0 -1px #2a7a4a,
+            9px 9px 0 -2px #1f5f3a,
+            12px 12px 14px rgba(0, 0, 0, 0.4);
         }
+        .mr-bills .mr-label { font-size: 16px; }
 
-        /* Briefcase */
+        /* === €100K Briefcase legendary === */
         .mr-briefcase {
-          width: 84px; height: 64px; margin-left: -42px;
+          width: 84px; height: 60px;
           background: linear-gradient(180deg, #3a1830 0%, #2a0e22 50%, #1a0614 100%);
           border: 1.5px solid rgba(255, 108, 216, 0.7);
           border-radius: 6px;
           color: #ff6cd8;
-          box-shadow: 0 0 30px rgba(255, 108, 216, 0.5);
+          box-shadow:
+            0 0 24px rgba(255, 108, 216, 0.5),
+            inset 0 1px 0 rgba(255, 108, 216, 0.6);
         }
         .mr-briefcase::after {
           content: "";
           position: absolute;
-          left: 50%; top: 14px; margin-left: -10px;
-          width: 20px; height: 8px;
+          left: 50%; top: 12px; margin-left: -10px;
+          width: 20px; height: 7px;
           background: #e0bf5e;
           border-radius: 1px;
         }
+        .mr-briefcase .mr-label { font-size: 14px; padding-top: 8px; }
 
-        /* TAX */
+        /* === TAX === */
         .mr-tax {
-          width: 70px; height: 56px; margin-left: -35px;
+          width: 68px; height: 54px;
           background: linear-gradient(180deg, #f5e8d0 0%, #a08866 100%);
           border-radius: 2px;
-          position: relative;
-          box-shadow: 3px 4px 8px rgba(0, 0, 0, 0.4);
-          color: #fff;
-          align-items: flex-end;
-          padding-bottom: 2px;
+          box-shadow: 3px 4px 6px rgba(0, 0, 0, 0.4);
+          justify-content: flex-end;
+          padding-bottom: 0;
         }
         .mr-tax::before {
           content: "";
@@ -518,32 +563,75 @@ export function MoneyRushGame() {
         }
         .mr-tax .mr-label {
           background: #a8351a;
-          padding: 2px 8px;
+          padding: 2px 10px;
           color: #fff;
-          font-size: 10px;
+          font-size: 12px;
+          letter-spacing: 0.05em;
         }
 
-        /* SCAM */
+        /* === SCAM v2 — FOREX trading scam card === */
         .mr-scam {
-          width: 70px; height: 64px; margin-left: -35px;
-          background: linear-gradient(180deg, #ff7a45 0%, #a8351a 100%);
-          clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-          color: #fff;
-          align-items: flex-end;
-          padding-bottom: 4px;
-          filter: drop-shadow(0 4px 6px rgba(168, 53, 26, 0.6));
+          width: 80px; height: 60px;
+          background: linear-gradient(180deg, #2a0a0a 0%, #6e1f1f 100%);
+          border: 1.5px solid #ff4545;
+          border-radius: 4px;
+          padding: 4px 6px;
+          color: #ffd2d2;
+          box-shadow: 0 4px 8px rgba(168, 53, 26, 0.5);
+          align-items: stretch;
+          justify-content: space-between;
+          overflow: hidden;
         }
-        .mr-scam .mr-label { font-size: 10px; }
+        /* Fake trading chart line — jagged red downward */
+        .mr-scam::before {
+          content: "";
+          position: absolute;
+          left: 6px;
+          right: 6px;
+          top: 22px;
+          height: 18px;
+          background-image:
+            linear-gradient(135deg, transparent 45%, #ff4545 45%, #ff4545 55%, transparent 55%);
+          background-size: 8px 100%;
+          background-repeat: repeat-x;
+          opacity: 0.7;
+          pointer-events: none;
+        }
+        /* Down arrow */
+        .mr-scam::after {
+          content: "▼";
+          position: absolute;
+          right: 6px;
+          top: 4px;
+          font-size: 10px;
+          color: #ff4545;
+        }
+        .mr-scam .mr-label {
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          color: #ff7a7a;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+          z-index: 1;
+        }
+        .mr-scam .mr-sub {
+          font-size: 14px;
+          color: #fff;
+          font-weight: 900;
+          margin-top: auto;
+          z-index: 1;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
 
-        /* DEBT */
+        /* === DEBT === */
         .mr-debt {
-          width: 78px; height: 50px; margin-left: -39px;
+          width: 76px; height: 48px;
           background: linear-gradient(180deg, #7a45e0 0%, #2e1655 100%);
           border-radius: 8px;
           border: 1.5px solid rgba(255, 255, 255, 0.4);
           color: #fff;
-          box-shadow: 0 4px 10px rgba(46, 22, 85, 0.5);
+          box-shadow: 0 4px 8px rgba(46, 22, 85, 0.5);
         }
+        .mr-debt .mr-label { font-size: 14px; letter-spacing: 0.05em; }
 
         /* === Animations === */
         .mr-tier-flash {
