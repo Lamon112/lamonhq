@@ -321,39 +321,63 @@ function Hero() {
           </div>
         </Reveal>
 
-        {/* Hero visual — animated 47 with rotating ring + shimmer */}
+        {/* Hero visual — Ferrari customer car bg + animated 47 overlay */}
         <Reveal delay={0.15}>
-          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-100">
-            {/* Slow-rotating yellow gradient ring */}
+          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-900">
+            {/* Real Baywash Ferrari customer photo as background */}
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: "url(/baywash/ferrari-cover.jpg)",
+                filter: "saturate(1.1)",
+              }}
+            />
+            {/* Dark gradient overlay so the white "47" pops + tints whole shot dramatic */}
             <div
               aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-br from-yellow-200/40 via-transparent to-yellow-100/20"
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100%)",
+              }}
             />
+            {/* Yellow warm overlay accent (Baywash signature bounce) */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 mix-blend-overlay"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 30% 20%, rgba(250,204,21,0.25) 0%, transparent 50%)",
+              }}
+            />
+            {/* "47" centerpiece + pulsing yellow glow ring */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative h-3/4 w-3/4">
-                <div className="hero-ring absolute inset-0 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 opacity-40 blur-3xl" />
+                <div className="hero-ring absolute inset-0 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 opacity-50 blur-3xl" />
                 <div className="relative flex h-full w-full items-center justify-center text-center">
                   <div>
-                    <div className="text-7xl font-black tracking-tight text-black sm:text-8xl">
+                    <div className="text-7xl font-black tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)] sm:text-8xl">
                       <Counter target={47} durationMs={1800} />
                     </div>
-                    <div className="mt-2 text-sm font-medium uppercase tracking-widest text-neutral-600">
+                    <div className="mt-2 text-sm font-medium uppercase tracking-widest text-yellow-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
                       koraka po autu
                     </div>
                     {/* Shimmer line under the number */}
-                    <div className="mx-auto mt-4 h-0.5 w-16 overflow-hidden bg-neutral-200">
-                      <div className="hero-shimmer h-full w-full bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
+                    <div className="mx-auto mt-4 h-0.5 w-16 overflow-hidden bg-white/20">
+                      <div className="hero-shimmer h-full w-full bg-gradient-to-r from-transparent via-yellow-300 to-transparent" />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            {/* Bottom info badge */}
             <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur">
-              <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-                Najnoviji tretman
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
+                <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-500" />
+                Real customer · Baywash garaža
               </div>
               <div className="mt-1 text-sm font-semibold text-black">
-                BMW M5 · Stage 4 + Artdeshine NGC+
+                Ferrari · Stage 4 + Artdeshine NGC+ Graphene
               </div>
               <div className="mt-0.5 text-xs text-neutral-600">
                 3 dana rada · 47 koraka · 5 godina zaštite

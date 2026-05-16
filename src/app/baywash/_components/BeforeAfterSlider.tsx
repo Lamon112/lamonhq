@@ -144,121 +144,10 @@ export function BeforeAfterSlider() {
 }
 
 /**
- * Shared car-tail panel scaffold — Audi-style trunk/tail surface used by
- * both Before and After. Both inherit the SAME geometry (taillights,
- * trunk seam, badge plate, shut line) so the slider wipe visibly shows
- * the SAME panel transformed, not two different things.
- *
- * Layout (clockwise from top-left of frame):
- *   - Two red taillight clusters (left + right edge), connected by a
- *     full-width chrome strip across the top
- *   - Trunk lid seam horizontal at ~28% (separates upper light bar from
- *     trunk lid body)
- *   - Body line crease at ~55% (Audi-style horizontal accent)
- *   - Faux "RS·BW" emboss badge in the center of trunk
- *   - Subtle license-plate frame hint at bottom center
- */
-function CarTailScaffold({ variant }: { variant: "before" | "after" }) {
-  const isBefore = variant === "before";
-  return (
-    <>
-      {/* Taillight strip — full-width thin chrome bar at very top */}
-      <div
-        className="absolute inset-x-0 top-0 h-[6%]"
-        style={{
-          background: isBefore
-            ? "linear-gradient(180deg, rgba(120,30,30,0.6) 0%, rgba(60,15,15,0.8) 100%)"
-            : "linear-gradient(180deg, rgba(180,40,40,0.9) 0%, rgba(80,15,15,1) 100%)",
-        }}
-      />
-      {/* LEFT taillight cluster — rounded red shape with inner glow */}
-      <div
-        className="absolute left-0 top-[6%] h-[20%] w-[28%]"
-        style={{
-          background: isBefore
-            ? "radial-gradient(ellipse at 30% 50%, rgba(160,30,30,0.85) 0%, rgba(90,20,20,0.7) 50%, rgba(40,10,10,0.5) 100%)"
-            : "radial-gradient(ellipse at 30% 50%, rgba(220,40,40,1) 0%, rgba(140,20,20,0.95) 50%, rgba(60,10,10,0.85) 100%)",
-          borderRadius: "0 0 60% 30% / 0 0 90% 50%",
-          boxShadow: isBefore
-            ? "inset 0 0 20px rgba(0,0,0,0.4)"
-            : "inset 0 0 30px rgba(0,0,0,0.5), 0 0 30px rgba(220,40,40,0.15)",
-        }}
-      />
-      {/* RIGHT taillight cluster — mirrored */}
-      <div
-        className="absolute right-0 top-[6%] h-[20%] w-[28%]"
-        style={{
-          background: isBefore
-            ? "radial-gradient(ellipse at 70% 50%, rgba(160,30,30,0.85) 0%, rgba(90,20,20,0.7) 50%, rgba(40,10,10,0.5) 100%)"
-            : "radial-gradient(ellipse at 70% 50%, rgba(220,40,40,1) 0%, rgba(140,20,20,0.95) 50%, rgba(60,10,10,0.85) 100%)",
-          borderRadius: "0 0 30% 60% / 0 0 50% 90%",
-          boxShadow: isBefore
-            ? "inset 0 0 20px rgba(0,0,0,0.4)"
-            : "inset 0 0 30px rgba(0,0,0,0.5), 0 0 30px rgba(220,40,40,0.15)",
-        }}
-      />
-      {/* Trunk lid seam — horizontal panel gap at ~28% */}
-      <div
-        className="absolute inset-x-0 top-[27%] h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.7) 15%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0.7) 85%, transparent 100%)",
-          boxShadow: isBefore
-            ? "0 1px 0 rgba(255,255,255,0.08)"
-            : "0 1px 0 rgba(255,255,255,0.18)",
-        }}
-      />
-      {/* Body line crease — Audi-style at ~55% */}
-      <div
-        className="absolute inset-x-0 top-[55%] h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 5%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0.5) 75%, transparent 95%)",
-          boxShadow: isBefore
-            ? "0 1px 0 rgba(255,255,255,0.05)"
-            : "0 1px 0 rgba(200,220,255,0.18)",
-        }}
-      />
-      {/* Center badge plate emboss — faux "RS·BW" Audi-style */}
-      <div className="absolute left-1/2 top-[38%] flex h-[10%] w-[18%] -translate-x-1/2 items-center justify-center">
-        <div
-          className="flex h-full w-full items-center justify-center rounded-sm font-black tracking-tighter"
-          style={{
-            background: isBefore
-              ? "linear-gradient(180deg, rgba(80,80,80,0.4), rgba(40,40,40,0.5))"
-              : "linear-gradient(180deg, rgba(60,60,60,0.6), rgba(20,20,20,0.8))",
-            boxShadow: isBefore
-              ? "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.4)"
-              : "inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.6), 0 0 10px rgba(0,0,0,0.4)",
-            color: isBefore ? "rgba(180,30,30,0.6)" : "rgba(220,40,40,0.95)",
-            fontSize: "clamp(14px, 2.2vw, 28px)",
-          }}
-        >
-          <span>RS</span>
-          <span className="ml-1 text-current/70">•</span>
-          <span className="ml-1">BW</span>
-        </div>
-      </div>
-      {/* License plate frame hint — thin recess at bottom center */}
-      <div
-        className="absolute bottom-[12%] left-1/2 h-[8%] w-[35%] -translate-x-1/2 rounded-sm"
-        style={{
-          background: isBefore
-            ? "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%)"
-            : "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.75) 100%)",
-          boxShadow: isBefore
-            ? "inset 0 1px 2px rgba(0,0,0,0.5)"
-            : "inset 0 2px 4px rgba(0,0,0,0.8), inset 0 -1px 0 rgba(200,220,255,0.1)",
-        }}
-      />
-    </>
-  );
-}
-
-/**
- * BEFORE — same scaffold, but dull oxidized paint with swirl marks +
- * scratches + haze. The taillights look murky and the badge is barely
- * visible.
+ * BEFORE — original simpler placeholder: dull metallic paint with
+ * swirl marks + scratches + haze. Subtle car-body cues (roofline
+ * highlight, body line crease, door handle hint) so it reads as a
+ * panel but stays minimal — no taillights / badge / license plate.
  */
 function PlaceholderBefore() {
   return (
@@ -268,107 +157,129 @@ function PlaceholderBefore() {
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse at 50% 120%, rgba(30,30,30,0.7) 0%, transparent 60%),
+            radial-gradient(ellipse at 50% 110%, rgba(40,40,40,0.6) 0%, transparent 50%),
             linear-gradient(180deg,
-              #3a3a3a 0%,
-              #4d4d4d 28%,
-              #555555 40%,
-              #4a4a4a 60%,
-              #3a3a3a 80%,
+              #4a4a4a 0%,
+              #6b6b6b 15%,
+              #5a5a5a 35%,
+              #4a4a4a 50%,
+              #3a3a3a 75%,
               #2a2a2a 100%
             )
           `,
         }}
       />
-      {/* Car tail scaffold — taillights, seams, badge */}
-      <CarTailScaffold variant="before" />
-      {/* SWIRL MARKS — concentrated around badge area (most visible) */}
+      {/* Roofline / top highlight (curved car body cue) */}
       <div
-        className="absolute inset-0 opacity-80 mix-blend-overlay"
+        className="absolute inset-x-0 top-0 h-1/4"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(220,220,220,0.35) 0%, rgba(180,180,180,0.15) 40%, transparent 100%)",
+        }}
+      />
+      {/* Body line crease across middle (door/fender body line) */}
+      <div
+        className="absolute inset-x-0 top-1/2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.6) 80%, transparent 100%)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.15)",
+        }}
+      />
+      {/* Door handle hint */}
+      <div className="absolute right-[8%] top-[58%] h-2 w-12 rounded-full bg-black/40 shadow-[0_1px_0_rgba(255,255,255,0.1)]" />
+      {/* SWIRL MARKS */}
+      <div
+        className="absolute inset-0 opacity-70 mix-blend-overlay"
         style={{
           background: `
-            repeating-conic-gradient(from 0deg at 50% 42%, transparent 0deg, rgba(255,255,255,0.18) 3deg, transparent 7deg),
-            repeating-conic-gradient(from 30deg at 25% 65%, transparent 0deg, rgba(255,255,255,0.14) 4deg, transparent 9deg),
-            repeating-conic-gradient(from 60deg at 75% 70%, transparent 0deg, rgba(255,255,255,0.12) 3deg, transparent 8deg),
-            repeating-conic-gradient(from 90deg at 50% 85%, transparent 0deg, rgba(255,255,255,0.10) 5deg, transparent 11deg)
+            repeating-conic-gradient(from 0deg at 20% 30%, transparent 0deg, rgba(255,255,255,0.18) 4deg, transparent 8deg),
+            repeating-conic-gradient(from 45deg at 65% 65%, transparent 0deg, rgba(255,255,255,0.12) 3deg, transparent 7deg),
+            repeating-conic-gradient(from 90deg at 80% 25%, transparent 0deg, rgba(255,255,255,0.10) 5deg, transparent 11deg)
           `,
         }}
       />
-      {/* Linear micro-scratches — diagonal across whole panel */}
+      {/* Linear micro-scratches */}
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-30"
         style={{
           background:
-            "repeating-linear-gradient(20deg, transparent 0px, transparent 3px, rgba(255,255,255,0.14) 3px, rgba(255,255,255,0.14) 4px)",
+            "repeating-linear-gradient(15deg, transparent 0px, transparent 2px, rgba(255,255,255,0.12) 2px, rgba(255,255,255,0.12) 3px)",
         }}
       />
-      {/* Haze overlay — flat dull surface */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.05] to-white/[0.09]" />
-      {/* Random "spots" suggesting tar / contamination */}
-      <div className="absolute left-[18%] top-[68%] h-1.5 w-1.5 rounded-full bg-black/30" />
-      <div className="absolute left-[42%] top-[78%] h-1 w-1 rounded-full bg-black/30" />
-      <div className="absolute left-[70%] top-[62%] h-1.5 w-2 rounded-full bg-black/35" />
-      <div className="absolute left-[85%] top-[80%] h-1 w-1.5 rounded-full bg-black/30" />
+      {/* Haze overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-white/[0.08]" />
     </div>
   );
 }
 
 /**
- * AFTER — same scaffold, but deep gloss black with horizon reflection,
- * specular highlight sweep, and saturated bright red taillights. Badge
- * "pops" with chromed lettering. NO swirls, NO scratches, NO haze.
+ * AFTER — original simpler placeholder: deep gloss black with sky
+ * reflection, specular highlight sweep, warm yellow + cool blue bounces.
+ * Same body cues as Before for continuity. No taillights / badge.
  */
 function PlaceholderAfter() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
-      {/* Base deep gloss black — sky reflection top, ground bottom */}
       <div
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(180deg,
-              #1d2235 0%,
-              #131829 22%,
-              #060912 50%,
+              #1a1f2e 0%,
+              #0f1422 25%,
+              #050810 50%,
               #0a0e1c 75%,
               #1a1f2e 100%
             )
           `,
         }}
       />
-      {/* Horizon line — environment reflection (where sky meets ground in panel reflection) */}
+      {/* Horizon line — env reflection */}
       <div
-        className="absolute inset-x-0 top-[48%] h-px"
+        className="absolute inset-x-0 top-[45%] h-px"
         style={{
           background:
-            "linear-gradient(90deg, transparent 0%, rgba(160,180,220,0.6) 20%, rgba(200,220,255,0.85) 50%, rgba(160,180,220,0.6) 80%, transparent 100%)",
-          boxShadow: "0 4px 8px rgba(140,170,220,0.15)",
+            "linear-gradient(90deg, transparent 0%, rgba(120,140,180,0.5) 30%, rgba(140,160,200,0.7) 50%, rgba(120,140,180,0.5) 70%, transparent 100%)",
         }}
       />
-      {/* Car tail scaffold — taillights glowing red, seams sharp, badge crisp */}
-      <CarTailScaffold variant="after" />
-      {/* SPECULAR HIGHLIGHT — diagonal sharp light sweep (mirror finish signature) */}
+      {/* Roofline highlight */}
       <div
-        className="absolute inset-0 opacity-65"
+        className="absolute inset-x-0 top-0 h-1/4"
         style={{
           background:
-            "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 48%, rgba(255,255,255,0.25) 55%, transparent 70%)",
+            "linear-gradient(180deg, rgba(180,200,240,0.4) 0%, rgba(100,120,160,0.15) 60%, transparent 100%)",
         }}
       />
-      {/* Yellow Baywash reflection accent (top-right) — signature warm bounce */}
+      {/* Body line crease (same position as Before for continuity) */}
+      <div
+        className="absolute inset-x-0 top-1/2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.7) 20%, rgba(0,0,0,0.8) 80%, transparent 100%)",
+          boxShadow: "0 1px 0 rgba(200,220,255,0.25)",
+        }}
+      />
+      {/* Door handle */}
+      <div className="absolute right-[8%] top-[58%] h-2 w-12 rounded-full bg-black shadow-[0_1px_0_rgba(200,220,255,0.3)]" />
+      {/* Specular highlight sweep */}
+      <div
+        className="absolute inset-0 opacity-60"
+        style={{
+          background:
+            "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%)",
+        }}
+      />
+      {/* Yellow Baywash reflection accent */}
       <div
         aria-hidden="true"
-        className="absolute right-[8%] top-[33%] h-20 w-32 rounded-full bg-yellow-300/35 blur-3xl"
+        className="absolute right-[10%] top-[15%] h-16 w-24 rounded-full bg-yellow-300/30 blur-2xl"
       />
-      {/* Cool blue garage LED reflection (bottom-left) */}
+      {/* Cool blue garage light reflection */}
       <div
         aria-hidden="true"
-        className="absolute bottom-[18%] left-[12%] h-24 w-40 rounded-full bg-blue-300/20 blur-3xl"
+        className="absolute bottom-[20%] left-[15%] h-20 w-32 rounded-full bg-blue-300/15 blur-3xl"
       />
-      {/* Subtle "shop ceiling lights" reflection — three small bright points */}
-      <div className="absolute left-[20%] top-[68%] h-1 w-8 rounded-full bg-white/40 blur-[1px]" />
-      <div className="absolute left-[48%] top-[72%] h-1 w-10 rounded-full bg-white/50 blur-[1px]" />
-      <div className="absolute left-[78%] top-[68%] h-1 w-8 rounded-full bg-white/40 blur-[1px]" />
     </div>
   );
 }
