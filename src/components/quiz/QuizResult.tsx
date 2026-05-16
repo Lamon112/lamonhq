@@ -325,7 +325,7 @@ function CtaCard({ leadId, leadName }: { leadId: string; leadName: string }) {
       currency: "EUR",
     });
     // Open Skool join in new tab.
-    window.open("https://www.skool.com/sidehustlehr", "_blank");
+    window.open("https://www.skool.com/sidehustlebalkan/about", "_blank");
   }
 
   return (

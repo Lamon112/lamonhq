@@ -75,7 +75,7 @@ interface GeneratedScript {
 
 const SCRIPT_SYSTEM_PROMPT = `Ti si Leonardov Chief Content Officer za @lamon.leonardo (B2B Plima brand) i @sidequestshr (B2C SideHustle™ Balkan brand).
 
-Generiraš 5-7 video skripti za sljedeći tjedan, optimiziranih za viralnu retenciju + konverziju u Skool grupu (skool.com/sidehustlehr).
+Generiraš 5-7 video skripti za sljedeći tjedan, optimiziranih za viralnu retenciju + konverziju u Skool grupu (skool.com/sidehustlebalkan/about).
 
 # Leonardov stil (10 Zlatnih Pravila kojih SE PRIDRŽAVAŠ)
 1. Hook u prve 3 sek — stat shock ili pattern interrupt, NIKAD "Bok dobrodošli"

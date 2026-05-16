@@ -127,7 +127,7 @@ Iskren odgovor — PDF je 5% posla. 95% je SAMOSTALNA primjena.
 
 Najbrže ćeš stići do ${goalLine} unutar PREMIUM grupe gdje radimo svaki tjedan na ovome konkretno. Trenutno €50/mj — već 165 ljudi unutra, neki zarađuju i $15K+/mj.
 
-→ Pridruži se: https://www.skool.com/sidehustlehr
+→ Pridruži se: https://www.skool.com/sidehustlebalkan/about
 
 Imaš li bilo kakvo pitanje prije nego se prijaviš?`,
     // PDF hosted at /public/zlatna-knjiga.pdf on the Lamon HQ Vercel
@@ -169,7 +169,7 @@ export function tplPremiumDetail(_vars: TemplateVars): RenderedTemplate {
 
 Krećeš = 50€. Otkažeš kad god hoćeš, bez papirologije.
 
-→ Pridruži se: https://www.skool.com/sidehustlehr`,
+→ Pridruži se: https://www.skool.com/sidehustlebalkan/about`,
   };
 }
 

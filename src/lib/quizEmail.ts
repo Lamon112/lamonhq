@@ -69,7 +69,16 @@ ${payload.resultUrl}
 Plan ostaje spreman u bilo koje vrijeme — bookmark-aj link ako te zanima da ga ponovo pogledaš.
 
 Sljedeći korak ako želiš da te vodim tjedno + pristup community-u koji prolazi isto:
-SideHustle premium grupa (€50/mj) — https://www.skool.com/sidehustlehr
+
+🎯 SideHustle premium grupa (€50/mj) — https://www.skool.com/sidehustlebalkan/about
+
+Šta je unutra:
+• Tjedni live grupni pozivi (srijeda 20:00, Q&A + hot-seat reviews)
+• NICHE DROPOVI — svaka 2 tjedna nova viralna niša + 5 hookova + monetization path
+• Pre-monetizirani TT/YT profili na kupnju (5K-50K subs, već AdSense/Creativity aktivni)
+• Onboarding 1:1 poziv sa mnom prvi tjedan
+• 165+ ljudi koji rade isto — Tom, Matija, Vuk
+• Sve kurseve (Faceless AI, ASMR framework, Recap blueprint)
 
 Bilo kakvo pitanje? Odgovori na ovaj email, čitam sve.
 
@@ -103,8 +112,15 @@ Lamon Agency
 
   <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
 
-  <p><strong>Sljedeći korak</strong> — ako želiš da te vodim tjedno + pristup community-u koji prolazi isto:</p>
-  <p>SideHustle premium grupa <strong>€50/mj</strong> — <a href="https://www.skool.com/sidehustlehr" style="color: #c9a84c;">skool.com/sidehustlehr</a></p>
+  <p><strong>Sljedeći korak</strong> — ako želiš da te vodim tjedno:</p>
+  <p>🎯 SideHustle premium grupa <strong>€50/mj</strong> — <a href="https://www.skool.com/sidehustlebalkan/about" style="color: #c9a84c;">skool.com/sidehustlebalkan</a></p>
+  <ul style="margin: 8px 0 16px 0; padding-left: 18px; font-size: 13px; color: #444;">
+    <li>Tjedni live grupni pozivi (srijeda 20:00)</li>
+    <li><strong>NICHE DROPOVI</strong> — svaka 2 tjedna nova viralna niša</li>
+    <li>Pre-monetizirani TT/YT profili na kupnju (5K-50K subs, već AdSense)</li>
+    <li>Onboarding 1:1 poziv sa mnom prvi tjedan</li>
+    <li>165+ ljudi unutra — Tom, Matija, Vuk i drugi</li>
+  </ul>
 
   <p>Bilo kakvo pitanje? Odgovori na ovaj email, čitam sve.</p>
 
