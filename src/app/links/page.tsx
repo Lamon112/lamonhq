@@ -20,7 +20,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Instagram, Youtube, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Leonardo Lamon — Plima & SideHustle",
@@ -97,27 +97,29 @@ const LINKS: BioLink[] = [
   },
 ];
 
-const SOCIALS = [
-  {
-    label: "Instagram",
-    href: "https://instagram.com/sidequestshr",
-    icon: Instagram,
-  },
-  {
-    label: "TikTok",
-    href: "https://tiktok.com/@sidehustlebalkan",
-    icon: TikTokIcon,
-  },
-  {
-    label: "YouTube",
-    href: "https://youtube.com/@lamon.leonardo",
-    icon: Youtube,
-  },
-];
+// Brand SVGs inlined because lucide-react dropped logo icons (TM/brand
+// guidelines). Each is a single path, ~150 bytes, no external deps.
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
 
 function TikTokIcon({ className }: { className?: string }) {
-  // Lucide doesn't ship TikTok. Inline minimal SVG so social row is
-  // visually balanced.
   return (
     <svg
       viewBox="0 0 24 24"
@@ -129,6 +131,37 @@ function TikTokIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+function YouTubeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M23 12s0-3.5-.45-5.18a2.78 2.78 0 0 0-2-2C18.88 4.4 12 4.4 12 4.4s-6.88 0-8.55.45a2.78 2.78 0 0 0-2 2C1 8.5 1 12 1 12s0 3.5.45 5.18a2.78 2.78 0 0 0 2 2c1.67.45 8.55.45 8.55.45s6.88 0 8.55-.45a2.78 2.78 0 0 0 2-2C23 15.5 23 12 23 12zM9.75 15.02V8.98L15.5 12l-5.75 3.02z" />
+    </svg>
+  );
+}
+
+const SOCIALS = [
+  {
+    label: "Instagram",
+    href: "https://instagram.com/sidequestshr",
+    icon: InstagramIcon,
+  },
+  {
+    label: "TikTok",
+    href: "https://tiktok.com/@sidehustlebalkan",
+    icon: TikTokIcon,
+  },
+  {
+    label: "YouTube",
+    href: "https://youtube.com/@lamon.leonardo",
+    icon: YouTubeIcon,
+  },
+];
 
 export default function LinksPage() {
   return (
@@ -195,7 +228,6 @@ export default function LinksPage() {
 
             return (
               <Component
-                // @ts-expect-error Next Link href vs anchor href type union
                 href={link.href}
                 key={link.label}
                 {...externalProps}
