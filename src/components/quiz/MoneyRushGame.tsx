@@ -125,6 +125,10 @@ export function MoneyRushGame() {
   const totalSpawnedRef = useRef(0);
   const itemsRef = useRef<FallingItem[]>([]);
   const pausedRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  // Per-item DOM refs so the delegated handler can hit-test against
+  // each item's CURRENT (animated) bounding box, not its static CSS box.
+  const itemDomRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Sync paused
   useEffect(() => { pausedRef.current = paused; }, [paused]);
@@ -250,8 +254,53 @@ export function MoneyRushGame() {
 
   // Auto-remove items when CSS animation ends (off-screen)
   const onItemAnimEnd = useCallback((id: number) => {
+    itemDomRefs.current.delete(id);
     setItems((arr) => arr.filter((it) => it.id !== id));
   }, []);
+
+  /**
+   * Delegated container hit-tester. Single listener attached to the
+   * game container catches every tap, then iterates all alive items
+   * and picks the closest one within a generous radius (HIT_RADIUS_PX).
+   *
+   * Why this beats per-item onPointerDown:
+   *   - CSS animation hit-test on per-element pointerdown can race the
+   *     compositor — element rect "in CSS" may differ from rendered px
+   *     for one frame. Container handler hit-tests against rendered DOM
+   *     rect at tap time which is always pixel-accurate.
+   *   - Generous radius (80px = bigger than visual + wrapper combined)
+   *     forgives fast-moving items where finger lands "near" the coin.
+   *   - One handler ≪ 30 handlers = fewer event registrations,
+   *     fewer chances for synthetic event quirks on iOS Safari.
+   */
+  const HIT_RADIUS_PX = 80;
+  const handleContainerTap = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (pausedRef.current) return;
+    e.preventDefault();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    let closestId: number | null = null;
+    let closestDist = HIT_RADIUS_PX;
+
+    for (const item of itemsRef.current) {
+      const dom = itemDomRefs.current.get(item.id);
+      if (!dom) continue;
+      const rect = dom.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dist = Math.hypot(cx - x, cy - y);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestId = item.id;
+      }
+    }
+
+    if (closestId !== null) {
+      const item = itemsRef.current.find((it) => it.id === closestId);
+      if (item) collectItem(item.id, item.value, item.kind, x, y);
+    }
+  }, [collectItem]);
 
   const tier = TIERS[tierIdx];
   const nextTier = TIERS[tierIdx + 1];
@@ -298,10 +347,13 @@ export function MoneyRushGame() {
         </div>
       </div>
 
-      {/* Game container */}
+      {/* Game container — delegated tap handler catches every tap and
+          hit-tests against all alive items. No per-item handlers needed. */}
       <div
+        ref={containerRef}
+        onPointerDown={handleContainerTap}
         className="relative w-full overflow-hidden rounded-2xl border border-gold/40 shadow-2xl shadow-gold/20 mr-game-bg"
-        style={{ aspectRatio: "9 / 14", maxHeight: "65vh", touchAction: "manipulation" }}
+        style={{ aspectRatio: "9 / 14", maxHeight: "65vh", touchAction: "none" }}
       >
         {/* Debug counter — top-left, small. Stays visible so Leonardo can
             tell at a glance whether spawn loop is alive (spawned should
@@ -312,29 +364,23 @@ export function MoneyRushGame() {
           spawned: {debugInfo.spawned} · alive: {debugInfo.alive}
         </div>
 
-        {/* Items — wrapper is 96x96 transparent hitbox; visual coin/card
-            centered inside. Bigger touch target = no missed taps on mobile
-            even when items move fast. Use onPointerDown (NOT onClick) so
-            collect fires the moment finger touches — onClick waits until
-            finger LIFTS by which time fast items have already moved. */}
+        {/* Items — pointer-events: none on the wrapper too (handled by
+            container delegate). Each div just registers its DOM ref so
+            the container handler can hit-test it. */}
         {items.map((item) => {
           const sty = ITEM_STYLES[item.kind];
           return (
             <div
               key={item.id}
+              ref={(el) => {
+                if (el) itemDomRefs.current.set(item.id, el);
+                else itemDomRefs.current.delete(item.id);
+              }}
               className={`mr-hitbox ${paused ? "mr-paused" : ""}`}
               style={{
                 left: `${item.xPercent}%`,
                 animationDuration: `${item.fallDuration}s`,
-              }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Capture pointer so subsequent moves stay on this element
-                if (e.currentTarget.setPointerCapture) {
-                  try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
-                }
-                collectItem(item.id, item.value, item.kind, e.clientX, e.clientY);
+                pointerEvents: "none",
               }}
               onAnimationEnd={() => onItemAnimEnd(item.id)}
             >
