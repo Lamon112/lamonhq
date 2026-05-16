@@ -314,7 +314,9 @@ export function MoneyRushGame() {
 
         {/* Items — wrapper is 96x96 transparent hitbox; visual coin/card
             centered inside. Bigger touch target = no missed taps on mobile
-            even when items move fast. Click handler on wrapper, not visual. */}
+            even when items move fast. Use onPointerDown (NOT onClick) so
+            collect fires the moment finger touches — onClick waits until
+            finger LIFTS by which time fast items have already moved. */}
         {items.map((item) => {
           const sty = ITEM_STYLES[item.kind];
           return (
@@ -325,9 +327,13 @@ export function MoneyRushGame() {
                 left: `${item.xPercent}%`,
                 animationDuration: `${item.fallDuration}s`,
               }}
-              onClick={(e) => {
+              onPointerDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // Capture pointer so subsequent moves stay on this element
+                if (e.currentTarget.setPointerCapture) {
+                  try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+                }
                 collectItem(item.id, item.value, item.kind, e.clientX, e.clientY);
               }}
               onAnimationEnd={() => onItemAnimEnd(item.id)}
