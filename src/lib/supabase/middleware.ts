@@ -39,6 +39,11 @@ export async function updateSession(request: NextRequest) {
     // /quiz form, /quiz/result/[id] result page, /api/quiz/* submit/fetch.
     pathname.startsWith("/quiz") ||
     pathname.startsWith("/api/quiz") ||
+    // Affiliate redirect endpoints (Spinova casino sponsorship, etc.) —
+    // public so Linktree visitors land on the right destination without
+    // hitting the HQ login gate.
+    pathname === "/spin" ||
+    pathname.startsWith("/r/") ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/inngest") ||
