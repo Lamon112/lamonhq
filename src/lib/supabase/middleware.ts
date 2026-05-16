@@ -47,6 +47,9 @@ export async function updateSession(request: NextRequest) {
     // Bio link aggregator — replaces terminated linktr.ee/lamon.
     // Public so anyone visiting from IG/TT bio lands directly.
     pathname === "/links" ||
+    // Baywash client microsite — premium auto detailing studio, Viškovo.
+    // Public so Max's clients (and Max himself!) land without HQ login gate.
+    pathname.startsWith("/baywash") ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/inngest") ||

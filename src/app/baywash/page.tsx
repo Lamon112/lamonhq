@@ -1,0 +1,875 @@
+/**
+ * Baywash — Premium Auto Detailing Studio · Viškovo, Rijeka
+ *
+ * Surprise client microsite for Max (Baywash voditelj) ahead of Mon 2026-05-18.
+ *
+ * BRAND ARCHETYPE (locked):
+ * - Colors: white background, black text, yellow (#FACC15) accent ONLY.
+ *   No grays except for muted body text and subtle borders. The yellow is
+ *   the ONLY brand color — every other surface stays mono so it pops.
+ * - Voice: "Voditelj, ne vlasnik." Anti-status, technical, anti-hype.
+ *   Drawing directly on Maxov dialog: "Mi ne peremo auto. Mi gradimo
+ *   sustav koji štiti auto sljedećih 3 do 5 godina."
+ * - Type: Inter (inherited from root layout) — display weights for
+ *   headlines, regular for body. No fancy serif because the brand is
+ *   industrial-premium, not editorial-luxury.
+ *
+ * STRUCTURE (single page, top to bottom):
+ *  1. Hero — eyebrow, headline, sub, phone CTA, trust strip
+ *  2. Saudijci pull-quote (Maxov verbatim brand voice)
+ *  3. 47 koraka proces — 5 stage cards
+ *  4. Tri sustava — package cards (NO prices, phone CTA each)
+ *  5. Voditelj Max — anti-status story + stat boxes
+ *  6. Klijenti iz svijeta — UAE/Saudi proof
+ *  7. Recenzije — 4.9★ social proof
+ *  8. Oprema — tool stack
+ *  9. Kontakt — phone, address, hours, map, socials
+ * 10. Footer
+ *
+ * PRIMARY CTA: phone (Max preferira osobni poziv, ne Calendly).
+ * Every CTA tel:+385... link = one-tap call on mobile.
+ *
+ * IMAGES (v1): /public/baywash/* placeholders. Drop real assets from
+ * Drive folder 10ygKz6MNX4R3WGkvDEDBWzd0wkc2Evnt later; videos in
+ * "Gotovi Videi" subfolder are perfect for hero background.
+ */
+
+import Link from "next/link";
+import { Phone, MapPin, Clock, Star, ArrowRight, Shield, Sparkles, Droplets } from "lucide-react";
+
+const PHONE_PRIMARY = "099 667 0969";
+const PHONE_PRIMARY_TEL = "+385996670969";
+const PHONE_SECONDARY = "099 400 6999";
+const PHONE_SECONDARY_TEL = "+385994006999";
+const ADDRESS = "Viškovo 125 A, 51216 Viškovo";
+const HOURS_LINES = ["Pon–Pet · 08:00–19:00", "Sub · 09:00–15:00", "Ned · po dogovoru"];
+const IG_URL = "https://www.instagram.com/baywash_info_0996670969/";
+const FB_URL = "https://www.facebook.com/baywash.rijeka/";
+const GOOGLE_REVIEWS_URL =
+  "https://www.google.com/search?q=baywash+rijeka+vi%C5%A1kovo";
+
+// 47-koraka proces broken into 5 narrative stages (Maxov own framing
+// from Notion intake: clients don't understand the steps, so we explain
+// what each stage *does* not just lists tools).
+const PROCESS_STAGES = [
+  {
+    n: "01",
+    title: "Inspekcija pod LED-om",
+    blurb:
+      "Mjerimo debljinu laka, mapiramo svaki swirl i kontaminaciju. Bez ovog koraka — sav posao kasnije je pogađanje.",
+    icon: Sparkles,
+  },
+  {
+    n: "02",
+    title: "Two-bucket pranje + foam",
+    blurb:
+      "Foam cannon, dvije kante, čisti microfiber per panel. Touchless ne ulazi u Baywash — uništava lak. Mi vadimo prljavštinu, ne raznosimo je.",
+    icon: Droplets,
+  },
+  {
+    n: "03",
+    title: "Stage 1–4 Paint Correction",
+    blurb:
+      "Rupes Bigfoot, polirne paste prilagođene laku, sat-po-sat rada po panelu. Stage 4 vraća lak na nivo iz salona — bez vrtložića, bez hologramskih tragova.",
+    icon: Sparkles,
+  },
+  {
+    n: "04",
+    title: "Artdeshine NGC+ Graphene",
+    blurb:
+      "Sloj koji štiti lak 3 do 5 godina. Hidrofoban, otporan na UV i kemikalije. Jedinstveno na Jadranu — istu zaštitu inače dobivaš samo u Dubaiju ili Münchenu.",
+    icon: Shield,
+  },
+  {
+    n: "05",
+    title: "Interior Premium",
+    blurb:
+      "Leather impregnation, parno čišćenje sjedala i tepiha, headliner detail. Auto izlazi tako da možeš stati golim koljenom na sjedalo.",
+    icon: Sparkles,
+  },
+];
+
+// Three packages — no prices on the site (Max preferira osobni quote).
+// Each card sends user straight to tel: link for primary CTA.
+const PACKAGES = [
+  {
+    name: "Quick Refresh",
+    tagline: "Održavanje između punih tretmana",
+    bullets: [
+      "Vanjsko + brzo interior",
+      "Foam pranje + iron remover",
+      "Dressing + headliner spray",
+      "2–3 sata",
+    ],
+    forWho: "Za postojeće klijente i sezonsku njegu",
+  },
+  {
+    name: "Premium Detail",
+    tagline: "Kompletna transformacija auta",
+    bullets: [
+      "Stage 2–3 paint correction",
+      "Ceramic coating osnovni",
+      "Interior deep clean + leather conditioning",
+      "1–2 dana",
+    ],
+    forWho: "Za nove premium klijente — lak “kao iz salona”",
+    featured: true,
+  },
+  {
+    name: "Custom Ceramic / PPF",
+    tagline: "3–5 godina zaštite",
+    bullets: [
+      "Stage 4 correction (savršen baseline)",
+      "Artdeshine NGC+ Graphene ili PPF film",
+      "Full interior premium",
+      "2–4 dana",
+    ],
+    forWho: "Za dugoročno ulaganje u vrijednost auta",
+  },
+];
+
+// Testimonials — placeholder text in Maxov client voice (HR + 1 UAE/EN).
+// Replace with real Google review quotes after import from Google Business.
+const REVIEWS = [
+  {
+    text:
+      "Vozio sam iz Zagreba u Rijeku samo zbog Baywasha. Nakon Stage 4 + ceramic, susjedi me pitaju jesam li promijenio auto. Max i ekipa znaju što rade.",
+    author: "Mario K.",
+    car: "BMW M5",
+  },
+  {
+    text:
+      "Driving from Dubai to Rijeka sounds insane until you see the result. Best paint correction work I’ve had outside the UAE. Max is a perfectionist.",
+    author: "Khalid A.",
+    car: "Mercedes-AMG GT",
+  },
+  {
+    text:
+      "Bio sam siguran da je auto izgubljen — interior je izgledao očajno. 47 koraka kasnije, izgleda bolje nego kad sam ga kupio. Vraćam se sigurno.",
+    author: "Ana P.",
+    car: "Audi RS6",
+  },
+];
+
+// Equipment — list of real tools Max uses, per Notion intake doc.
+const EQUIPMENT = [
+  { name: "Rupes Bigfoot", note: "Polishing system" },
+  { name: "Artdeshine NGC+", note: "Graphene coating" },
+  { name: "LED inspekcija", note: "Defect detection" },
+  { name: "Cquartz", note: "Ceramic coating" },
+  { name: "Foam cannon", note: "Pre-wash" },
+  { name: "Steam injection", note: "Interior deep" },
+];
+
+// Stat boxes for the Voditelj section. Conservative numbers from Notion;
+// swap with real values from Maxov intake answers when they come back.
+const STATS = [
+  { value: "219+", label: "Google recenzija" },
+  { value: "4,9", label: "Prosjek ocjena" },
+  { value: "47", label: "Koraka po autu" },
+  { value: "5+", label: "Zemalja klijenata" },
+];
+
+function Header() {
+  return (
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <Link
+          href="/baywash"
+          className="flex items-baseline gap-1.5 text-black"
+          aria-label="Baywash — početna"
+        >
+          <span className="text-xl font-black tracking-tight sm:text-2xl">
+            BAYWASH
+          </span>
+          <span className="hidden text-xs font-medium text-neutral-500 sm:inline">
+            Premium Detailing
+          </span>
+        </Link>
+        <nav className="hidden items-center gap-7 text-sm font-medium text-neutral-700 md:flex">
+          <a href="#proces" className="transition hover:text-black">
+            Proces
+          </a>
+          <a href="#tretmani" className="transition hover:text-black">
+            Tretmani
+          </a>
+          <a href="#voditelj" className="transition hover:text-black">
+            Voditelj
+          </a>
+          <a href="#kontakt" className="transition hover:text-black">
+            Kontakt
+          </a>
+        </nav>
+        <a
+          href={`tel:${PHONE_PRIMARY_TEL}`}
+          className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-yellow-300 sm:px-5"
+        >
+          <Phone className="h-4 w-4" />
+          <span className="hidden sm:inline">{PHONE_PRIMARY}</span>
+          <span className="sm:hidden">Nazovi</span>
+        </a>
+      </div>
+    </header>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="relative overflow-hidden bg-white">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:py-32">
+        <div className="flex flex-col justify-center">
+          <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-yellow-300/60 bg-yellow-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-neutral-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-yellow-400" />
+            Premium Auto Detailing · Viškovo, Rijeka
+          </span>
+          <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-black sm:text-5xl lg:text-6xl">
+            Tvoj auto zaslužuje{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10">47 koraka.</span>
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-1 z-0 h-3 bg-yellow-300/70 sm:h-4"
+              />
+            </span>
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-neutral-600 sm:text-lg">
+            Studio koji klijenti voze 5.000 km da bi došli do njega. Stage 4
+            paint correction + Artdeshine NGC+ graphene — jedinstveno na Jadranu.
+            Mi ne peremo auto. Gradimo sustav koji ga štiti sljedećih 3 do 5
+            godina.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <a
+              href={`tel:${PHONE_PRIMARY_TEL}`}
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-black px-7 py-4 text-base font-semibold text-white transition hover:bg-neutral-800"
+            >
+              <Phone className="h-5 w-5 text-yellow-400 transition group-hover:scale-110" />
+              Pozovi Maxa · {PHONE_PRIMARY}
+            </a>
+            <a
+              href="#tretmani"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-black/15 px-6 py-4 text-base font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
+            >
+              Vidi tretmane
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-neutral-600">
+            <div className="flex items-center gap-1.5">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                  />
+                ))}
+              </div>
+              <span className="font-medium text-black">4,9</span>
+              <span>· 219 recenzija</span>
+            </div>
+            <div className="h-4 w-px bg-neutral-300" />
+            <div>Klijenti iz Dubaija, Saudijske Arabije, Italije</div>
+          </div>
+        </div>
+
+        {/* Hero visual — yellow geometry placeholder until real photo lands */}
+        <div className="relative">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-100">
+            {/* Yellow accent gradient ring */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-200/40 via-transparent to-yellow-100/20" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative h-3/4 w-3/4">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 blur-3xl opacity-30" />
+                <div className="relative flex h-full w-full items-center justify-center text-center">
+                  <div>
+                    <div className="text-7xl font-black tracking-tight text-black sm:text-8xl">
+                      47
+                    </div>
+                    <div className="mt-2 text-sm font-medium uppercase tracking-widest text-neutral-600">
+                      koraka po autu
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Bottom info badge */}
+            <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-white/95 p-4 backdrop-blur shadow-lg">
+              <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                Najnoviji tretman
+              </div>
+              <div className="mt-1 text-sm font-semibold text-black">
+                BMW M5 · Stage 4 + Artdeshine NGC+
+              </div>
+              <div className="mt-0.5 text-xs text-neutral-600">
+                3 dana rada · 47 koraka · 5 godina zaštite
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PullQuote() {
+  return (
+    <section className="border-y border-black/5 bg-neutral-50">
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
+        <div className="mx-auto mb-6 h-10 w-10 text-yellow-400">
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+            className="h-full w-full"
+          >
+            <path d="M6 17h2.5l1.5-4V8H4v5h2zm9 0h2.5l1.5-4V8h-6v5h2z" />
+          </svg>
+        </div>
+        <blockquote className="text-2xl font-medium leading-snug text-black sm:text-3xl lg:text-4xl">
+          Mi ne peremo auto.
+          <br />
+          <span className="text-neutral-700">
+            Mi gradimo sustav koji štiti auto sljedećih 3 do 5 godina.
+          </span>
+        </blockquote>
+        <div className="mt-6 text-sm font-medium uppercase tracking-wider text-neutral-500">
+          — Max, voditelj Baywasha
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProcessSection() {
+  return (
+    <section id="proces" className="bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
+            Proces
+          </span>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
+            Svaki auto kod nas prolazi
+            <br />
+            <span className="relative inline-block">
+              <span className="relative z-10">47 koraka.</span>
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-1 z-0 h-3 bg-yellow-300/70 sm:h-4"
+              />
+            </span>
+          </h2>
+          <p className="mt-5 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            Ne brzo. Ne jeftino. Ne kompromis. Svaki korak ima svrhu, svaki
+            alat ima razlog. Evo zašto klijenti dolaze iz cijele Europe.
+          </p>
+        </div>
+
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {PROCESS_STAGES.map((stage, i) => {
+            const Icon = stage.icon;
+            return (
+              <div
+                key={stage.n}
+                className={`relative rounded-3xl border border-black/10 bg-white p-7 transition hover:border-yellow-400/60 hover:shadow-lg ${
+                  i === 0 ? "lg:col-span-1" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+                    {stage.n}
+                  </span>
+                </div>
+                <h3 className="mt-6 text-xl font-bold tracking-tight text-black">
+                  {stage.title}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-neutral-600">
+                  {stage.blurb}
+                </p>
+              </div>
+            );
+          })}
+
+          {/* CTA card filling 6th slot */}
+          <a
+            href={`tel:${PHONE_PRIMARY_TEL}`}
+            className="group flex flex-col justify-between rounded-3xl bg-black p-7 text-white transition hover:bg-neutral-800"
+          >
+            <div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-black">
+                <Phone className="h-6 w-6" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold tracking-tight">
+                Imaš pitanje o procesu?
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-neutral-300">
+                Max ti osobno objašnjava što je najbolje za tvoj auto. Bez
+                prodajne priče — direktan razgovor.
+              </p>
+            </div>
+            <div className="mt-6 flex items-center justify-between text-yellow-400">
+              <span className="font-semibold">{PHONE_PRIMARY}</span>
+              <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PackagesSection() {
+  return (
+    <section id="tretmani" className="bg-neutral-50">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
+            Tretmani
+          </span>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
+            Tri sustava. Jedan pristup.
+          </h2>
+          <p className="mt-5 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            Bez fiksnih cijenika. Svaki auto je drugačiji, svaki klijent ima
+            druge ciljeve. Pozovi Maxa — dobit ćeš iskreno mišljenje i jasan
+            quote.
+          </p>
+        </div>
+
+        <div className="mt-14 grid gap-5 md:grid-cols-3">
+          {PACKAGES.map((pkg) => (
+            <div
+              key={pkg.name}
+              className={`flex flex-col rounded-3xl border p-7 transition hover:shadow-lg ${
+                pkg.featured
+                  ? "border-yellow-400 bg-white shadow-md ring-1 ring-yellow-400/20"
+                  : "border-black/10 bg-white"
+              }`}
+            >
+              {pkg.featured ? (
+                <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">
+                  Najtraženiji
+                </div>
+              ) : null}
+              <h3 className="text-2xl font-black tracking-tight text-black">
+                {pkg.name}
+              </h3>
+              <p className="mt-1.5 text-sm font-medium text-neutral-500">
+                {pkg.tagline}
+              </p>
+              <ul className="mt-6 space-y-3 text-sm text-neutral-700">
+                {pkg.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2.5">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 border-t border-black/5 pt-5 text-xs leading-relaxed text-neutral-500">
+                {pkg.forWho}
+              </div>
+              <a
+                href={`tel:${PHONE_PRIMARY_TEL}`}
+                className={`mt-6 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
+                  pkg.featured
+                    ? "bg-black text-white hover:bg-neutral-800"
+                    : "bg-yellow-400 text-black hover:bg-yellow-300"
+                }`}
+              >
+                <Phone className="h-4 w-4" />
+                Pozovi za quote
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function VoditeljSection() {
+  return (
+    <section id="voditelj" className="bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
+              Voditelj
+            </span>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
+              Ne vlasnik.
+              <br />
+              <span className="relative inline-block">
+                <span className="relative z-10">Voditelj.</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 bottom-1 z-0 h-3 bg-yellow-300/70 sm:h-4"
+                />
+              </span>
+            </h2>
+            <div className="mt-6 space-y-4 text-base leading-relaxed text-neutral-700 sm:text-lg">
+              <p>
+                Max je voditelj koji vozi lošiji auto od svog radnika. Novac
+                vraća u ekipu i opremu, ne u status. Vjeruje da lojalnost
+                gradiš godinama — ne mjesecima.
+              </p>
+              <p className="text-neutral-600">
+                Baywash je nastao iz jedne ideje:{" "}
+                <span className="font-semibold text-black">
+                  tretirati svaki auto kao da je vlastiti.
+                </span>{" "}
+                Bez prečaca, bez kompromisa na materijalu, bez gluposti tipa
+                touchless pranja.
+              </p>
+            </div>
+            <a
+              href={`tel:${PHONE_PRIMARY_TEL}`}
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+            >
+              <Phone className="h-4 w-4 text-yellow-400" />
+              Razgovaraj s Maxom · {PHONE_PRIMARY}
+            </a>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {STATS.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-3xl border border-black/10 bg-neutral-50 p-6 sm:p-8"
+              >
+                <div className="text-4xl font-black tracking-tight text-black sm:text-5xl">
+                  {stat.value}
+                </div>
+                <div className="mt-2 text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InternationalSection() {
+  return (
+    <section className="bg-black text-white">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
+              Klijenti iz svijeta
+            </span>
+            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+              Iz Dubaija. Iz Saudijske Arabije.
+              <br />
+              <span className="text-yellow-400">Iz Italije.</span>
+            </h2>
+            <p className="mt-6 text-base leading-relaxed text-neutral-300 sm:text-lg">
+              Putuju 5.000 km da im auto prođe naš sustav. Saudijci slijeću u
+              Rijeku samo zbog ovog. Stage 4 + Artdeshine NGC+ graphene — istu
+              razinu inače dobivaš samo u Dubaiju ili Münchenu, a kod nas s
+              osobnim pristupom Maxa.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm">
+              {["🇦🇪 Dubai", "🇸🇦 Saudi Arabia", "🇮🇹 Italija", "🇩🇪 Njemačka", "🇭🇷 Cijela Hrvatska"].map(
+                (loc) => (
+                  <span
+                    key={loc}
+                    className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-neutral-100"
+                  >
+                    {loc}
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { car: "BMW M5 Competition", origin: "Dubai" },
+              { car: "Mercedes-AMG GT", origin: "Saudi Arabia" },
+              { car: "Porsche 911 Turbo S", origin: "Italija" },
+              { car: "Audi RS6 Avant", origin: "Njemačka" },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-neutral-800 to-black p-5"
+              >
+                <div className="flex h-full flex-col justify-between">
+                  <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
+                    {item.origin}
+                  </div>
+                  <div className="text-base font-bold leading-tight text-white">
+                    {item.car}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReviewsSection() {
+  return (
+    <section className="bg-neutral-50">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
+            Recenzije
+          </span>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className="h-7 w-7 fill-yellow-400 text-yellow-400"
+                />
+              ))}
+            </div>
+            <span className="text-3xl font-black tracking-tight text-black">
+              4,9
+            </span>
+          </div>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-black sm:text-3xl">
+            219 recenzija na Googleu.
+            <br />
+            Evo nekoliko izabranih.
+          </h2>
+        </div>
+
+        <div className="mt-14 grid gap-5 md:grid-cols-3">
+          {REVIEWS.map((rev, i) => (
+            <div
+              key={i}
+              className="flex flex-col rounded-3xl border border-black/10 bg-white p-7"
+            >
+              <div className="flex">
+                {[...Array(5)].map((_, j) => (
+                  <Star
+                    key={j}
+                    className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                  />
+                ))}
+              </div>
+              <p className="mt-5 grow text-sm leading-relaxed text-neutral-700">
+                &ldquo;{rev.text}&rdquo;
+              </p>
+              <div className="mt-6 border-t border-black/5 pt-5">
+                <div className="text-sm font-bold text-black">{rev.author}</div>
+                <div className="text-xs text-neutral-500">{rev.car}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <a
+            href={GOOGLE_REVIEWS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-black transition hover:text-yellow-600"
+          >
+            Vidi svih 219 recenzija na Googleu
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EquipmentSection() {
+  return (
+    <section className="bg-white">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
+            Oprema
+          </span>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl">
+            Profesionalna oprema.
+            <br />
+            <span className="text-neutral-500">Bez kompromisa.</span>
+          </h2>
+        </div>
+
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {EQUIPMENT.map((item) => (
+            <div
+              key={item.name}
+              className="rounded-2xl border border-black/10 bg-neutral-50 p-5 text-center transition hover:border-yellow-400 hover:bg-yellow-50"
+            >
+              <div className="text-sm font-bold text-black">{item.name}</div>
+              <div className="mt-1 text-xs text-neutral-500">{item.note}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ContactSection() {
+  return (
+    <section id="kontakt" className="bg-yellow-400">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-black/70">
+              Kontakt
+            </span>
+            <h2 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl lg:text-6xl">
+              Spreman za 47 koraka?
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-black/80 sm:text-lg">
+              Direktan poziv Maxu — bez forme, bez čekanja. Reci što ti
+              treba, dobiješ iskreni quote i termin u najkraćem roku.
+            </p>
+
+            <div className="mt-10 space-y-3">
+              <a
+                href={`tel:${PHONE_PRIMARY_TEL}`}
+                className="group flex items-center gap-4 rounded-3xl bg-black px-6 py-5 text-white transition hover:bg-neutral-800"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-400 text-black">
+                  <Phone className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
+                    Max · Voditelj
+                  </div>
+                  <div className="text-2xl font-black tracking-tight">
+                    {PHONE_PRIMARY}
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-yellow-400 transition group-hover:translate-x-1" />
+              </a>
+              <a
+                href={`tel:${PHONE_SECONDARY_TEL}`}
+                className="group flex items-center gap-4 rounded-3xl border-2 border-black/15 bg-white px-6 py-5 text-black transition hover:border-black/40"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black text-yellow-400">
+                  <Phone className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs font-medium uppercase tracking-widest text-neutral-500">
+                    Rezervacije
+                  </div>
+                  <div className="text-2xl font-black tracking-tight">
+                    {PHONE_SECONDARY}
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-black/40 transition group-hover:translate-x-1" />
+              </a>
+            </div>
+          </div>
+
+          <div className="space-y-6 rounded-3xl bg-white p-7 sm:p-9">
+            <div>
+              <div className="flex items-center gap-3 text-black">
+                <MapPin className="h-5 w-5 text-yellow-500" />
+                <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                  Adresa
+                </div>
+              </div>
+              <div className="mt-2 text-base font-semibold text-black">
+                {ADDRESS}
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-black"
+              >
+                Otvori na Google Maps
+                <ArrowRight className="h-3 w-3" />
+              </a>
+            </div>
+
+            <div className="border-t border-black/5 pt-6">
+              <div className="flex items-center gap-3 text-black">
+                <Clock className="h-5 w-5 text-yellow-500" />
+                <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                  Radno vrijeme
+                </div>
+              </div>
+              <div className="mt-2 space-y-1 text-sm text-neutral-700">
+                {HOURS_LINES.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-black/5 pt-6">
+              <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                Pratite nas
+              </div>
+              <div className="mt-3 flex gap-3">
+                <a
+                  href={IG_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
+                >
+                  Instagram
+                </a>
+                <a
+                  href={FB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
+                >
+                  Facebook
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="bg-black text-white">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex items-baseline gap-2">
+          <span className="text-xl font-black tracking-tight">BAYWASH</span>
+          <span className="text-xs font-medium text-neutral-400">
+            Premium Detailing · Viškovo, Rijeka
+          </span>
+        </div>
+        <div className="text-xs text-neutral-500">
+          BAYWASH - Premium j.d.o.o. · © {new Date().getFullYear()}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export default function BaywashPage() {
+  return (
+    <main className="bg-white text-black antialiased">
+      <Header />
+      <Hero />
+      <PullQuote />
+      <ProcessSection />
+      <PackagesSection />
+      <VoditeljSection />
+      <InternationalSection />
+      <ReviewsSection />
+      <EquipmentSection />
+      <ContactSection />
+      <Footer />
+    </main>
+  );
+}
