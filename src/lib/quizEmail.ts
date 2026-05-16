@@ -113,7 +113,7 @@ Lamon Agency
   <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
 
   <p><strong>Sljedeći korak</strong> — ako želiš da te vodim tjedno:</p>
-  <p>🎯 SideHustle premium grupa <strong>€50/mj</strong> — <a href="https://www.skool.com/sidehustlebalkan/about" style="color: #c9a84c;">skool.com/sidehustlebalkan</a></p>
+  <p>🎯 SideHustle premium grupa <strong>€50/mj</strong> — <a href="https://www.skool.com/sidehustlebalkan/about" style="color: #c9a84c;">skool.com/sidehustlebalkan/about</a></p>
   <ul style="margin: 8px 0 16px 0; padding-left: 18px; font-size: 13px; color: #444;">
     <li>Tjedni live grupni pozivi (srijeda 20:00)</li>
     <li><strong>NICHE DROPOVI</strong> — svaka 2 tjedna nova viralna niša</li>

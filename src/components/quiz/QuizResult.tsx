@@ -217,7 +217,6 @@ export function QuizResult({ lead }: { lead: QuizLead }) {
 function ScoreCircle({ score }: { score: number }) {
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
 
   let color = "var(--color-danger)";
   let label = "Nizak start";
@@ -231,6 +230,27 @@ function ScoreCircle({ score }: { score: number }) {
     color = "var(--color-warning)";
     label = "Treba fokus";
   }
+
+  // Animate number from 0 → score on mount, synced with the SVG ring
+  // sweep (~1.4s). Uses rAF with ease-out so the count slows as it
+  // approaches the final value (more satisfying than linear).
+  const [displayed, setDisplayed] = useState(0);
+  useEffect(() => {
+    const duration = 1600; // ms — matches stroke-dashoffset transition
+    const start = performance.now();
+    let raf: number;
+    function step(now: number) {
+      const t = Math.min(1, (now - start) / duration);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplayed(Math.round(eased * score));
+      if (t < 1) raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [score]);
+
+  const offset = circumference - (displayed / 100) * circumference;
 
   return (
     <div className="relative">
@@ -253,11 +273,10 @@ function ScoreCircle({ score }: { score: number }) {
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          style={{ transition: "stroke-dashoffset 1.4s ease-out" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-6xl font-bold tabular-nums">{score}</span>
+        <span className="text-6xl font-bold tabular-nums">{displayed}</span>
         <span className="-mt-1 text-xs font-semibold tracking-wider text-text-dim">
           / 100
         </span>
@@ -359,7 +378,7 @@ function CtaCard({ leadId, leadName }: { leadId: string; leadName: string }) {
         onClick={handleClick}
         className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-6 py-4 text-base font-bold text-bg transition hover:bg-gold-bright"
       >
-        {acked ? "Otvaram Skool…" : "Pridruži se SideHustle premium →"}
+        <span>{acked ? "Otvaram Skool…" : "Pridruži se SideHustle premium grupi"}</span>
         <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
       </button>
       <p className="mt-3 text-center text-xs text-text-muted">
