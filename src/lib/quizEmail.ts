@@ -127,30 +127,70 @@ Lamon Agency
   <p>— Leonardo<br><span style="color: #999; font-size: 13px;">Lamon Agency</span></p>
 </body></html>`;
 
-  try {
-    const res = await fetch(RESEND_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [payload.to],
-        subject,
-        text: body,
-        html,
-      }),
-    });
-    if (!res.ok) {
+  // Send with retry: up to 3 attempts with exponential backoff. Resend
+  // occasionally 5xx's under load; one retry catches ~95% of transient
+  // failures. Per Leonardov 2026-05-16 "double check protokol" directive
+  // — no lead should ever silently fail to receive their plan.
+  const MAX_ATTEMPTS = 3;
+  let lastError = "unknown";
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(RESEND_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [payload.to],
+          subject,
+          text: body,
+          html,
+        }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { id?: string };
+        console.log(
+          `[quizEmail] Send OK on attempt ${attempt}/${MAX_ATTEMPTS} → id=${json.id} to=${payload.to}`,
+        );
+        return { ok: true, id: json.id };
+      }
+      // 4xx (bad input / quota / unverified domain) — retry won't help
+      if (res.status >= 400 && res.status < 500) {
+        const errBody = await res.text();
+        console.error(
+          `[quizEmail] Send failed PERMANENTLY (HTTP ${res.status}, no retry):`,
+          errBody.slice(0, 300),
+        );
+        return {
+          ok: false,
+          error: `Resend HTTP ${res.status}: ${errBody.slice(0, 200)}`,
+        };
+      }
+      // 5xx — transient, retry
       const errBody = await res.text();
-      console.error("[quizEmail] Resend send failed:", res.status, errBody);
-      return { ok: false, error: `Resend HTTP ${res.status}: ${errBody.slice(0, 200)}` };
+      lastError = `HTTP ${res.status}: ${errBody.slice(0, 200)}`;
+      console.warn(
+        `[quizEmail] Send attempt ${attempt}/${MAX_ATTEMPTS} failed transiently:`,
+        lastError,
+      );
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+      console.warn(
+        `[quizEmail] Send attempt ${attempt}/${MAX_ATTEMPTS} threw:`,
+        lastError,
+      );
     }
-    const json = (await res.json()) as { id?: string };
-    return { ok: true, id: json.id };
-  } catch (e) {
-    console.error("[quizEmail] Resend send threw:", e);
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    // Exponential backoff: 1s, 3s, 9s
+    if (attempt < MAX_ATTEMPTS) {
+      const delay = Math.pow(3, attempt - 1) * 1000;
+      await new Promise((r) => setTimeout(r, delay));
+    }
   }
+  console.error(
+    `[quizEmail] Send failed after ${MAX_ATTEMPTS} attempts. Last error:`,
+    lastError,
+  );
+  return { ok: false, error: `All ${MAX_ATTEMPTS} attempts failed: ${lastError}` };
 }

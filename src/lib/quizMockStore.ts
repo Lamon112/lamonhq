@@ -31,6 +31,11 @@ export interface MockQuizLead {
   status: "new" | "dm_sent" | "replied" | "skool_invited" | "converted" | "cold";
   generated_at: string | null;
   generation_cost_usd: number | null;
+  email_status: "pending" | "sent" | "delivered" | "failed" | "bounced" | "skipped" | null;
+  email_provider_id: string | null;
+  email_error: string | null;
+  email_sent_at: string | null;
+  email_attempts: number;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +67,11 @@ export function mockInsert(initial: Partial<MockQuizLead>): MockQuizLead {
     status: "new",
     generated_at: null,
     generation_cost_usd: null,
+    email_status: null,
+    email_provider_id: null,
+    email_error: null,
+    email_sent_at: null,
+    email_attempts: 0,
     created_at: now,
     updated_at: now,
   };

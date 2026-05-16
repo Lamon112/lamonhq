@@ -337,14 +337,22 @@ export async function POST(request: Request) {
         .eq("id", leadId);
     }
 
-    // Fire-and-forget email send. Wrapped in try so a failed email doesn't
-    // break the user's flow (they still get the result page). Resend
-    // no-ops if RESEND_API_KEY env is missing — deploy will work without it.
+    // Email send with double-check protocol — retry + explicit status
+    // tracking persisted to DB so the HQ Quiz Funnel panel can surface
+    // failed sends. Per Leonardov 2026-05-16 directive: every lead must
+    // have verifiable email_status, never silently fail.
     if (parsed.score !== undefined) {
       const resultUrl =
         (process.env.NEXT_PUBLIC_SITE_URL || "https://lamon-hq.vercel.app") +
         `/quiz/result/${leadId}`;
+      let emailStatus: "sent" | "failed" | "skipped" = "skipped";
+      let emailProviderId: string | null = null;
+      let emailError: string | null = null;
+      let emailAttempts = 0;
+      const sentAt = new Date().toISOString();
+
       try {
+        emailAttempts = 1;
         const emailResult = await sendQuizPlanEmail({
           to: kontakt.email,
           leadName: kontakt.name?.trim() || "ej",
@@ -353,11 +361,37 @@ export async function POST(request: Request) {
           matchedCaseStudy: parsed.matched_case_study ?? null,
           planMd: parsed.plan_md ?? "",
         });
-        if (!emailResult.ok && !emailResult.skipped) {
-          console.error("[quiz/submit] email send failed:", emailResult.error);
+        if (emailResult.skipped) {
+          emailStatus = "skipped";
+          emailError = "RESEND_API_KEY not set";
+        } else if (emailResult.ok) {
+          emailStatus = "sent";
+          emailProviderId = emailResult.id ?? null;
+        } else {
+          emailStatus = "failed";
+          emailError = emailResult.error ?? "unknown";
+          console.error("[quiz/submit] email send failed:", emailError);
         }
       } catch (e) {
+        emailStatus = "failed";
+        emailError = e instanceof Error ? e.message : String(e);
         console.error("[quiz/submit] email threw:", e);
+      }
+
+      // Persist email status — both in mock and real Supabase mode so the
+      // panel sees it everywhere.
+      const emailPatch = {
+        email_status: emailStatus,
+        email_provider_id: emailProviderId,
+        email_error: emailError ? emailError.slice(0, 500) : null,
+        email_sent_at: sentAt,
+        email_attempts: emailAttempts,
+      };
+      if (isMockMode()) {
+        mockUpdate(leadId, emailPatch as Parameters<typeof mockUpdate>[1]);
+      } else {
+        const sb = getServiceSupabase();
+        await sb.from("quiz_leads").update(emailPatch).eq("id", leadId);
       }
     }
   } catch (e) {

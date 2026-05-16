@@ -39,6 +39,11 @@ export interface QuizLead {
   status: "new" | "dm_sent" | "replied" | "skool_invited" | "converted" | "cold";
   generated_at: string | null;
   generation_cost_usd: number | null;
+  email_status: "pending" | "sent" | "delivered" | "failed" | "bounced" | "skipped" | null;
+  email_provider_id: string | null;
+  email_error: string | null;
+  email_sent_at: string | null;
+  email_attempts: number | null;
   created_at: string;
   updated_at: string;
 }

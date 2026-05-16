@@ -424,8 +424,28 @@ function LeadRow({
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-text-muted">
             {lead.lead_email && (
               <span className="flex items-center gap-1">
-                <Mail size={10} />
+                <Mail
+                  size={10}
+                  className={
+                    lead.email_status === "sent" || lead.email_status === "delivered"
+                      ? "text-success"
+                      : lead.email_status === "failed" || lead.email_status === "bounced"
+                        ? "text-danger"
+                        : lead.email_status === "skipped"
+                          ? "text-warning"
+                          : ""
+                  }
+                />
                 {lead.lead_email}
+                {lead.email_status === "sent" && (
+                  <span title={`Sent ${lead.email_sent_at}`} className="text-success">✓</span>
+                )}
+                {lead.email_status === "failed" && (
+                  <span title={lead.email_error ?? "Send failed"} className="text-danger">⚠</span>
+                )}
+                {lead.email_status === "skipped" && (
+                  <span title="RESEND_API_KEY missing" className="text-warning">○</span>
+                )}
               </span>
             )}
             {lead.lead_telegram && (
