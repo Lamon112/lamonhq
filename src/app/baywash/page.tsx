@@ -37,6 +37,7 @@ import { Counter } from "./_components/Counter";
 import { Reveal } from "./_components/Reveal";
 import { BeforeAfterSlider } from "./_components/BeforeAfterSlider";
 import { ValueCalculator } from "./_components/ValueCalculator";
+import { HeroMedia } from "./_components/HeroMedia";
 
 const PHONE_PRIMARY = "099 667 0969";
 const PHONE_PRIMARY_TEL = "+385996670969";
@@ -325,36 +326,9 @@ function Hero() {
         <Reveal delay={0.15}>
           <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-900">
             {/* Real Baywash workshop video — autoplay loop, muted, mobile-friendly */}
-            {/* Static fallback layer — visible only when video doesn't autoplay
-                (some mobile browsers block, slow networks). Uses the Baywash
-                yellow brand logo as a stylized background pattern so the
-                hero is NEVER the same Ferrari image as the International
-                section card. */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900"
-              style={{
-                backgroundImage: `
-                  radial-gradient(ellipse at 50% 50%, rgba(250,204,21,0.18) 0%, transparent 60%),
-                  url(/baywash/baywash-profilna.jpg)
-                `,
-                backgroundSize: "auto, 60% auto",
-                backgroundPosition: "center, center",
-                backgroundRepeat: "no-repeat, no-repeat",
-                filter: "saturate(0.9)",
-              }}
-            />
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              className="absolute inset-0 h-full w-full object-cover"
-              aria-hidden="true"
-            >
-              <source src="/baywash/hero-bg.mp4" type="video/mp4" />
-            </video>
+            {/* HeroMedia handles fallback bg + video w/ forced JS play() +
+                Baywash song audio element + tap-to-play sound button. */}
+            <HeroMedia />
             {/* Dark gradient overlay so the white "47" pops */}
             <div
               aria-hidden="true"
