@@ -309,13 +309,16 @@ export function MoneyRushGame() {
     : 100;
 
   return (
-    <div className="w-full max-w-md select-none">
-      {/* HUD */}
-      <div className="mb-2 flex items-center justify-between gap-3 px-1">
+    <div className="mx-auto w-full max-w-[22rem] select-none">
+      {/* HUD — kompaktni 2-kolumna layout, optimiziran za 360px+ mobile.
+          Bilanca tabular-nums tekst može biti širok za "€1.65K" pa smo
+          smanjili font + dodali shrink-0 da ne istisne tier label.
+          overflow-hidden na flex parent stops horizontal scroll bleed. */}
+      <div className="mb-2 flex items-start justify-between gap-2 overflow-hidden px-1">
         <div className="min-w-0 flex-1">
           <span
-            className="text-base font-black tracking-wider"
-            style={{ color: tier.color, textShadow: `0 0 12px ${tier.color}55` }}
+            className="block truncate text-sm font-black tracking-wide sm:text-base"
+            style={{ color: tier.color, textShadow: `0 0 10px ${tier.color}55` }}
           >
             {tier.label}
           </span>
@@ -330,30 +333,31 @@ export function MoneyRushGame() {
             />
           </div>
           {nextTier && (
-            <p className="mt-0.5 text-[9px] text-text-muted">
+            <p className="mt-0.5 truncate text-[9px] text-text-muted">
               → <span className="font-bold" style={{ color: nextTier.color }}>{nextTier.label}</span> @ {fmtMoney(nextTier.min)}
             </p>
           )}
         </div>
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <p className="text-[9px] font-semibold uppercase tracking-wider text-text-muted">Bilanca</p>
           <p
-            className="text-2xl font-black tabular-nums"
-            style={{ color: "#e0bf5e", textShadow: "0 0 10px rgba(224,191,94,0.4)" }}
+            className="text-xl font-black tabular-nums leading-none sm:text-2xl"
+            style={{ color: "#e0bf5e", textShadow: "0 0 8px rgba(224,191,94,0.4)" }}
           >
             {fmtMoney(displayMoney)}
           </p>
-          <p className="text-[9px] tabular-nums text-text-dim">best {fmtMoney(bestMoney)}</p>
+          <p className="mt-0.5 text-[9px] tabular-nums text-text-dim">best {fmtMoney(bestMoney)}</p>
         </div>
       </div>
 
-      {/* Game container — delegated tap handler catches every tap and
-          hit-tests against all alive items. No per-item handlers needed. */}
+      {/* Game container — aspect 3:5 manji od prijašnjeg 9:14 da uvijek
+          stane unutar 55dvh na bilo kojem mobu bez clip-a. dvh (dynamic
+          viewport height) rješava iOS Safari URL-bar shrink jitter. */}
       <div
         ref={containerRef}
         onPointerDown={handleContainerTap}
-        className="relative w-full overflow-hidden rounded-2xl border border-gold/40 shadow-2xl shadow-gold/20 mr-game-bg"
-        style={{ aspectRatio: "9 / 14", maxHeight: "65vh", touchAction: "none" }}
+        className="relative mx-auto w-full overflow-hidden rounded-2xl border border-gold/40 shadow-2xl shadow-gold/20 mr-game-bg"
+        style={{ aspectRatio: "3 / 5", maxHeight: "55dvh", touchAction: "none" }}
       >
         {/* Debug counter — top-left, small. Stays visible so Leonardo can
             tell at a glance whether spawn loop is alive (spawned should
