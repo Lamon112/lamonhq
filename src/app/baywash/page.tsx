@@ -1,11 +1,11 @@
 /**
  * Baywash — Premium Auto Detailing Studio · Viškovo, Rijeka
  *
- * Surprise client microsite for Max (Baywash voditelj) ahead of Mon 2026-05-18.
+ * Surprise client microsite for Max (Baywash vlasnik) ahead of Mon 2026-05-18.
  *
  * BRAND ARCHETYPE (locked):
  * - Colors: white background, black text, yellow (#FACC15) accent ONLY.
- * - Voice: "Voditelj, ne vlasnik." Anti-status, technical, anti-hype.
+ * - Voice: anti-status premium leader. Technical, anti-hype.
  *   Drawing directly on Maxov dialog: "Mi ne peremo auto. Mi gradimo
  *   sustav koji štiti auto sljedećih 3 do 5 godina."
  *
@@ -207,8 +207,8 @@ function Header() {
           <a href="#kalkulator" className="transition hover:text-black">
             Kalkulator
           </a>
-          <a href="#voditelj" className="transition hover:text-black">
-            Voditelj
+          <a href="#vlasnik" className="transition hover:text-black">
+            Vlasnik
           </a>
           <a href="#kontakt" className="transition hover:text-black">
             Kontakt
@@ -415,7 +415,7 @@ function PullQuote() {
             </span>
           </blockquote>
           <div className="mt-6 text-sm font-medium uppercase tracking-wider text-neutral-500">
-            — Max, voditelj Baywasha
+            — Max, vlasnik Baywasha
           </div>
         </Reveal>
       </div>
@@ -583,7 +583,7 @@ function PackagesSection() {
                   }`}
                 >
                   <Phone className="h-4 w-4" />
-                  Pozovi za quote
+                  Nazovi za tretman
                 </a>
               </div>
             </Reveal>
@@ -594,23 +594,25 @@ function PackagesSection() {
   );
 }
 
-function VoditeljSection() {
+function VlasnikSection() {
   return (
-    <section id="voditelj" className="bg-white">
+    <section id="vlasnik" className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           <Reveal>
             <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
-              Voditelj
+              Vlasnik
             </span>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
-              Ne vlasnik.
+              Iza svakog
               <br />
-              <YellowAccent>Voditelj.</YellowAccent>
+              detalja je
+              <br />
+              <YellowAccent>Max.</YellowAccent>
             </h2>
             <div className="mt-6 space-y-4 text-base leading-relaxed text-neutral-700 sm:text-lg">
               <p>
-                Max je voditelj koji vozi lošiji auto od svog radnika. Novac
+                Max je vlasnik koji vozi lošiji auto od svog radnika. Novac
                 vraća u ekipu i opremu, ne u status. Vjeruje da lojalnost
                 gradiš godinama — ne mjesecima.
               </p>
@@ -883,7 +885,7 @@ function ContactSection() {
                 </div>
                 <div className="flex-1">
                   <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
-                    Max · Voditelj
+                    Max · Vlasnik
                   </div>
                   <div className="text-2xl font-black tracking-tight">
                     {PHONE_PRIMARY}
@@ -1122,7 +1124,7 @@ export default function BaywashPage() {
       <section id="kalkulator">
         <ValueCalculator />
       </section>
-      <VoditeljSection />
+      <VlasnikSection />
       <InternationalSection />
       <ReviewsSection />
       <EquipmentSection />
