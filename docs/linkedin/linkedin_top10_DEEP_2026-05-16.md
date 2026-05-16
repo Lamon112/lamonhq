@@ -102,42 +102,48 @@ Leo
 
 ---
 
-### #3 — Jadran Hudoklin ⭐ A-tier (MAX INTENT)
+### #4 — Anamaria Raspopović ⭐ A-tier (OTW + Avon + Bernays edu)
+
+_⚠ Replaced Jadran Hudoklin per Leonardov 2026-05-16 feedback ("premalo otkriven"). Anamaria has richer visible profile + higher mutuals + higher score._
 
 | Kriterij | Score |
 |---|---|
-| FIT | 8/25 (current Mar turist, past BAT Outside Sales — premium brand exposure) |
-| INTENT | **15/15** (OTW badge VISIBLE + headline "Open to work" + smaller current employer + Message direct + recent education) |
-| REACH | 1/10 (1 mutual, 92 conn, low networker) |
-| **Total** | **24/50** |
-| Multiplier | OTW max (1.0) × activity_unknown (0.6) = 0.6 |
-| **Response prob** | **29%** |
+| FIT | 13/25 (Avon Sales Support past, consultative outbound discipline, FMCG brand) |
+| INTENT | **13/15** (OTW badge VISUAL + headline "Open to work" + Avon transitional + Message direct + Bernays edu) |
+| REACH | 4/10 (4 mutuals, 355 conn near-500, rich profile) |
+| **Total** | **30/50** |
+| Multiplier | OTW (1.0) × activity_unknown (0.7) = 0.7 |
+| **Response prob** | **42%** |
 
-- **LinkedIn:** https://www.linkedin.com/in/jadran-hudoklin-b7797216a/
-- **Lokacija:** Zagreb ✓
-- **Past:** Outside Sales Rep @ BAT (British American Tobacco) — multi-national FMCG field sales
-- **Current:** Mar turist d.o.o. (tourism, OTW signal — htio izaći)
-- **OTW badge:** ✓✓✓ (zeleni ring + "Open to work" headline + sub-text "Croatia | On-site • Hybrid • Remote")
-- **Mutuals:** Filip (1)
-- **HR-native:** ✓ Zagreb + Croatian surname (Hudoklin je Slovenian-origin ali Zagreb resident)
-- **Template:** C (OTW) — IDEALAN fit za template
+- **LinkedIn:** https://www.linkedin.com/in/anamaria-raspopovi%C4%87-5021431a1/
+- **Lokacija:** Croatia ✓ (grad u headline-u nije specifiziran, OTW detail kaže "Croatia | Hybrid · Remote")
+- **Past:** Sales Support @ Avon (per Cowork search snippet — Avon rep model = built-in consultative outbound discipline)
+- **Current:** Avon (transitional given OTW)
+- **OTW badge:** ✓✓✓ (zeleni #OPENTOWORK ring + headline "Open to work" + sub-text "Croatia +1 more | Hybrid · Remote")
+- **Education:** **Edward Bernays University College** (HR top private school za PR/komunikacijske znanosti — strong communicator profile)
+- **Mutuals:** Pavla, Martina + 2 = 4 ukupno
+- **Connections:** 355 (active networker, near-500)
+- **HR-native:** ✓ Croatia + HR education + Croatian-speaking via Bernays
+- **Template:** C (OTW)
 
 **DM:**
 ```
-Pozdrav Jadran,
+Pozdrav Anamaria,
 
-Vidio sam da si OTW (Croatia | Remote OK) i da iza tebe stoji Outside Sales Rep rola @ BAT — field sales discipline iz multinacionalne FMCG je točan tip mindseta koji tražim.
+Vidio sam OTW + sales rep iskustvo @ Avon — direct outbound consultative discipline + komunikacijska edukacija sa Bernays-a. Točan mindset koji tražim.
 
 Možda nije baš full-time, ali realan side income €1.000-2.000/mj uz fleksibilan raspored — može preći u full-time ako klikne.
 
 Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu. Trial tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 i 14-16:30). 100% remote.
+Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 i 14-16:30). 100% remote (Hybrid OK).
 
-10 min Zoom da pokažem što i kako?
+Imamo Pavlu, Martinu i još 2 zajednička kontakta. 10 min Zoom da pokažem materijal?
 
 Leo
 ```
+
+_Razlog zamjene Jadrana: njegov profile bio "premalo otkriven" (per Leonardov feedback). Anamaria ima: (a) visual OTW istog jakog signala, (b) 4 mutuals vs Jadranov 1, (c) 355 conn vs 92, (d) Bernays komunikacijska edukacija + Avon brand visible, (e) richer profile detail page (cover photo, badges, IPA detail). Jadran prebačen na backup pool #11._
 
 ---
 
@@ -405,9 +411,9 @@ Leo
 | Rank | Ime | Bucket | Lokacija | Score | OTW | Mutuals | Resp.prob | Verify needed |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Bruno Dunaj | C | Zagreb | 33/50 | ✓ | 5 | **53%** | ✓ done |
-| 2 | Ines Huskovic | A | Zagreb | 30/50 | ✗ | 9 | **30%** | ✓ done |
-| 3 | Lara Migalić | C | Karlovac | 25/50 | ✓ | 3 | **30%** | ✓ done |
-| 4 | Jadran Hudoklin | C | Zagreb | 24/50 | ✓✓ | 1 | **29%** | ✓ done (today) |
+| 2 | Anamaria Raspopović | C | Croatia | 30/50 | ✓✓ | 4 | **42%** | ✓ done (today) ← REPLACED Jadran |
+| 3 | Ines Huskovic | A | Zagreb | 30/50 | ✗ | 9 | **30%** | ✓ done |
+| 4 | Lara Migalić | C | Karlovac | 25/50 | ✓ | 3 | **30%** | ✓ done |
 | 5 | Lidija Zenunovic | B | Split | 26/50 | ✗ | 4 | **23%** | ✓ done |
 | 6 | Ivana Jurić | A | Zagreb | 25/50 | ✗ | 6 | **20%** | ✓ done (today) |
 | 7 | Igor Hlušička | C | Zagreb | 23/50 | ✓ | 5 | **18%** | ✓ done |
@@ -436,11 +442,13 @@ Niži score, koristi ako prvih 10 ne odgovori u 7 dana:
 
 | # | Ime | Bucket | URL | Score | Razlog backup |
 |---|-----|--------|-----|---|---|
-| 11 | Petra Jandras | B | https://www.linkedin.com/in/petra-jandras-017b13298/ | 20/50 | Med Devices Rep @ MARK MEDICAL, 3 mutuals — verify pre-send |
-| 12 | David Đuroković | A | https://www.linkedin.com/in/david-%C4%91urokovi%C4%87-6a91bb195/ | 17/50 | SDR @ Infobip ali 74 conn (very low networker) |
-| 13 | Jana Perutka | A | https://www.linkedin.com/in/jana-perutka-8b369b29b/ | 17/50 | SDR @ Kolegio, 1 mutual, 136 conn |
-| 14 | Marko Ćurak | A | https://www.linkedin.com/in/marko-%C4%87urak/ | 16/50 | SDR @ Recommend (finance/biz law), 1 mutual |
-| 15 | Ivana Zeljko Hrdžić | A | https://www.linkedin.com/in/ivana-zeljko-hrd%C5%BEi%C4%87-1b752a1a8/ | 16/50 | SDR @ Roxtec, 3 mutuals — solid B-tier |
+| 11 | Jadran Hudoklin | C | https://www.linkedin.com/in/jadran-hudoklin-b7797216a/ | 24/50 | OTW + BAT past + remote OK, ali profile premalo otkriven (1 mutual, 92 conn) |
+| 12 | Ema Bajo Sabljak | C | https://www.linkedin.com/in/ema-bajo-sabljak-2580011b3/ | 21/50 | Marketing+comm specialist Zagreb, **10 mutuals** (max!), B2B City Connect past, ali NO OTW badge |
+| 13 | Petra Jandras | B | https://www.linkedin.com/in/petra-jandras-017b13298/ | 20/50 | Med Devices Rep @ MARK MEDICAL, 3 mutuals — verify pre-send |
+| 14 | David Đuroković | A | https://www.linkedin.com/in/david-%C4%91urokovi%C4%87-6a91bb195/ | 17/50 | SDR @ Infobip ali 74 conn (very low networker) |
+| 15 | Jana Perutka | A | https://www.linkedin.com/in/jana-perutka-8b369b29b/ | 17/50 | SDR @ Kolegio, 1 mutual, 136 conn |
+| 16 | Marko Ćurak | A | https://www.linkedin.com/in/marko-%C4%87urak/ | 16/50 | SDR @ Recommend (finance/biz law), 1 mutual |
+| 17 | Ivana Zeljko Hrdžić | A | https://www.linkedin.com/in/ivana-zeljko-hrd%C5%BEi%C4%87-1b752a1a8/ | 16/50 | SDR @ Roxtec, 3 mutuals — solid B-tier |
 
 ---
 
