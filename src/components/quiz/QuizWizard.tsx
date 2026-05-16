@@ -8,6 +8,58 @@ import { trackMetaEvent } from "./MetaPixel";
 import { MoneyRushGame } from "./MoneyRushGame";
 import { AnimatedBackground } from "./AnimatedBackground";
 
+/**
+ * 60-second countdown shown above the game while AI generates the plan.
+ * Counts down from `initialSeconds`. When it hits 0 the label flips
+ * to "Skoro gotovo..." (real generation typically completes in 40-50s
+ * so reaching 0 means we're in the long-tail; user already knows it
+ * could take a bit more).
+ *
+ * On unmount (=navigation to result page) the timer just disappears.
+ */
+function CountdownTimer({ initialSeconds }: { initialSeconds: number }) {
+  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const t = setTimeout(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [secondsLeft]);
+  const elapsed = initialSeconds - secondsLeft;
+  const pct = Math.min(100, (elapsed / initialSeconds) * 100);
+  const mm = Math.floor(secondsLeft / 60);
+  const ss = secondsLeft % 60;
+  const isLow = secondsLeft <= 10 && secondsLeft > 0;
+  const isDone = secondsLeft === 0;
+  return (
+    <div className="mb-3 w-full max-w-md">
+      <div className="flex items-baseline justify-between px-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+        <span>{isDone ? "Skoro gotovo…" : "Plan stiže za"}</span>
+        <span
+          className={`tabular-nums font-black text-base ${
+            isLow ? "text-warning animate-pulse" : isDone ? "text-gold-bright animate-pulse" : "text-gold"
+          }`}
+        >
+          {mm}:{String(ss).padStart(2, "0")}
+        </span>
+      </div>
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-bg-elevated">
+        <div
+          className="h-full rounded-full transition-all duration-1000 ease-linear"
+          style={{
+            width: `${pct}%`,
+            background: isDone
+              ? "linear-gradient(90deg, #c9a84c, #ff6cd8)"
+              : isLow
+                ? "linear-gradient(90deg, #c9a84c, #e0a545)"
+                : "linear-gradient(90deg, #8b7530, #e0bf5e)",
+            boxShadow: "0 0 8px rgba(224, 191, 94, 0.5)",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 type Responses = Record<string, string | string[] | { name: string; email: string; telegram?: string }>;
 
 export function QuizWizard() {
@@ -155,10 +207,11 @@ export function QuizWizard() {
           <h2 className="mt-2 text-2xl font-black md:text-3xl">
             Penji se do EMPIRE-a
           </h2>
-          <p className="mb-3 max-w-md text-xs text-text-dim">
-            AI generira tvoj plan u pozadini (~45 sek). Igra dok čekaš —
+          <p className="mb-2 max-w-md text-xs text-text-dim">
+            AI generira tvoj plan u pozadini. Igra dok čekaš —
             preusmjerava te kad bude spreman.
           </p>
+          <CountdownTimer initialSeconds={60} />
           <MoneyRushGame />
         </div>
       </>
