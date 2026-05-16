@@ -5,37 +5,38 @@
  *
  * BRAND ARCHETYPE (locked):
  * - Colors: white background, black text, yellow (#FACC15) accent ONLY.
- *   No grays except for muted body text and subtle borders. The yellow is
- *   the ONLY brand color — every other surface stays mono so it pops.
  * - Voice: "Voditelj, ne vlasnik." Anti-status, technical, anti-hype.
  *   Drawing directly on Maxov dialog: "Mi ne peremo auto. Mi gradimo
  *   sustav koji štiti auto sljedećih 3 do 5 godina."
- * - Type: Inter (inherited from root layout) — display weights for
- *   headlines, regular for body. No fancy serif because the brand is
- *   industrial-premium, not editorial-luxury.
  *
- * STRUCTURE (single page, top to bottom):
- *  1. Hero — eyebrow, headline, sub, phone CTA, trust strip
- *  2. Saudijci pull-quote (Maxov verbatim brand voice)
- *  3. 47 koraka proces — 5 stage cards
- *  4. Tri sustava — package cards (NO prices, phone CTA each)
- *  5. Voditelj Max — anti-status story + stat boxes
- *  6. Klijenti iz svijeta — UAE/Saudi proof
- *  7. Recenzije — 4.9★ social proof
- *  8. Oprema — tool stack
- *  9. Kontakt — phone, address, hours, map, socials
- * 10. Footer
+ * V2 — WOW PASS:
+ * - PaintCursor: yellow droplet trail follows cursor (desktop only)
+ * - Counter: stats animate from 0 on scroll into view
+ * - Reveal: scroll-triggered fade+slide-up on every section
+ * - BeforeAfterSlider: interactive drag-to-wipe paint correction reveal
+ * - ValueCalculator: residual value calc, sliders + animated benefit number
+ * - Yellow underline accents: CSS-animated draw-in via .accent-underline
  *
- * PRIMARY CTA: phone (Max preferira osobni poziv, ne Calendly).
+ * Primary CTA: phone (Max preferira osobni poziv, ne Calendly).
  * Every CTA tel:+385... link = one-tap call on mobile.
- *
- * IMAGES (v1): /public/baywash/* placeholders. Drop real assets from
- * Drive folder 10ygKz6MNX4R3WGkvDEDBWzd0wkc2Evnt later; videos in
- * "Gotovi Videi" subfolder are perfect for hero background.
  */
 
 import Link from "next/link";
-import { Phone, MapPin, Clock, Star, ArrowRight, Shield, Sparkles, Droplets } from "lucide-react";
+import {
+  Phone,
+  MapPin,
+  Clock,
+  Star,
+  ArrowRight,
+  Shield,
+  Sparkles,
+  Droplets,
+} from "lucide-react";
+import { PaintCursor } from "./_components/PaintCursor";
+import { Counter } from "./_components/Counter";
+import { Reveal } from "./_components/Reveal";
+import { BeforeAfterSlider } from "./_components/BeforeAfterSlider";
+import { ValueCalculator } from "./_components/ValueCalculator";
 
 const PHONE_PRIMARY = "099 667 0969";
 const PHONE_PRIMARY_TEL = "+385996670969";
@@ -48,9 +49,6 @@ const FB_URL = "https://www.facebook.com/baywash.rijeka/";
 const GOOGLE_REVIEWS_URL =
   "https://www.google.com/search?q=baywash+rijeka+vi%C5%A1kovo";
 
-// 47-koraka proces broken into 5 narrative stages (Maxov own framing
-// from Notion intake: clients don't understand the steps, so we explain
-// what each stage *does* not just lists tools).
 const PROCESS_STAGES = [
   {
     n: "01",
@@ -89,8 +87,6 @@ const PROCESS_STAGES = [
   },
 ];
 
-// Three packages — no prices on the site (Max preferira osobni quote).
-// Each card sends user straight to tel: link for primary CTA.
 const PACKAGES = [
   {
     name: "Quick Refresh",
@@ -128,8 +124,6 @@ const PACKAGES = [
   },
 ];
 
-// Testimonials — placeholder text in Maxov client voice (HR + 1 UAE/EN).
-// Replace with real Google review quotes after import from Google Business.
 const REVIEWS = [
   {
     text:
@@ -151,7 +145,6 @@ const REVIEWS = [
   },
 ];
 
-// Equipment — list of real tools Max uses, per Notion intake doc.
 const EQUIPMENT = [
   { name: "Rupes Bigfoot", note: "Polishing system" },
   { name: "Artdeshine NGC+", note: "Graphene coating" },
@@ -161,14 +154,31 @@ const EQUIPMENT = [
   { name: "Steam injection", note: "Interior deep" },
 ];
 
-// Stat boxes for the Voditelj section. Conservative numbers from Notion;
-// swap with real values from Maxov intake answers when they come back.
-const STATS = [
-  { value: "219+", label: "Google recenzija" },
-  { value: "4,9", label: "Prosjek ocjena" },
-  { value: "47", label: "Koraka po autu" },
-  { value: "5+", label: "Zemalja klijenata" },
+// Stats use Counter — animated on scroll
+const STATS: Array<{
+  target: number;
+  decimals?: 0 | 1 | 2;
+  suffix?: string;
+  label: string;
+}> = [
+  { target: 219, suffix: "+", label: "Google recenzija" },
+  { target: 4.9, decimals: 1, label: "Prosjek ocjena" },
+  { target: 47, label: "Koraka po autu" },
+  { target: 5, suffix: "+", label: "Zemalja klijenata" },
 ];
+
+/** Yellow accent underline — draws in on view via CSS keyframe. */
+function YellowAccent({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="relative inline-block">
+      <span className="relative z-10">{children}</span>
+      <span
+        aria-hidden="true"
+        className="accent-underline absolute inset-x-0 bottom-1 z-0 h-3 origin-left bg-yellow-300/70 sm:h-4"
+      />
+    </span>
+  );
+}
 
 function Header() {
   return (
@@ -193,6 +203,9 @@ function Header() {
           <a href="#tretmani" className="transition hover:text-black">
             Tretmani
           </a>
+          <a href="#kalkulator" className="transition hover:text-black">
+            Kalkulator
+          </a>
           <a href="#voditelj" className="transition hover:text-black">
             Voditelj
           </a>
@@ -216,21 +229,25 @@ function Header() {
 function Hero() {
   return (
     <section className="relative overflow-hidden bg-white">
-      <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:py-32">
-        <div className="flex flex-col justify-center">
+      {/* Ambient yellow gradient mesh for depth */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-32 top-0 h-[500px] w-[500px] rounded-full bg-yellow-300/15 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-20 bottom-0 h-[400px] w-[400px] rounded-full bg-yellow-200/20 blur-3xl"
+      />
+
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:py-32">
+        <Reveal className="flex flex-col justify-center">
           <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-yellow-300/60 bg-yellow-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-neutral-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-yellow-400" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-400" />
             Premium Auto Detailing · Viškovo, Rijeka
           </span>
           <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-black sm:text-5xl lg:text-6xl">
             Tvoj auto zaslužuje{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10">47 koraka.</span>
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-0 bottom-1 z-0 h-3 bg-yellow-300/70 sm:h-4"
-              />
-            </span>
+            <YellowAccent>47 koraka.</YellowAccent>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-neutral-600 sm:text-lg">
             Studio koji klijenti voze 5.000 km da bi došli do njega. Stage 4
@@ -270,30 +287,36 @@ function Hero() {
             <div className="h-4 w-px bg-neutral-300" />
             <div>Klijenti iz Dubaija, Saudijske Arabije, Italije</div>
           </div>
-        </div>
+        </Reveal>
 
-        {/* Hero visual — yellow geometry placeholder until real photo lands */}
-        <div className="relative">
+        {/* Hero visual — animated 47 with rotating ring + shimmer */}
+        <Reveal delay={0.15}>
           <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-100">
-            {/* Yellow accent gradient ring */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-200/40 via-transparent to-yellow-100/20" />
+            {/* Slow-rotating yellow gradient ring */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-br from-yellow-200/40 via-transparent to-yellow-100/20"
+            />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative h-3/4 w-3/4">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 blur-3xl opacity-30" />
+                <div className="hero-ring absolute inset-0 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 opacity-40 blur-3xl" />
                 <div className="relative flex h-full w-full items-center justify-center text-center">
                   <div>
                     <div className="text-7xl font-black tracking-tight text-black sm:text-8xl">
-                      47
+                      <Counter target={47} durationMs={1800} />
                     </div>
                     <div className="mt-2 text-sm font-medium uppercase tracking-widest text-neutral-600">
                       koraka po autu
+                    </div>
+                    {/* Shimmer line under the number */}
+                    <div className="mx-auto mt-4 h-0.5 w-16 overflow-hidden bg-neutral-200">
+                      <div className="hero-shimmer h-full w-full bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            {/* Bottom info badge */}
-            <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-white/95 p-4 backdrop-blur shadow-lg">
+            <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur">
               <div className="text-xs font-medium uppercase tracking-wider text-neutral-500">
                 Najnoviji tretman
               </div>
@@ -305,7 +328,7 @@ function Hero() {
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -315,26 +338,28 @@ function PullQuote() {
   return (
     <section className="border-y border-black/5 bg-neutral-50">
       <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
-        <div className="mx-auto mb-6 h-10 w-10 text-yellow-400">
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-            className="h-full w-full"
-          >
-            <path d="M6 17h2.5l1.5-4V8H4v5h2zm9 0h2.5l1.5-4V8h-6v5h2z" />
-          </svg>
-        </div>
-        <blockquote className="text-2xl font-medium leading-snug text-black sm:text-3xl lg:text-4xl">
-          Mi ne peremo auto.
-          <br />
-          <span className="text-neutral-700">
-            Mi gradimo sustav koji štiti auto sljedećih 3 do 5 godina.
-          </span>
-        </blockquote>
-        <div className="mt-6 text-sm font-medium uppercase tracking-wider text-neutral-500">
-          — Max, voditelj Baywasha
-        </div>
+        <Reveal>
+          <div className="mx-auto mb-6 h-10 w-10 text-yellow-400">
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+              className="h-full w-full"
+            >
+              <path d="M6 17h2.5l1.5-4V8H4v5h2zm9 0h2.5l1.5-4V8h-6v5h2z" />
+            </svg>
+          </div>
+          <blockquote className="text-2xl font-medium leading-snug text-black sm:text-3xl lg:text-4xl">
+            Mi ne peremo auto.
+            <br />
+            <span className="text-neutral-700">
+              Mi gradimo sustav koji štiti auto sljedećih 3 do 5 godina.
+            </span>
+          </blockquote>
+          <div className="mt-6 text-sm font-medium uppercase tracking-wider text-neutral-500">
+            — Max, voditelj Baywasha
+          </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -344,78 +369,98 @@ function ProcessSection() {
   return (
     <section id="proces" className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
             Proces
           </span>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
             Svaki auto kod nas prolazi
             <br />
-            <span className="relative inline-block">
-              <span className="relative z-10">47 koraka.</span>
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-0 bottom-1 z-0 h-3 bg-yellow-300/70 sm:h-4"
-              />
-            </span>
+            <YellowAccent>47 koraka.</YellowAccent>
           </h2>
           <p className="mt-5 text-base leading-relaxed text-neutral-600 sm:text-lg">
             Ne brzo. Ne jeftino. Ne kompromis. Svaki korak ima svrhu, svaki
             alat ima razlog. Evo zašto klijenti dolaze iz cijele Europe.
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PROCESS_STAGES.map((stage, i) => {
             const Icon = stage.icon;
             return (
-              <div
-                key={stage.n}
-                className={`relative rounded-3xl border border-black/10 bg-white p-7 transition hover:border-yellow-400/60 hover:shadow-lg ${
-                  i === 0 ? "lg:col-span-1" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700">
-                    <Icon className="h-6 w-6" />
+              <Reveal key={stage.n} delay={i * 0.08}>
+                <div className="relative h-full rounded-3xl border border-black/10 bg-white p-7 transition hover:-translate-y-1 hover:border-yellow-400/60 hover:shadow-xl hover:shadow-yellow-400/10">
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+                      {stage.n}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-                    {stage.n}
-                  </span>
+                  <h3 className="mt-6 text-xl font-bold tracking-tight text-black">
+                    {stage.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-neutral-600">
+                    {stage.blurb}
+                  </p>
                 </div>
-                <h3 className="mt-6 text-xl font-bold tracking-tight text-black">
-                  {stage.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-neutral-600">
-                  {stage.blurb}
-                </p>
-              </div>
+              </Reveal>
             );
           })}
 
-          {/* CTA card filling 6th slot */}
-          <a
-            href={`tel:${PHONE_PRIMARY_TEL}`}
-            className="group flex flex-col justify-between rounded-3xl bg-black p-7 text-white transition hover:bg-neutral-800"
-          >
-            <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-black">
-                <Phone className="h-6 w-6" />
+          <Reveal delay={PROCESS_STAGES.length * 0.08}>
+            <a
+              href={`tel:${PHONE_PRIMARY_TEL}`}
+              className="group flex h-full flex-col justify-between rounded-3xl bg-black p-7 text-white transition hover:-translate-y-1 hover:bg-neutral-800 hover:shadow-xl"
+            >
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-black">
+                  <Phone className="h-6 w-6" />
+                </div>
+                <h3 className="mt-6 text-xl font-bold tracking-tight">
+                  Imaš pitanje o procesu?
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-neutral-300">
+                  Max ti osobno objašnjava što je najbolje za tvoj auto. Bez
+                  prodajne priče — direktan razgovor.
+                </p>
               </div>
-              <h3 className="mt-6 text-xl font-bold tracking-tight">
-                Imaš pitanje o procesu?
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-300">
-                Max ti osobno objašnjava što je najbolje za tvoj auto. Bez
-                prodajne priče — direktan razgovor.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center justify-between text-yellow-400">
-              <span className="font-semibold">{PHONE_PRIMARY}</span>
-              <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
-            </div>
-          </a>
+              <div className="mt-6 flex items-center justify-between text-yellow-400">
+                <span className="font-semibold">{PHONE_PRIMARY}</span>
+                <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+              </div>
+            </a>
+          </Reveal>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function BeforeAfterSection() {
+  return (
+    <section className="bg-neutral-50">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
+            Stage 4 Reveal
+          </span>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
+            Pomakni klizač.
+            <br />
+            <YellowAccent>Vidi razliku.</YellowAccent>
+          </h2>
+          <p className="mt-5 text-base leading-relaxed text-neutral-600 sm:text-lg">
+            Lijevo — swirl-marks, kontaminacija, dosadna boja. Desno — Stage
+            4 paint correction + Artdeshine NGC+ Graphene. Zrcalo umjesto
+            laka.
+          </p>
+        </Reveal>
+
+        <Reveal delay={0.1} className="mt-12">
+          <BeforeAfterSlider />
+        </Reveal>
       </div>
     </section>
   );
@@ -423,9 +468,9 @@ function ProcessSection() {
 
 function PackagesSection() {
   return (
-    <section id="tretmani" className="bg-neutral-50">
+    <section id="tretmani" className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
             Tretmani
           </span>
@@ -437,52 +482,53 @@ function PackagesSection() {
             druge ciljeve. Pozovi Maxa — dobit ćeš iskreno mišljenje i jasan
             quote.
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-14 grid gap-5 md:grid-cols-3">
-          {PACKAGES.map((pkg) => (
-            <div
-              key={pkg.name}
-              className={`flex flex-col rounded-3xl border p-7 transition hover:shadow-lg ${
-                pkg.featured
-                  ? "border-yellow-400 bg-white shadow-md ring-1 ring-yellow-400/20"
-                  : "border-black/10 bg-white"
-              }`}
-            >
-              {pkg.featured ? (
-                <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">
-                  Najtraženiji
-                </div>
-              ) : null}
-              <h3 className="text-2xl font-black tracking-tight text-black">
-                {pkg.name}
-              </h3>
-              <p className="mt-1.5 text-sm font-medium text-neutral-500">
-                {pkg.tagline}
-              </p>
-              <ul className="mt-6 space-y-3 text-sm text-neutral-700">
-                {pkg.bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-2.5">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400" />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 border-t border-black/5 pt-5 text-xs leading-relaxed text-neutral-500">
-                {pkg.forWho}
-              </div>
-              <a
-                href={`tel:${PHONE_PRIMARY_TEL}`}
-                className={`mt-6 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
+          {PACKAGES.map((pkg, i) => (
+            <Reveal key={pkg.name} delay={i * 0.1}>
+              <div
+                className={`flex h-full flex-col rounded-3xl border p-7 transition hover:-translate-y-1 hover:shadow-xl ${
                   pkg.featured
-                    ? "bg-black text-white hover:bg-neutral-800"
-                    : "bg-yellow-400 text-black hover:bg-yellow-300"
+                    ? "border-yellow-400 bg-white shadow-md ring-1 ring-yellow-400/20"
+                    : "border-black/10 bg-white"
                 }`}
               >
-                <Phone className="h-4 w-4" />
-                Pozovi za quote
-              </a>
-            </div>
+                {pkg.featured ? (
+                  <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold uppercase tracking-wider text-black">
+                    Najtraženiji
+                  </div>
+                ) : null}
+                <h3 className="text-2xl font-black tracking-tight text-black">
+                  {pkg.name}
+                </h3>
+                <p className="mt-1.5 text-sm font-medium text-neutral-500">
+                  {pkg.tagline}
+                </p>
+                <ul className="mt-6 space-y-3 text-sm text-neutral-700">
+                  {pkg.bullets.map((b) => (
+                    <li key={b} className="flex items-start gap-2.5">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 border-t border-black/5 pt-5 text-xs leading-relaxed text-neutral-500">
+                  {pkg.forWho}
+                </div>
+                <a
+                  href={`tel:${PHONE_PRIMARY_TEL}`}
+                  className={`mt-6 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
+                    pkg.featured
+                      ? "bg-black text-white hover:bg-neutral-800"
+                      : "bg-yellow-400 text-black hover:bg-yellow-300"
+                  }`}
+                >
+                  <Phone className="h-4 w-4" />
+                  Pozovi za quote
+                </a>
+              </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -495,20 +541,14 @@ function VoditeljSection() {
     <section id="voditelj" className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <div>
+          <Reveal>
             <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
               Voditelj
             </span>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl">
               Ne vlasnik.
               <br />
-              <span className="relative inline-block">
-                <span className="relative z-10">Voditelj.</span>
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 bottom-1 z-0 h-3 bg-yellow-300/70 sm:h-4"
-                />
-              </span>
+              <YellowAccent>Voditelj.</YellowAccent>
             </h2>
             <div className="mt-6 space-y-4 text-base leading-relaxed text-neutral-700 sm:text-lg">
               <p>
@@ -532,21 +572,24 @@ function VoditeljSection() {
               <Phone className="h-4 w-4 text-yellow-400" />
               Razgovaraj s Maxom · {PHONE_PRIMARY}
             </a>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {STATS.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-3xl border border-black/10 bg-neutral-50 p-6 sm:p-8"
-              >
-                <div className="text-4xl font-black tracking-tight text-black sm:text-5xl">
-                  {stat.value}
+            {STATS.map((stat, i) => (
+              <Reveal key={stat.label} delay={i * 0.1}>
+                <div className="rounded-3xl border border-black/10 bg-neutral-50 p-6 sm:p-8">
+                  <div className="text-4xl font-black tracking-tight text-black sm:text-5xl">
+                    <Counter
+                      target={stat.target}
+                      decimals={stat.decimals}
+                      suffix={stat.suffix}
+                    />
+                  </div>
+                  <div className="mt-2 text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className="mt-2 text-xs font-medium uppercase tracking-widest text-neutral-500 sm:text-sm">
-                  {stat.label}
-                </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -560,7 +603,7 @@ function InternationalSection() {
     <section className="bg-black text-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
+          <Reveal>
             <span className="text-xs font-semibold uppercase tracking-widest text-yellow-400">
               Klijenti iz svijeta
             </span>
@@ -587,7 +630,7 @@ function InternationalSection() {
                 ),
               )}
             </div>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -596,19 +639,18 @@ function InternationalSection() {
               { car: "Porsche 911 Turbo S", origin: "Italija" },
               { car: "Audi RS6 Avant", origin: "Njemačka" },
             ].map((item, i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-neutral-800 to-black p-5"
-              >
-                <div className="flex h-full flex-col justify-between">
-                  <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
-                    {item.origin}
-                  </div>
-                  <div className="text-base font-bold leading-tight text-white">
-                    {item.car}
+              <Reveal key={i} delay={i * 0.08}>
+                <div className="aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-neutral-800 to-black p-5">
+                  <div className="flex h-full flex-col justify-between">
+                    <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
+                      {item.origin}
+                    </div>
+                    <div className="text-base font-bold leading-tight text-white">
+                      {item.car}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -621,7 +663,7 @@ function ReviewsSection() {
   return (
     <section className="bg-neutral-50">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
             Recenzije
           </span>
@@ -639,34 +681,33 @@ function ReviewsSection() {
             </span>
           </div>
           <h2 className="mt-3 text-2xl font-bold tracking-tight text-black sm:text-3xl">
-            219 recenzija na Googleu.
+            <Counter target={219} /> recenzija na Googleu.
             <br />
             Evo nekoliko izabranih.
           </h2>
-        </div>
+        </Reveal>
 
         <div className="mt-14 grid gap-5 md:grid-cols-3">
           {REVIEWS.map((rev, i) => (
-            <div
-              key={i}
-              className="flex flex-col rounded-3xl border border-black/10 bg-white p-7"
-            >
-              <div className="flex">
-                {[...Array(5)].map((_, j) => (
-                  <Star
-                    key={j}
-                    className="h-4 w-4 fill-yellow-400 text-yellow-400"
-                  />
-                ))}
+            <Reveal key={i} delay={i * 0.1}>
+              <div className="flex h-full flex-col rounded-3xl border border-black/10 bg-white p-7">
+                <div className="flex">
+                  {[...Array(5)].map((_, j) => (
+                    <Star
+                      key={j}
+                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                    />
+                  ))}
+                </div>
+                <p className="mt-5 grow text-sm leading-relaxed text-neutral-700">
+                  &ldquo;{rev.text}&rdquo;
+                </p>
+                <div className="mt-6 border-t border-black/5 pt-5">
+                  <div className="text-sm font-bold text-black">{rev.author}</div>
+                  <div className="text-xs text-neutral-500">{rev.car}</div>
+                </div>
               </div>
-              <p className="mt-5 grow text-sm leading-relaxed text-neutral-700">
-                &ldquo;{rev.text}&rdquo;
-              </p>
-              <div className="mt-6 border-t border-black/5 pt-5">
-                <div className="text-sm font-bold text-black">{rev.author}</div>
-                <div className="text-xs text-neutral-500">{rev.car}</div>
-              </div>
-            </div>
+            </Reveal>
           ))}
         </div>
 
@@ -690,7 +731,7 @@ function EquipmentSection() {
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-2xl text-center">
+        <Reveal className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
             Oprema
           </span>
@@ -699,17 +740,16 @@ function EquipmentSection() {
             <br />
             <span className="text-neutral-500">Bez kompromisa.</span>
           </h2>
-        </div>
+        </Reveal>
 
         <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {EQUIPMENT.map((item) => (
-            <div
-              key={item.name}
-              className="rounded-2xl border border-black/10 bg-neutral-50 p-5 text-center transition hover:border-yellow-400 hover:bg-yellow-50"
-            >
-              <div className="text-sm font-bold text-black">{item.name}</div>
-              <div className="mt-1 text-xs text-neutral-500">{item.note}</div>
-            </div>
+          {EQUIPMENT.map((item, i) => (
+            <Reveal key={item.name} delay={i * 0.05}>
+              <div className="rounded-2xl border border-black/10 bg-neutral-50 p-5 text-center transition hover:-translate-y-0.5 hover:border-yellow-400 hover:bg-yellow-50">
+                <div className="text-sm font-bold text-black">{item.name}</div>
+                <div className="mt-1 text-xs text-neutral-500">{item.note}</div>
+              </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -722,7 +762,7 @@ function ContactSection() {
     <section id="kontakt" className="bg-yellow-400">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-start">
-          <div>
+          <Reveal>
             <span className="text-xs font-semibold uppercase tracking-widest text-black/70">
               Kontakt
             </span>
@@ -770,68 +810,70 @@ function ContactSection() {
                 <ArrowRight className="h-5 w-5 text-black/40 transition group-hover:translate-x-1" />
               </a>
             </div>
-          </div>
+          </Reveal>
 
-          <div className="space-y-6 rounded-3xl bg-white p-7 sm:p-9">
-            <div>
-              <div className="flex items-center gap-3 text-black">
-                <MapPin className="h-5 w-5 text-yellow-500" />
-                <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
-                  Adresa
+          <Reveal delay={0.1}>
+            <div className="space-y-6 rounded-3xl bg-white p-7 sm:p-9">
+              <div>
+                <div className="flex items-center gap-3 text-black">
+                  <MapPin className="h-5 w-5 text-yellow-500" />
+                  <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                    Adresa
+                  </div>
                 </div>
-              </div>
-              <div className="mt-2 text-base font-semibold text-black">
-                {ADDRESS}
-              </div>
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-black"
-              >
-                Otvori na Google Maps
-                <ArrowRight className="h-3 w-3" />
-              </a>
-            </div>
-
-            <div className="border-t border-black/5 pt-6">
-              <div className="flex items-center gap-3 text-black">
-                <Clock className="h-5 w-5 text-yellow-500" />
-                <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
-                  Radno vrijeme
+                <div className="mt-2 text-base font-semibold text-black">
+                  {ADDRESS}
                 </div>
-              </div>
-              <div className="mt-2 space-y-1 text-sm text-neutral-700">
-                {HOURS_LINES.map((line) => (
-                  <div key={line}>{line}</div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t border-black/5 pt-6">
-              <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
-                Pratite nas
-              </div>
-              <div className="mt-3 flex gap-3">
                 <a
-                  href={IG_URL}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-black"
                 >
-                  Instagram
-                </a>
-                <a
-                  href={FB_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
-                >
-                  Facebook
+                  Otvori na Google Maps
+                  <ArrowRight className="h-3 w-3" />
                 </a>
               </div>
+
+              <div className="border-t border-black/5 pt-6">
+                <div className="flex items-center gap-3 text-black">
+                  <Clock className="h-5 w-5 text-yellow-500" />
+                  <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                    Radno vrijeme
+                  </div>
+                </div>
+                <div className="mt-2 space-y-1 text-sm text-neutral-700">
+                  {HOURS_LINES.map((line) => (
+                    <div key={line}>{line}</div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-black/5 pt-6">
+                <div className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                  Pratite nas
+                </div>
+                <div className="mt-3 flex gap-3">
+                  <a
+                    href={IG_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
+                  >
+                    Instagram
+                  </a>
+                  <a
+                    href={FB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-black transition hover:border-black/30 hover:bg-neutral-50"
+                  >
+                    Facebook
+                  </a>
+                </div>
+              </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>
@@ -859,11 +901,51 @@ function Footer() {
 export default function BaywashPage() {
   return (
     <main className="bg-white text-black antialiased">
+      {/* Custom yellow paint-droplet cursor (desktop, motion-allowed only) */}
+      <PaintCursor />
+
+      {/* Local CSS for accent underline draw-in + hero shimmer */}
+      <style>{`
+        @keyframes accent-draw {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
+        .accent-underline {
+          animation: accent-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+          transform: scaleX(0);
+        }
+        @keyframes shimmer-sweep {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .hero-shimmer {
+          animation: shimmer-sweep 2.4s ease-in-out infinite;
+        }
+        @keyframes hero-ring-pulse {
+          0%, 100% { transform: scale(1); opacity: 0.35; }
+          50%      { transform: scale(1.08); opacity: 0.55; }
+        }
+        .hero-ring {
+          animation: hero-ring-pulse 5s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .accent-underline, .hero-shimmer, .hero-ring {
+            animation: none !important;
+            transform: none !important;
+            opacity: 0.5 !important;
+          }
+        }
+      `}</style>
+
       <Header />
       <Hero />
       <PullQuote />
       <ProcessSection />
+      <BeforeAfterSection />
       <PackagesSection />
+      <section id="kalkulator">
+        <ValueCalculator />
+      </section>
       <VoditeljSection />
       <InternationalSection />
       <ReviewsSection />
