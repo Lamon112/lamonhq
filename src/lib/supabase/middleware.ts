@@ -44,6 +44,9 @@ export async function updateSession(request: NextRequest) {
     // hitting the HQ login gate.
     pathname === "/spin" ||
     pathname.startsWith("/r/") ||
+    // Bio link aggregator — replaces terminated linktr.ee/lamon.
+    // Public so anyone visiting from IG/TT bio lands directly.
+    pathname === "/links" ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/cron") ||
     pathname.startsWith("/api/inngest") ||
