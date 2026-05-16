@@ -53,15 +53,15 @@ Search-only (Cowork data, ne profile-verified — flagged `verify_pre_send`):
 ```
 Pozdrav Bruno,
 
-Vidio sam da si OTW i da iza tebe stoji Sales Manager rola kod KAZ d.o.o. — točan profil koji tražim.
+Vidio sam da si trenutno otvoren za nove prilike, a iza tebe stoji rola Voditelja prodaje u KAZ-u — točno profil koji tražim.
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income uz tvoj postojeći raspored. Može preći u full-time ako klikne.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoj postojeći raspored. Može preći u puno radno vrijeme ako se pokaže dobro.
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
+Tražim telefonskog prodavača za premium marketinšku agenciju (target: privatne stomatološke ordinacije). Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana. Probni tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sam).
+Sva infrastruktura postavljena: skripte, popis klijenata, CRM sustav. Ti samo zoveš u najboljim terminima (9:30-11:30 ili 14-16:30, biraš sam).
 
-Imamo Neda i Sebastijana zajedničke — 10 min Zoom da pokažem što i kako?
+Imamo Neda i Sebastijana zajedničke — 10 min na Zoom-u da pokažem što i kako?
 
 Leo
 ```
@@ -91,13 +91,13 @@ Leo
 ```
 Pozdrav Ines,
 
-Vidio sam tvoj profil — SDR @ Hypefy, plus Nestlé sales background prije toga, i imamo 9 zajedničkih kontakata (Pavla, Janko i ekipa). Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
+Vidio sam tvoj profil — predstavnica razvoja prodaje u Hypefyju, plus prodajno iskustvo u Nestléu prije toga, i imamo 9 zajedničkih kontakata (Pavla, Janko i ekipa). Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500 mjesečne naknade).
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Hypefy uloge. Performance model: €200 po zatvorenom klijentu, cash 7 dana.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoju ulogu u Hypefyju. Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana.
 
-Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, popis klijenata, CRM sustav — sve postavljeno. Probni tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
-10 min Zoom da pokažem materijal?
+10 min na Zoom-u da pokažem materijal?
 
 Leo
 ```
@@ -132,15 +132,15 @@ _⚠ Replaced Jadran Hudoklin per Leonardov 2026-05-16 feedback ("premalo otkriv
 ```
 Pozdrav Anamaria,
 
-Vidio sam OTW + sales rep iskustvo @ Avon — direct outbound consultative discipline + komunikacijska edukacija sa Bernays-a. Točan mindset koji tražim.
+Vidio sam da si otvorena za nove prilike + prodajno iskustvo u Avonu — direktna prodaja s konzultativnim pristupom + komunikacijska edukacija sa Bernays-a. Točno smjer kojeg tražim.
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, 100% remote (Hybrid OK).
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, 100% rad od kuće (hibridno također u redu).
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
+Tražim telefonskog prodavača za premium marketinšku agenciju (target: privatne stomatološke ordinacije). Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana. Probni tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sama).
+Sva infrastruktura postavljena: skripte, popis klijenata, CRM sustav. Ti samo zoveš u najboljim terminima (9:30-11:30 ili 14-16:30, biraš sama).
 
-Imamo Pavlu, Martinu i još 2 zajednička kontakta. 10 min Zoom da pokažem materijal?
+Imamo Pavlu, Martinu i još 2 zajednička kontakta. 10 min na Zoom-u da pokažem materijal?
 
 Leo
 ```
@@ -176,11 +176,11 @@ Vidim da imaš medical sales experience (Beiersdorf sada, Sabex prije toga) — 
 
 Vodim Lamon Agency — marketing partner za privatne stomatološke klinike u HR. Sklopio sam ugovore s nekoliko premium ordinacija i sada gradim outreach tim koji razumije industriju.
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Beiersdorf uloge. Sve remote — Split radi savršeno. €200 po zatvorenom klijentu, cash 7 dana, tier bonus za bolje pakete.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoju ulogu u Beiersdorfu. Sve ide na daljinu — Split radi savršeno. Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana, bonus po razinama za bolje pakete.
 
 Znati doktora-vlasnika kako govoriti je 80% bitke. Ti to već imaš.
 
-Imaš 10 min za Zoom da prođemo materijale?
+Imaš 10 min na Zoom-u da prođemo materijale?
 
 Leo
 ```
@@ -211,13 +211,13 @@ Leo
 ```
 Pozdrav Ivana,
 
-Vidio sam tvoj profil — BDR @ OB2B, "Finding your new partners" tagline (mindset partner discovery-a je 1:1 zatvaranje retainer klijenta). Plus imamo Martinu, Neda i još 4 zajednička kontakta. Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
+Vidio sam tvoj profil — predstavnica poslovnog razvoja u OB2B, "Finding your new partners" tagline (smjer pronalaska partnera je 1:1 zatvaranje klijenta s mjesečnom naknadom). Plus imamo Martinu, Neda i još 4 zajednička kontakta. Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500 mjesečne naknade).
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje OB2B uloge. €200 po zatvorenom klijentu, cash 7 dana.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoju ulogu u OB2B-u. Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana.
 
-Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, popis klijenata, CRM sustav — sve postavljeno. Probni tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
-Zanima te 10 min Zoom da pokažem materijal?
+Zanima te 10 min na Zoom-u da pokažem materijal?
 
 Leo
 ```
@@ -246,15 +246,15 @@ Leo
 ```
 Pozdrav Lara,
 
-Vidio sam da si OTW i da iza tebe stoji Sales Manager track s record-setting sales figures + territory expansion — to je nivo performansi koji tražim.
+Vidio sam da si otvorena za nove prilike i da iza tebe stoji rola Voditeljice prodaje s rekordnim prodajnim brojkama + širenjem teritorija — to je razina rezultata koju tražim.
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income uz fleksibilan raspored. Karlovac fine, sve ide remote. Može preći u full-time ako klikne.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz fleksibilan raspored. Karlovac u redu, sve ide na daljinu. Može preći u puno radno vrijeme ako se pokaže dobro.
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
+Tražim telefonskog prodavača za premium marketinšku agenciju (target: privatne stomatološke ordinacije). Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana. Probni tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sama).
+Sva infrastruktura postavljena: skripte, popis klijenata, CRM sustav. Ti samo zoveš u najboljim terminima (9:30-11:30 ili 14-16:30, biraš sama).
 
-10 min Zoom da pokažem materijal?
+10 min na Zoom-u da pokažem materijal?
 
 Leo
 ```
@@ -284,15 +284,15 @@ Leo
 ```
 Pozdrav Igor,
 
-Vidio sam da si OTW i da iza tebe stoji Samsung Senior Ambassador rola @ DEKRA — prodavanje premium tech brenda u retail/B2B kontekstu je točno mindset koji tražim.
+Vidio sam da si otvoren za nove prilike i da iza tebe stoji rola Samsung Senior Ambassador-a u DEKRA-i — prodavanje premium tehnološkog brenda u maloprodajnom/B2B kontekstu je točno smjer kojeg tražim.
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income uz fleksibilan raspored. Može preći u full-time ako klikne.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz fleksibilan raspored. Može preći u puno radno vrijeme ako se pokaže dobro.
 
-Tražim cold caller-a za premium marketing agenciju (target: privatne stomatološke ordinacije). Performance model: €200 po zatvorenom klijentu, cash 7 dana. Trial tjedan bez obveza.
+Tražim telefonskog prodavača za premium marketinšku agenciju (target: privatne stomatološke ordinacije). Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana. Probni tjedan bez obveza.
 
-Sva infrastructure postavljena: skripte, lead lista, CRM. Ti samo zoves u optimalnim slotovima (9:30-11:30 ili 14-16:30, biraš sam).
+Sva infrastruktura postavljena: skripte, popis klijenata, CRM sustav. Ti samo zoveš u najboljim terminima (9:30-11:30 ili 14-16:30, biraš sam).
 
-10 min Zoom da pokažem što i kako?
+10 min na Zoom-u da pokažem što i kako?
 
 Leo
 ```
@@ -322,13 +322,13 @@ _⚠ Search-only verified (Cowork data). Provjeri profile prije slanja: OTW fram
 ```
 Pozdrav Iva,
 
-Vidio sam tvoj profil — Operations & Sales Manager + Industrial Engineering MSc + sada SDR @ HotelSync. Hybrid analytical+sales background je neobičan i točno mindset koji treba consultative selling u premium segmentu. Plus imamo Miju Radovcic i još 3 zajednička kontakta. Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
+Vidio sam tvoj profil — Voditeljica operacija i prodaje + magistrica industrijskog inženjerstva + sada predstavnica razvoja prodaje u HotelSyncu. Hibridni analitički + prodajni profil je neobičan i točno smjer koji treba konzultativna prodaja u premium segmentu. Plus imamo Miju Radovcic i još 3 zajednička kontakta. Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500 mjesečne naknade).
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje HotelSync uloge. €200 po zatvorenom klijentu, cash 7 dana.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoju ulogu u HotelSyncu. Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana.
 
-Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, popis klijenata, CRM sustav — sve postavljeno. Probni tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
-Zanima te 10 min Zoom da pokažem materijal?
+Zanima te 10 min na Zoom-u da pokažem materijal?
 
 Leo
 ```
@@ -361,11 +361,11 @@ Vidim da imaš Sales Officer iskustvo pri Medical Intertrade — domaća medical
 
 Vodim Lamon Agency — marketing partner za privatne stomatološke klinike u HR. Sklopio sam ugovore s nekoliko premium ordinacija i sada gradim outreach tim koji razumije industriju.
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Medical Intertrade uloge. €200 po zatvorenom klijentu, cash 7 dana, tier bonus za bolje pakete.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoju ulogu u Medical Intertradeu. Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana, bonus po razinama za bolje pakete.
 
 Znati doktora-vlasnika kako govoriti je 80% bitke. Ti to već imaš.
 
-Imaš 10 min za Zoom da prođemo materijale?
+Imaš 10 min na Zoom-u da prođemo materijale?
 
 Leo
 ```
@@ -393,15 +393,15 @@ Leo
 ```
 Pozdrav Mia,
 
-Vidio sam tvoj profil — SDR @ Turizam Info, B2B konzultativna prodaja u tourism industriji + 2 zajednička kontakta (Dominik, Zoran). Solidan match.
+Vidio sam tvoj profil — predstavnica razvoja prodaje u Turizam Info, B2B konzultativna prodaja u turističkoj industriji + 2 zajednička kontakta (Dominik, Zoran). Solidan match.
 
-Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500/mj retainer).
+Radim premium marketing agenciju za privatne klinike (dental fokus, paket ~€1.500 mjesečne naknade).
 
-Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, side income na top tvoje Turizam Info uloge. €200 po zatvorenom klijentu, cash 7 dana.
+Konkretno: **1-2 sata posla dnevno = €1.000-2.000 mjesečno**, dodatna zarada uz tvoju ulogu u Turizam Info. Rad na učinak: €200 po zatvorenom klijentu, isplata u 7 dana.
 
-Skripte, lead lista, CRM — sve postavljeno. Trial tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
+Skripte, popis klijenata, CRM sustav — sve postavljeno. Probni tjedan 50 poziva bez fiksne. Ako u 7 dana ne klikne, razilazimo se bez obveza.
 
-Zanima te 10 min Zoom da pokažem materijal?
+Zanima te 10 min na Zoom-u da pokažem materijal?
 
 Leo
 ```
@@ -478,7 +478,7 @@ Niži score, koristi ako prvih 10 ne odgovori u 7 dana:
 
 4. **Skratiti template za Connect+note (max 280 chars):**
    ```
-   Pozdrav [Ime], vidio sam [signal]. Radim premium marketing agenciju za dental klinike. 1-2h posla dnevno = €1-2K/mj. €200/close, cash 7 dana, trial bez obveza. 10 min Zoom? — Leo
+   Pozdrav [Ime], vidio sam [signal]. Vodim premium marketinšku agenciju za stomatološke klinike. 1-2h posla dnevno = €1-2K mjesečno. €200 po zatvorenom klijentu, isplata u 7 dana, probni tjedan bez obveza. 10 min na Zoom-u? — Leo
    ```
 
 5. **Rate limit**: 7-9 min spacing između DMs. Max 15 DM/dan. Ako LinkedIn flag → STOP, retry sutra.
