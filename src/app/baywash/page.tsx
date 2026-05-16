@@ -634,18 +634,51 @@ function InternationalSection() {
 
           <div className="grid grid-cols-2 gap-3">
             {[
-              { car: "BMW M5 Competition", origin: "Dubai" },
-              { car: "Mercedes-AMG GT", origin: "Saudi Arabia" },
-              { car: "Porsche 911 Turbo S", origin: "Italija" },
-              { car: "Audi RS6 Avant", origin: "Njemačka" },
+              {
+                car: "Ferrari · iz Baywash garaže",
+                origin: "🇭🇷 Rijeka",
+                img: "/baywash/ferrari-cover.jpg",
+                note: "Real customer",
+              },
+              {
+                car: "BMW M5 Competition",
+                origin: "🇦🇪 Dubai",
+                img: "/baywash/bmw-m5.jpg",
+              },
+              {
+                car: "Mercedes-AMG GT",
+                origin: "🇸🇦 Saudi Arabia",
+                img: "/baywash/mercedes-amg.jpg",
+              },
+              {
+                car: "Porsche 911 Turbo S",
+                origin: "🇮🇹 Italija",
+                img: "/baywash/porsche-911.jpg",
+              },
             ].map((item, i) => (
               <Reveal key={i} delay={i * 0.08}>
-                <div className="aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-neutral-800 to-black p-5">
-                  <div className="flex h-full flex-col justify-between">
+                <div
+                  className="group relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-neutral-800"
+                  style={{
+                    backgroundImage: `url(${item.img})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                >
+                  {/* Bottom gradient for label legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent transition-opacity group-hover:opacity-90" />
+                  {/* Subtle yellow ring on hover */}
+                  <div className="absolute inset-0 ring-0 ring-yellow-400/0 transition-all duration-300 group-hover:ring-2 group-hover:ring-yellow-400/40" />
+                  {item.note ? (
+                    <div className="absolute right-3 top-3 rounded-full bg-yellow-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-black">
+                      {item.note}
+                    </div>
+                  ) : null}
+                  <div className="absolute inset-x-5 bottom-5 flex flex-col justify-end">
                     <div className="text-xs font-medium uppercase tracking-widest text-yellow-400">
                       {item.origin}
                     </div>
-                    <div className="text-base font-bold leading-tight text-white">
+                    <div className="mt-1 text-base font-bold leading-tight text-white">
                       {item.car}
                     </div>
                   </div>

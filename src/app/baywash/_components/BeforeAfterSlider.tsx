@@ -13,8 +13,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const BEFORE_IMG: string | null = null; // e.g. "/baywash/before.jpg"
-const AFTER_IMG: string | null = null; // e.g. "/baywash/after.jpg"
+const BEFORE_IMG: string | null = "/baywash/paint-correction-before.jpg";
+const AFTER_IMG: string | null = "/baywash/paint-correction-after.jpg";
 
 export function BeforeAfterSlider() {
   const [pos, setPos] = useState(50); // percent
