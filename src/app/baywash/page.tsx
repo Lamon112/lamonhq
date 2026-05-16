@@ -321,33 +321,38 @@ function Hero() {
           </div>
         </Reveal>
 
-        {/* Hero visual — Ferrari customer car bg + animated 47 overlay */}
+        {/* Hero visual — REAL Baywash detailing video loop + animated 47 overlay */}
         <Reveal delay={0.15}>
           <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-neutral-900">
-            {/* Real Baywash Ferrari customer photo as background */}
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: "url(/baywash/ferrari-cover.jpg)",
-                filter: "saturate(1.1)",
-              }}
-            />
-            {/* Dark gradient overlay so the white "47" pops + tints whole shot dramatic */}
+            {/* Real Baywash workshop video — autoplay loop, muted, mobile-friendly */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 h-full w-full object-cover"
+              poster="/baywash/ferrari-cover.jpg"
+              aria-hidden="true"
+            >
+              <source src="/baywash/hero-bg.mp4" type="video/mp4" />
+            </video>
+            {/* Dark gradient overlay so the white "47" pops */}
             <div
               aria-hidden="true"
               className="absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100%)",
+                  "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.9) 100%)",
               }}
             />
-            {/* Yellow warm overlay accent (Baywash signature bounce) */}
+            {/* Yellow warm overlay accent */}
             <div
               aria-hidden="true"
               className="absolute inset-0 mix-blend-overlay"
               style={{
                 background:
-                  "radial-gradient(ellipse at 30% 20%, rgba(250,204,21,0.25) 0%, transparent 50%)",
+                  "radial-gradient(ellipse at 30% 20%, rgba(250,204,21,0.3) 0%, transparent 55%)",
               }}
             />
             {/* "47" centerpiece + pulsing yellow glow ring */}
@@ -370,17 +375,22 @@ function Hero() {
                 </div>
               </div>
             </div>
+            {/* "LIVE" pulsing badge top-left to signal it's a video */}
+            <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur">
+              <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+              U radionici
+            </div>
             {/* Bottom info badge */}
             <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-500">
                 <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-500" />
-                Real customer · Baywash garaža
+                Baywash radionica · Viškovo
               </div>
               <div className="mt-1 text-sm font-semibold text-black">
-                Ferrari · Stage 4 + Artdeshine NGC+ Graphene
+                47 koraka · Stage 4 + Artdeshine NGC+ Graphene
               </div>
               <div className="mt-0.5 text-xs text-neutral-600">
-                3 dana rada · 47 koraka · 5 godina zaštite
+                Live snimka iz studio-a · uvedeni klijenti samo
               </div>
             </div>
           </div>
@@ -1002,37 +1012,26 @@ export default function BaywashPage() {
       <PaintCursor />
 
       {/* Local CSS for: accent underline draw-in, hero shimmer, ring pulse,
-          floating paint droplets, and PAGE-LOAD PAINT WIPE HOOK. */}
+          floating droplets, and PAGE-LOAD SPARKLE HOOK (replaces paint wipe). */}
       <style>{`
-        /* ────── PAGE LOAD HOOK — yellow paint sweep across viewport ────── */
-        @keyframes paint-wipe {
-          0%   { transform: translateX(-110%) skewX(-12deg); opacity: 1; }
-          60%  { transform: translateX(0%) skewX(-12deg); opacity: 1; }
-          100% { transform: translateX(110%) skewX(-12deg); opacity: 0; }
+        /* ────── PAGE LOAD HOOK — multi-point yellow sparkles pop in across viewport ────── */
+        @keyframes sparkle-pop {
+          0%   { transform: scale(0) rotate(0deg);   opacity: 0; }
+          20%  { transform: scale(1.5) rotate(45deg); opacity: 1; }
+          45%  { transform: scale(0.9) rotate(80deg); opacity: 1; }
+          65%  { transform: scale(1.2) rotate(110deg); opacity: 0.95; }
+          100% { transform: scale(0) rotate(180deg);  opacity: 0; }
         }
-        .paint-wipe-overlay {
+        .sparkle {
           position: fixed;
-          inset: 0;
           z-index: 9998;
           pointer-events: none;
-          background: linear-gradient(
-            105deg,
-            transparent 38%,
-            #fde047 44%,
-            #facc15 50%,
-            #eab308 56%,
-            transparent 62%
-          );
-          animation: paint-wipe 1.4s cubic-bezier(0.65, 0.05, 0.35, 1) forwards;
+          width: 40px;
+          height: 40px;
+          transform: scale(0);
+          animation: sparkle-pop 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
           will-change: transform, opacity;
-        }
-        /* Content fade-in synced with paint wipe — feels like the wipe REVEALS the content */
-        @keyframes content-reveal {
-          0%, 40% { opacity: 0; transform: translateY(8px); }
-          100%    { opacity: 1; transform: translateY(0); }
-        }
-        .hero-reveal {
-          animation: content-reveal 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.7));
         }
         /* ────── Existing accent / shimmer / ring / droplet animations ────── */
         @keyframes accent-draw {
@@ -1071,17 +1070,56 @@ export default function BaywashPage() {
         }
         @media (prefers-reduced-motion: reduce) {
           .accent-underline, .hero-shimmer, .hero-ring,
-          .hero-droplet, .paint-wipe-overlay, .hero-reveal {
+          .hero-droplet, .sparkle {
             animation: none !important;
             transform: none !important;
-            opacity: 1 !important;
+            opacity: 0 !important;
           }
-          .paint-wipe-overlay { display: none !important; }
+          .sparkle { display: none !important; }
         }
       `}</style>
 
-      {/* The actual paint-wipe overlay element — fires once on mount */}
-      <div className="paint-wipe-overlay" aria-hidden="true" />
+      {/* PAGE-LOAD SPARKLE HOOK — 9 yellow stars pop in at scattered positions
+          across the viewport in the first 1.5s. Each <SparkleSVG /> is a
+          4-point star with gradient + glow, sequenced via animation-delay. */}
+      {[
+        { top: "12%", left: "8%", delay: "0s", size: 36 },
+        { top: "22%", left: "78%", delay: "0.12s", size: 28 },
+        { top: "8%", left: "52%", delay: "0.24s", size: 32 },
+        { top: "45%", left: "18%", delay: "0.36s", size: 24 },
+        { top: "38%", left: "90%", delay: "0.48s", size: 30 },
+        { top: "60%", left: "62%", delay: "0.6s", size: 26 },
+        { top: "70%", left: "12%", delay: "0.72s", size: 34 },
+        { top: "78%", left: "85%", delay: "0.84s", size: 28 },
+        { top: "30%", left: "35%", delay: "0.96s", size: 22 },
+      ].map((s, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className="sparkle"
+          style={{
+            top: s.top,
+            left: s.left,
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            animationDelay: s.delay,
+          }}
+        >
+          <svg viewBox="0 0 32 32" fill="none">
+            <defs>
+              <radialGradient id={`sparkle-grad-${i}`}>
+                <stop offset="0%" stopColor="#fffbe7" />
+                <stop offset="40%" stopColor="#facc15" />
+                <stop offset="100%" stopColor="#eab308" />
+              </radialGradient>
+            </defs>
+            <path
+              d="M16 0 L19 13 L32 16 L19 19 L16 32 L13 19 L0 16 L13 13 Z"
+              fill={`url(#sparkle-grad-${i})`}
+            />
+          </svg>
+        </div>
+      ))}
 
       <Header />
       <Hero />
