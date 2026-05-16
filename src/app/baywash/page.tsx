@@ -239,6 +239,38 @@ function Hero() {
         className="pointer-events-none absolute -left-20 bottom-0 h-[400px] w-[400px] rounded-full bg-yellow-200/20 blur-3xl"
       />
 
+      {/* Floating yellow paint droplets — subtle, premium ambient motion */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        {[
+          { left: "8%", delay: "0s", duration: "12s", size: 8 },
+          { left: "22%", delay: "3s", duration: "18s", size: 6 },
+          { left: "35%", delay: "1s", duration: "15s", size: 10 },
+          { left: "48%", delay: "5s", duration: "20s", size: 7 },
+          { left: "65%", delay: "2s", duration: "14s", size: 9 },
+          { left: "78%", delay: "4s", duration: "17s", size: 6 },
+          { left: "90%", delay: "6s", duration: "16s", size: 8 },
+        ].map((d, i) => (
+          <div
+            key={i}
+            className="hero-droplet absolute bottom-[-30px] rounded-full"
+            style={{
+              left: d.left,
+              width: `${d.size}px`,
+              height: `${d.size * 1.4}px`,
+              animationDelay: d.delay,
+              animationDuration: d.duration,
+              background:
+                "radial-gradient(circle at 30% 30%, #fde047, #facc15 50%, #eab308 100%)",
+              borderRadius: "50% 50% 45% 45%",
+              boxShadow: "0 0 8px rgba(250, 204, 21, 0.4)",
+            }}
+          />
+        ))}
+      </div>
+
       <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:py-32">
         <Reveal className="flex flex-col justify-center">
           <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-yellow-300/60 bg-yellow-50 px-3 py-1 text-xs font-medium uppercase tracking-wider text-neutral-700">
@@ -945,14 +977,46 @@ export default function BaywashPage() {
       {/* Custom yellow paint-droplet cursor (desktop, motion-allowed only) */}
       <PaintCursor />
 
-      {/* Local CSS for accent underline draw-in + hero shimmer */}
+      {/* Local CSS for: accent underline draw-in, hero shimmer, ring pulse,
+          floating paint droplets, and PAGE-LOAD PAINT WIPE HOOK. */}
       <style>{`
+        /* ────── PAGE LOAD HOOK — yellow paint sweep across viewport ────── */
+        @keyframes paint-wipe {
+          0%   { transform: translateX(-110%) skewX(-12deg); opacity: 1; }
+          60%  { transform: translateX(0%) skewX(-12deg); opacity: 1; }
+          100% { transform: translateX(110%) skewX(-12deg); opacity: 0; }
+        }
+        .paint-wipe-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9998;
+          pointer-events: none;
+          background: linear-gradient(
+            105deg,
+            transparent 38%,
+            #fde047 44%,
+            #facc15 50%,
+            #eab308 56%,
+            transparent 62%
+          );
+          animation: paint-wipe 1.4s cubic-bezier(0.65, 0.05, 0.35, 1) forwards;
+          will-change: transform, opacity;
+        }
+        /* Content fade-in synced with paint wipe — feels like the wipe REVEALS the content */
+        @keyframes content-reveal {
+          0%, 40% { opacity: 0; transform: translateY(8px); }
+          100%    { opacity: 1; transform: translateY(0); }
+        }
+        .hero-reveal {
+          animation: content-reveal 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        /* ────── Existing accent / shimmer / ring / droplet animations ────── */
         @keyframes accent-draw {
           from { transform: scaleX(0); }
           to   { transform: scaleX(1); }
         }
         .accent-underline {
-          animation: accent-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+          animation: accent-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1s forwards;
           transform: scaleX(0);
         }
         @keyframes shimmer-sweep {
@@ -969,14 +1033,31 @@ export default function BaywashPage() {
         .hero-ring {
           animation: hero-ring-pulse 5s ease-in-out infinite;
         }
+        @keyframes droplet-float {
+          0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+          15%  { opacity: 0.7; }
+          85%  { opacity: 0.5; }
+          100% { transform: translateY(-110vh) scale(1); opacity: 0; }
+        }
+        .hero-droplet {
+          animation-name: droplet-float;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          will-change: transform, opacity;
+        }
         @media (prefers-reduced-motion: reduce) {
-          .accent-underline, .hero-shimmer, .hero-ring {
+          .accent-underline, .hero-shimmer, .hero-ring,
+          .hero-droplet, .paint-wipe-overlay, .hero-reveal {
             animation: none !important;
             transform: none !important;
-            opacity: 0.5 !important;
+            opacity: 1 !important;
           }
+          .paint-wipe-overlay { display: none !important; }
         }
       `}</style>
+
+      {/* The actual paint-wipe overlay element — fires once on mount */}
+      <div className="paint-wipe-overlay" aria-hidden="true" />
 
       <Header />
       <Hero />
