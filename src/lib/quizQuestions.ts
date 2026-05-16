@@ -79,7 +79,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       { value: "0", label: "0€ — samo besplatno", weight: 1 },
       { value: "do_50", label: "Do 50€", weight: 3 },
       { value: "do_200", label: "Do 200€", weight: 4 },
-      { value: "200_plus", label: "200€+ (mentorstvo, alati, ad spend)", weight: 5 },
+      { value: "do_500", label: "200-500€", weight: 5 },
+      { value: "1000_plus", label: "1.000€+ (mentorstvo, alati, ad spend)", weight: 6 },
     ],
   },
   {

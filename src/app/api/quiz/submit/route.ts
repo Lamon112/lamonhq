@@ -22,6 +22,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { isMockMode, mockInsert, mockUpdate } from "@/lib/quizMockStore";
+import { sendQuizPlanEmail } from "@/lib/quizEmail";
 
 export const runtime = "nodejs";
 // 120s — Sonnet 4.5 plan generation under load can hit ~90s for
@@ -42,14 +43,27 @@ const QUIZ_SCORING_SYSTEM = `Ti si Leonardov AI Side Hustle Coach (sidequestshr 
 
 Cilj: Generirati osobni 30-dnevni plan na temelju 10 odgovora iz quizа. Output je striktno JSON koji frontend renderira.
 
-# Verificirani case studyji koje SMIJEŠ koristiti (NIKAD izmišljaj brojke)
-- **Tom**: 17.000€ / 3 mjeseca, faceless TikTok, AI alati (ElevenLabs + Midjourney + CapCut), niša "AI Factory Secrets" + povijest
-- **Matija**: 3.000€ / 2 mjeseca, faceless ASMR Reels, sleeping aid niša
-- **Vuk**: 5.000€ / mjesečno, longform YouTube, dokumentarni stil "Vuk Cosic"
-- **Filmovi Ukratko**: 30.000 followera, recap kanal, 60s sažeci serija/filmova
-- **Borna documenting**: dokumentira svoj put kao zero-to-hero, growth od 0 do 12K za 4 mjeseca
+# 🚨 NAJVAŽNIJE PRAVILO — POZICIONIRANJE SVAKOG PLANA
 
-# Verificirane viralne niše
+**DEFAULT JE UVIJEK: faceless content + AMERIČKO/GLOBALNO TRŽIŠTE (engleski).**
+
+Razlog: Balkan tržište ima nizak CPM ($0.20-1.00) — čak i 100K views = €30-100. US/UK/CA tržište ima 10-30× viši CPM ($3-15) — isti view-ovi = €500-1500. Plus US tržište ima Skool/Substack/affiliate ekosistem koji jednostavno ne postoji u nas.
+
+Ako default je faceless+US, kada PREPORUČIŠ da postane KREATOR (face na kameri ili dokumentari personal brand)?
+- SAMO AKO user EKSPLICITNO odabere kamera="da_komforno" (NE "nervozno", NE "samo glas")
+- I dodatno samo ako: (a) user piše izvanrednom self-confidence + storytelling, ili (b) ima već existing audience
+- Ako bilo koji od tih signala nedostaje → SVE OSTALO IDE FACELESS + US
+
+**NIKAD ne preporučuj kreator/face/dokumentari put samo zato jer "ima volju". Balkanski user koji "volio bi" snimati = u 9/10 slučajeva odustane jer Balkan CPM ne plaća. Faceless US + AI alati = scalable, profitabilno, retention-friendly.**
+
+# Verificirani case studyji (NIKAD izmišljaj brojke)
+- **Tom**: 17.000€ / 3 mjeseca, **faceless TikTok US**, AI alati (ElevenLabs + Midjourney + CapCut), niša "AI Factory Secrets" + povijest
+- **Matija**: 3.000€ / 2 mjeseca, **faceless ASMR Reels US**, sleeping aid niša
+- **Vuk**: 5.000€/mj, longform YouTube dokumentarni — face KOMFORAN, EXPERIENCED, has audience already
+- **Filmovi Ukratko**: 30K followera, **faceless recap kanal**, 60s sažeci serija/filmova (engleski)
+- **Borna documenting**: face na kameri, dokumentira put 0→12K za 4 mj — face KOMFORAN, izvanredno self-aware, retko fit
+
+# Verificirane viralne niše (sve faceless, sve US/EN tržište)
 - GenRescue (US Reddit niche, $280K/godinu)
 - Zhiphyr (gaming reaction, $234K)
 - 217aep (faceless lifestyle, $199K)
@@ -71,12 +85,28 @@ Cilj: Generirati osobni 30-dnevni plan na temelju 10 odgovora iz quizа. Output 
      {label: "Tehnika (AI alati)", percent: 60, color: "orange"},
      {label: "Niša fokus", percent: 40, color: "yellow"}]
   Color: red 70-100, orange 50-70, yellow 30-50, green <30
+
 - matched_case_study: jedan od { tom_17k | matija_3k | vuk_5k | filmovi_30k | borna_doc }
-  - face komfor + 10h+ + cilj 5K → tom_17k
-  - ne kamere + ASMR/anonimno → matija_3k
-  - YouTube longform + storytelling → vuk_5k
-  - recap/sažeci + film/serija fan → filmovi_30k
-  - početnik + dokumentari put → borna_doc
+  Default ide u FACELESS US bucket:
+  - kamera ≠ "da_komforno" + bilo što → tom_17k (faceless TikTok AI) ili matija_3k (faceless ASMR) ili filmovi_30k (faceless recap)
+  - kamera = "samo_glas" → tom_17k (voice-over content)
+  - kamera = "ne_nikako" → matija_3k (ASMR ili pure visual)
+  - 18-24 student + nikad probao + 0 budget → matija_3k (low-bar entry)
+  - recap/film/serija interest → filmovi_30k
+
+  Kreator put SAMO ako sve od ovih:
+  - kamera = "da_komforno" (eksplicitno)
+  - cilj_zarade = 2000_5000 ili 5000_plus (dovoljno hungry da svaki dan snima)
+  - blocker NE sadrži "kamera" / "ne_vjerujem_si"
+  - Tek tada: vuk_5k (longform YT) ili borna_doc (dokumentari put)
+
+- target_market: postavi ovo polje u plan_md eksplicitno u Tjedan 1: "Tržište: USA/UK/Kanada (engleski)" — osim za vuk_5k/borna_doc koji mogu biti HR/balkanski personal brand
+
+# Plan struktura (30 dana) — STROGO 4 tjedna, KRATKO
+- TJEDAN 1: Setup (alati, niša lock-in US tržište, prvi 3 videa engleski) — max 80 riječi
+- TJEDAN 2: Konzistentnost (1 video/dan, hook iteration) — max 80 riječi
+- TJEDAN 3: Skaliranje (analytics, najbolji video → 5 varijanti) — max 80 riječi
+- TJEDAN 4: Monetizacija (TikTok Creativity Program, YouTube AdSense, affiliate, digital product) — max 80 riječi
 
 # Plan struktura (30 dana) — STROGO 4 tjedna, KRATKO
 - TJEDAN 1: Setup (alati, niša lock-in, prvi 3 videa) — max 80 riječi
@@ -268,6 +298,30 @@ export async function POST(request: Request) {
           generation_cost_usd: cost,
         })
         .eq("id", leadId);
+    }
+
+    // Fire-and-forget email send. Wrapped in try so a failed email doesn't
+    // break the user's flow (they still get the result page). Resend
+    // no-ops if RESEND_API_KEY env is missing — deploy will work without it.
+    if (parsed.score !== undefined) {
+      const resultUrl =
+        (process.env.NEXT_PUBLIC_SITE_URL || "https://lamon-hq.vercel.app") +
+        `/quiz/result/${leadId}`;
+      try {
+        const emailResult = await sendQuizPlanEmail({
+          to: kontakt.email,
+          leadName: kontakt.name?.trim() || "ej",
+          resultUrl,
+          score: parsed.score,
+          matchedCaseStudy: parsed.matched_case_study ?? null,
+          planMd: parsed.plan_md ?? "",
+        });
+        if (!emailResult.ok && !emailResult.skipped) {
+          console.error("[quiz/submit] email send failed:", emailResult.error);
+        }
+      } catch (e) {
+        console.error("[quiz/submit] email threw:", e);
+      }
     }
   } catch (e) {
     console.error("[quiz/submit] Claude call failed:", e);
