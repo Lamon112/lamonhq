@@ -7,6 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isMockMode, mockGet } from "@/lib/quizMockStore";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,11 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+  if (isMockMode()) {
+    const lead = mockGet(id);
+    if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(lead);
+  }
   const sb = getServiceSupabase();
   const { data, error } = await sb
     .from("quiz_leads")

@@ -2,9 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronLeft, Sparkles, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
 import { QUIZ_QUESTIONS, type QuizQuestion } from "@/lib/quizQuestions";
 import { trackMetaEvent } from "./MetaPixel";
+import { MoneyRushGame } from "./MoneyRushGame";
+import { AnimatedBackground } from "./AnimatedBackground";
 
 type Responses = Record<string, string | string[] | { name: string; email: string; telegram?: string }>;
 
@@ -141,24 +143,32 @@ export function QuizWizard() {
 
   if (submitting) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-gold/30 bg-gold/5">
-          <Loader2 className="h-10 w-10 animate-spin text-gold" />
+      <>
+        <AnimatedBackground intensity="high" />
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-6 text-center">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 backdrop-blur">
+            <Sparkles className="h-3.5 w-3.5 animate-pulse text-gold" />
+            <span className="text-[11px] font-bold tracking-widest text-gold">
+              AI GRADI TVOJ PLAN
+            </span>
+          </div>
+          <h2 className="mt-2 text-2xl font-black md:text-3xl">
+            Penji se do EMPIRE-a
+          </h2>
+          <p className="mb-3 max-w-md text-xs text-text-dim">
+            AI generira tvoj plan u pozadini (~45 sek). Igra dok čekaš —
+            preusmjerava te kad bude spreman.
+          </p>
+          <MoneyRushGame />
         </div>
-        <h2 className="mb-3 text-2xl font-semibold">
-          AI gradi tvoj osobni plan…
-        </h2>
-        <p className="max-w-md text-sm text-text-dim">
-          Analizira tvoje odgovore, mapira ih na 5 verificiranih case studyja
-          (Tom 17K/3mj, Matija 3K/2mj, Vuk 5K/mj…) i gradi plan koji odgovara
-          baš tvojim satima, budžetu i nišama. Ovo traje 30-60 sekundi.
-        </p>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-8">
+    <>
+      <AnimatedBackground intensity="medium" />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-8">
       {/* Header — brand + progress */}
       <div className="mb-10">
         <div className="mb-4 flex items-center justify-between">
@@ -219,7 +229,9 @@ export function QuizWizard() {
         </div>
       )}
 
-      {/* Footer nav */}
+      {/* Footer nav — Dalje gumb skriven na single-select (auto-advance
+          radi tu); pokazuje se na multi-select (treba commit), text input,
+          i posljednjem koraku (kontakt forma + submit). */}
       <div className="mt-8 flex items-center justify-between">
         <button
           onClick={prev}
@@ -230,16 +242,29 @@ export function QuizWizard() {
           Natrag
         </button>
 
-        <button
-          onClick={next}
-          disabled={!isCurrentAnswered()}
-          className="flex items-center gap-2 rounded-lg bg-gold px-6 py-3 text-sm font-bold text-bg transition hover:bg-gold-bright disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted"
-        >
-          {stepIdx === totalSteps - 1 ? "Generiraj moj plan" : "Dalje"}
-          <ChevronRight className="h-4 w-4" />
-        </button>
+        {(question.type !== "single" || stepIdx === totalSteps - 1) && (
+          <button
+            onClick={next}
+            disabled={!isCurrentAnswered()}
+            className="flex items-center gap-2 rounded-lg bg-gold px-6 py-3 text-sm font-bold text-bg transition hover:bg-gold-bright disabled:cursor-not-allowed disabled:bg-bg-elevated disabled:text-text-muted"
+          >
+            {stepIdx === totalSteps - 1
+              ? "Generiraj moj plan"
+              : question.type === "multi"
+                ? "Dalje (potvrdi izbor)"
+                : "Dalje"}
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
+
+        {question.type === "single" && stepIdx !== totalSteps - 1 && (
+          <span className="text-xs text-text-muted italic">
+            Klikni odgovor da nastavi →
+          </span>
+        )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

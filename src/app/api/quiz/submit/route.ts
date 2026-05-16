@@ -21,6 +21,7 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { isMockMode, mockInsert, mockUpdate } from "@/lib/quizMockStore";
 
 export const runtime = "nodejs";
 // 120s — Sonnet 4.5 plan generation under load can hit ~90s for
@@ -138,13 +139,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "missing email" }, { status: 400 });
   }
 
-  const sb = getServiceSupabase();
-
-  // Insert row first so we have an id even if Claude fails — user gets a
-  // result page that can retry. Status=new, fields populated incrementally.
-  const { data: inserted, error: insertErr } = await sb
-    .from("quiz_leads")
-    .insert({
+  // ── DB INSERT path ──
+  // Production: SUPABASE_SERVICE_ROLE_KEY is set → real Supabase insert.
+  // Dev w/o key: fall back to in-memory mock store so quiz UX is testable
+  // without applying migrations. Mock data lives only in this process.
+  let leadId: string;
+  if (isMockMode()) {
+    console.log("[quiz/submit] MOCK MODE — no SUPABASE_SERVICE_ROLE_KEY set");
+    const mock = mockInsert({
       responses,
       lead_email: kontakt.email,
       lead_name: kontakt.name ?? null,
@@ -152,19 +154,32 @@ export async function POST(request: Request) {
       source: body.source ?? "direct",
       utm_campaign: body.utm_campaign ?? null,
       utm_medium: body.utm_medium ?? null,
-      status: "new",
-    })
-    .select("id")
-    .single();
-
-  if (insertErr || !inserted) {
-    return NextResponse.json(
-      { error: insertErr?.message || "insert failed" },
-      { status: 500 },
-    );
+    });
+    leadId = mock.id;
+  } else {
+    const sb = getServiceSupabase();
+    const { data: inserted, error: insertErr } = await sb
+      .from("quiz_leads")
+      .insert({
+        responses,
+        lead_email: kontakt.email,
+        lead_name: kontakt.name ?? null,
+        lead_telegram: kontakt.telegram ?? null,
+        source: body.source ?? "direct",
+        utm_campaign: body.utm_campaign ?? null,
+        utm_medium: body.utm_medium ?? null,
+        status: "new",
+      })
+      .select("id")
+      .single();
+    if (insertErr || !inserted) {
+      return NextResponse.json(
+        { error: insertErr?.message || "insert failed" },
+        { status: 500 },
+      );
+    }
+    leadId = inserted.id as string;
   }
-
-  const leadId = inserted.id as string;
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ id: leadId });
@@ -231,17 +246,29 @@ export async function POST(request: Request) {
     // Compose markdown for the result page.
     const aiOutputMd = composeOutputMarkdown(parsed);
 
-    await sb
-      .from("quiz_leads")
-      .update({
+    if (isMockMode()) {
+      mockUpdate(leadId, {
         score: parsed.score ?? null,
         weaknesses: parsed.weaknesses ?? null,
         matched_case_study: parsed.matched_case_study ?? null,
         ai_output_md: aiOutputMd,
         generated_at: new Date().toISOString(),
         generation_cost_usd: cost,
-      })
-      .eq("id", leadId);
+      });
+    } else {
+      const sb = getServiceSupabase();
+      await sb
+        .from("quiz_leads")
+        .update({
+          score: parsed.score ?? null,
+          weaknesses: parsed.weaknesses ?? null,
+          matched_case_study: parsed.matched_case_study ?? null,
+          ai_output_md: aiOutputMd,
+          generated_at: new Date().toISOString(),
+          generation_cost_usd: cost,
+        })
+        .eq("id", leadId);
+    }
   } catch (e) {
     console.error("[quiz/submit] Claude call failed:", e);
     // Lead saved anyway — result page handles missing ai_output gracefully.
