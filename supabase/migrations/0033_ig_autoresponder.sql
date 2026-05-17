@@ -95,6 +95,10 @@ create table if not exists ig_dm_events (
   -- to our "javi se u DM" prompt)
   triggered_by_comment_id uuid references ig_comment_events(id),
 
+  -- Which keyword trigger matched this DM (for variation lookup + analytics)
+  matched_trigger_id uuid references ig_keyword_triggers(id),
+  matched_keyword text,
+
   -- Auto-reply tracking
   reply_status text not null default 'pending' check (reply_status in ('pending', 'sent', 'failed', 'skipped_cooldown', 'skipped_no_match')),
   reply_text text,

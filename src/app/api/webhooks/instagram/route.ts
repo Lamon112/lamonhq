@@ -31,6 +31,7 @@ import {
   sendDirectMessage,
   renderTemplate,
 } from "@/lib/instagram";
+import { varyReply } from "@/lib/replyVariation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -142,17 +143,24 @@ async function handleComment(c: IGCommentValue) {
   // Insert pending event first so we have a record even if API fails
   const eventId = await logComment(c, match, "pending", null, null);
 
+  // Vary reply if too similar to recent ones (anti-spam protection)
+  const replyText = await varyReply({
+    base: match.comment_reply_text,
+    triggerId: match.id,
+    channel: "comment",
+  });
+
   // Reply publicly
   const result = await replyToComment({
     commentId: c.id,
-    message: match.comment_reply_text,
+    message: replyText,
   });
   if (result.ok) {
     await supabase
       .from("ig_comment_events")
       .update({
         public_reply_status: "sent",
-        public_reply_text: match.comment_reply_text,
+        public_reply_text: replyText,
         public_reply_at: new Date().toISOString(),
       })
       .eq("id", eventId);
@@ -229,13 +237,20 @@ async function handleDirectMessage(msg: IGMessagingEvent) {
     link: match.dm_link ?? "",
   });
 
-  const result = await sendDirectMessage({ recipientId: senderId, message: rendered });
+  // Vary DM reply if too similar to recent ones (anti-spam protection)
+  const variedDm = await varyReply({
+    base: rendered,
+    triggerId: match.id,
+    channel: "dm",
+  });
+
+  const result = await sendDirectMessage({ recipientId: senderId, message: variedDm });
   if (result.ok) {
     await supabase
       .from("ig_dm_events")
       .update({
         reply_status: "sent",
-        reply_text: rendered,
+        reply_text: variedDm,
         reply_at: new Date().toISOString(),
         link_sent: match.dm_link,
       })
@@ -293,6 +308,8 @@ async function logDm(
       ig_message_id: msg.message?.mid ?? "",
       ig_user_id: msg.sender?.id ?? "",
       message_text: msg.message?.text ?? null,
+      matched_trigger_id: match?.id ?? null,
+      matched_keyword: match?.keyword ?? null,
       reply_status: status,
     })
     .select("id")
